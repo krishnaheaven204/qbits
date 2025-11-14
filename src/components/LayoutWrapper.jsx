@@ -1,0 +1,26 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Header from '@/components/header/Header';
+import Sidebar from '@/components/sidebar/Sidebar';
+
+export default function LayoutWrapper({ children }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === '/register' || pathname === '/login' || pathname === '/auth/login' || pathname === '/auth/register';
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="app-layout">
+      <Sidebar />
+      <div className="main-content-wrapper">
+        <Header />
+        <div className="pc-content">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}

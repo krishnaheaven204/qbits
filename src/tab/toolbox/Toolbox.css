@@ -1,0 +1,115 @@
+.toolbox-page {
+  width: 100%;
+}
+
+.toolbox-body {
+  padding: 1.5rem;
+}
+
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.toolbox-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background-color: #fff;
+  border-radius: 0.5rem;
+}
+
+.toolbox-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.toolbox-icon-purple {
+  color: #9333ea;
+}
+
+.toolbox-icon-green {
+  color: #22c55e;
+}
+
+.toolbox-icon-orange {
+  color: #f59e0b;
+}
+
+.toolbox-icon-blue {
+  color: #3b82f6;
+}
+
+.toolbox-icon-grey {
+  color: #6b7280;
+}
+
+.toolbox-icon-grey-dark {
+  color: #4b5563;
+}
+
+.toolbox-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  margin-top: 0;
+}
+
+.toolbox-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+  line-height: 1.5;
+}
+
+.toolbox-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+  width: auto;
+  margin-top: auto;
+}
+
+.toolbox-button:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+  .toolbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .toolbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

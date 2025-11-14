@@ -1,0 +1,188 @@
+.user-list-page {
+  width: 100%;
+}
+
+/* Layout */
+.ul-container {
+  width: 100%;
+}
+.ul-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: visible; /* allow inner scrollbars to be visible */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.ul-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ul-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ul-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ul-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+.ul-body {
+  padding: 16px 20px;
+  overflow: visible;
+}
+
+/* Search */
+.ul-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ul-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  min-width: 280px;
+  background: #f8fafc;
+}
+.ul-search-icon {
+  display: inline-flex;
+  color: #94a3b8;
+}
+.ul-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  color: #0f172a;
+}
+
+/* Buttons */
+.ul-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.ul-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ul-btn-primary {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+.ul-btn-primary:hover:not(:disabled) {
+  background: #0b1220;
+}
+.ul-btn-ghost {
+  background: #fff;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+.ul-btn-ghost:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+/* Table */
+.ul-table-wrap {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  max-width: 100%;
+  background: #fff;
+  scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+  position: relative;
+}
+.ul-data-grid {
+  min-width: 1800px;
+  width: max-content;
+  height: 100%;
+}
+.ul-table-wrap .MuiDataGrid-root {
+  border: none;
+  background: #fff;
+}
+.ul-table-wrap .MuiDataGrid-columnHeaders {
+  border-bottom: 1px solid #e5e7eb;
+}
+.ul-table-wrap .MuiDataGrid-main,
+.ul-table-wrap .MuiDataGrid-virtualScroller {
+  overflow-x: auto !important;
+}
+.ul-table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+.ul-table-wrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+.ul-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.ul-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* States */
+.ul-empty {
+  text-align: center;
+  padding: 40px 0;
+}
+.ul-muted {
+  color: #6b7280;
+}
+.ul-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+/* Pagination */
+.ul-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.ul-pagination-info {
+  color: #6b7280;
+  font-size: 12px;
+}
+.ul-strong {
+  font-weight: 700;
+  color: #111827;
+}
+.ul-pagination-actions {
+  display: flex;
+  gap: 8px;
+}
+
