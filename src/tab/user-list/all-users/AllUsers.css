@@ -209,6 +209,23 @@
   transition: background-color 0.15s ease;
 }
 
+.table-next-button {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.table-next-button .ul-btn {
+  min-width: 140px;
+}
+
+.ul-load-more-container {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+
 /* Scrollbar styling for better visibility */
 .table-scroll-container::-webkit-scrollbar {
   width: 8px;

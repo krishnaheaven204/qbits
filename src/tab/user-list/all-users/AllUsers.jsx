@@ -6,24 +6,27 @@ import "./AllUsers.css";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL_USER_LIST || process.env.NEXT_PUBLIC_API_URL;
 
-// Derive the Laravel origin (where /sanctum/csrf-cookie lives)
-// If API_BASE_URL is like http://IP/api or http://IP/api/v1 → backend origin is http://IP
-const LARAVEL_ORIGIN = (() => {
-  try {
-    const u = new URL(API_BASE_URL);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    // Fallback: strip known /api prefixes
-    return API_BASE_URL.replace(/\/api(\/v\d+)?\/?$/, "");
+const normalizeApiBase = (input) => {
+  if (!input) return "";
+  let base = input.trim();
+  const queryIndex = base.indexOf("?");
+  if (queryIndex !== -1) {
+    base = base.substring(0, queryIndex);
   }
-})();
+  base = base.replace(/\/client\/index\/?$/i, "");
+  base = base.replace(/\/client\/?$/i, "");
+  base = base.replace(/\/$/, "");
+  return base;
+};
+
+const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
 
 export default function AllUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [perPage] = useState(50);
+  const [perPage] = useState(150);
   const [search, setSearch] = useState("");
   const [sortBy] = useState("username");
   const [sortOrder] = useState("asc");
@@ -47,35 +50,21 @@ export default function AllUsers() {
         params.append("search", search.trim());
       }
 
-      const url = `${API_BASE_URL.replace(
-        /\/$/,
-        ""
-      )}/client/index?${params.toString()}`;
-
-      // IMPORTANT for Laravel Sanctum on cross-origin:
-      // 1) Get CSRF cookie from backend origin before making stateful requests
-      //    This sets XSRF-TOKEN cookie which the browser will include
-      try {
-        await fetch(`${LARAVEL_ORIGIN}/sanctum/csrf-cookie`, {
-          method: "GET",
-          credentials: "include",
-          mode: "cors",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        });
-      } catch (e) {
-        // Non-blocking; if this fails we'll still attempt the primary request
+      if (!API_BASE_ROOT) {
+        throw new Error("API base URL is not configured");
       }
+
+      const url = `${API_BASE_ROOT}/client/index?${params.toString()}`;
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
       const response = await fetch(url, {
         method: "GET",
-        // credentials: 'include', // Laravel Sanctum cookies
         mode: "cors",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
 
@@ -111,7 +100,11 @@ export default function AllUsers() {
         }
       }
 
-      setUsers(list);
+      if (page === 1) {
+        setUsers(list);
+      } else {
+        setUsers((prev) => [...prev, ...list]);
+      }
       if (!Number.isFinite(lastPage) || lastPage < 1) {
         lastPage = Math.max(1, Math.ceil((total || list.length) / perPage));
       }
@@ -137,8 +130,9 @@ export default function AllUsers() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    setUsers([]);
+    setPage(1);
     setSearch(searchInput);
-    setPage(1); // Reset to first page on new search
   };
 
   const handlePrevious = () => {
@@ -153,17 +147,102 @@ export default function AllUsers() {
     }
   };
 
-  const handleFlagToggle = (userId, field, isEnabled) => {
+  const handleFlagToggle = async (userId, field, isEnabled) => {
+    const targetUser = users.find((u) => u.id === userId);
+
+    if (!targetUser) {
+      return;
+    }
+
+    const previousSnapshot = { ...targetUser };
+    const nextFlags = {
+      whatsapp_notification_flag: targetUser.whatsapp_notification_flag ?? 0,
+      inverter_fault_flag: targetUser.inverter_fault_flag ?? 0,
+      daily_generation_report_flag:
+        targetUser.daily_generation_report_flag ?? 0,
+      weekly_generation_report_flag:
+        targetUser.weekly_generation_report_flag ?? 0,
+      monthly_generation_report_flag:
+        targetUser.monthly_generation_report_flag ?? 0,
+    };
+
+    if (field === "whatsapp_notification_flag") {
+      nextFlags.whatsapp_notification_flag = isEnabled ? 1 : 0;
+      if (!isEnabled) {
+        nextFlags.inverter_fault_flag = 1;
+        nextFlags.daily_generation_report_flag = 0;
+        nextFlags.weekly_generation_report_flag = 1;
+        nextFlags.monthly_generation_report_flag = 1;
+      }
+    } else {
+      nextFlags[field] = isEnabled ? 1 : 0;
+    }
+
     setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? { ...u, [field]: isEnabled ? 1 : 0 }
-          : u
-      )
+      prev.map((u) => (u.id === userId ? { ...u, ...nextFlags } : u))
     );
 
-    // Optional: add API call later
+    try {
+      await updateFlagsAPI(userId, nextFlags);
+    } catch (err) {
+      console.error("[Flags Update] Failed to sync with API", err);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? previousSnapshot : u))
+      );
+    }
   };
+
+const updateFlagsAPI = async (userId, values) => {
+  const normalizedValues = {
+    whatsapp_notification_flag: values.whatsapp_notification_flag ? 1 : 0,
+    inverter_fault_flag: values.inverter_fault_flag ? 1 : 0,
+    daily_generation_report_flag: values.daily_generation_report_flag ? 1 : 0,
+    weekly_generation_report_flag: values.weekly_generation_report_flag ? 1 : 0,
+    monthly_generation_report_flag: values.monthly_generation_report_flag ? 1 : 0,
+  };
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  if (!API_BASE_ROOT) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const url = `${API_BASE_ROOT}/client/whatsapp-notification-update`;
+
+  const payload = {
+    id: userId,
+    ...normalizedValues,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    let errorDetails = "";
+    try {
+      const errorText = await response.text();
+      errorDetails = errorText || `HTTP ${response.status}`;
+    } catch {
+      errorDetails = `HTTP ${response.status}`;
+    }
+    throw new Error(`Failed to update flags: ${errorDetails}`);
+  }
+
+  return response.json().catch(() => null);
+};
 
   return (
     <div className="user-list-page">
@@ -222,6 +301,7 @@ export default function AllUsers() {
                         <tr>
                           <th>#</th>
                           <th>ID</th>
+                          <th>Company Code</th>
                           <th>Username</th>
                           <th>Phone</th>
                           <th>Email</th>
@@ -247,8 +327,9 @@ export default function AllUsers() {
                         {users && users.length > 0 ? (
                           users.map((u, index) => (
                             <tr key={u.id ?? index}>
-                              <td>{(page - 1) * perPage + index + 1}</td>
+                              <td>{index + 1}</td>
                               <td>{u.id ?? "N/A"}</td>
+                              <td>{u.company_code?? "N/A"}</td>
                               <td>{u.username ?? "N/A"}</td>
                               <td>{u.phone ?? "N/A"}</td>
                               <td>{u.email ?? "N/A"}</td>
@@ -341,27 +422,23 @@ export default function AllUsers() {
                   </div>
                 </div>
 
+                {page < totalPages && (
+                  <div className="ul-load-more-container">
+                    <button
+                      className="ul-btn ul-btn-primary"
+                      onClick={() => setPage((prev) => prev + 1)}
+                      disabled={loading}
+                    >
+                      Load More
+                    </button>
+                  </div>
+                )}
+
                 <div className="ul-pagination">
                   <div className="ul-pagination-info">
                     Showing <span className="ul-strong">{users.length}</span>{" "}
                     users • Page <span className="ul-strong">{page}</span> of{" "}
                     <span className="ul-strong">{totalPages}</span>
-                  </div>
-                  <div className="ul-pagination-actions">
-                    <button
-                      className="ul-btn ul-btn-ghost"
-                      onClick={handlePrevious}
-                      disabled={page === 1 || loading}
-                    >
-                      ‹ Previous
-                    </button>
-                    <button
-                      className="ul-btn ul-btn-primary"
-                      onClick={handleNext}
-                      disabled={page >= totalPages || loading}
-                    >
-                      Next ›
-                    </button>
                   </div>
                 </div>
               </>

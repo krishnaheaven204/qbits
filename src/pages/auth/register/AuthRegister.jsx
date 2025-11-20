@@ -1,11 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import './AuthRegister.css';
+
+const generateCompanyCode = () => {
+  const number = [
+    'A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Y','Z',
+  ];
+  const arr = [...number];
+  const result = ['A'];
+  for (let i = 0; i < 6; i += 1) {
+    const seed = Math.floor(Math.random() * arr.length);
+    result.push(arr[seed]);
+  }
+  result.push('T');
+  return result.join('');
+};
 
 export default function AuthRegister() {
   const router = useRouter();
@@ -14,6 +28,7 @@ export default function AuthRegister() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [companyCode, setCompanyCode] = useState(() => generateCompanyCode());
   const [formData, setFormData] = useState({
     homeName: '',
     inverterSerial: '',
@@ -28,9 +43,17 @@ export default function AuthRegister() {
     account: '',
     companyPassword: '',
     companyConfirmPassword: '',
-    companyCode: '',
+    companyCode,
     email: ''
   });
+
+  useEffect(() => {
+    if (registrationType === 'company' && !companyCode) {
+      const newCode = generateCompanyCode();
+      setCompanyCode(newCode);
+      setFormData(prev => ({ ...prev, companyCode: newCode }));
+    }
+  }, [registrationType, companyCode]);
 
   const validateIndividualForm = () => {
     const newErrors = {};
@@ -407,15 +430,29 @@ export default function AuthRegister() {
 
                   <div className="auth-reg-form-group">
                     <label className="auth-reg-label">Company Code *</label>
-                    <input
-                      type="text"
-                      name="companyCode"
-                      className={`auth-reg-input ${errors.companyCode ? 'error' : ''}`}
-                      placeholder="Enter unique company code"
-                      value={formData.companyCode}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                    />
+                    <div className="auth-reg-password-wrapper">
+                      <input
+                        type="text"
+                        name="companyCode"
+                        className={`auth-reg-input ${errors.companyCode ? 'error' : ''}`}
+                        placeholder="Enter unique company code"
+                        value={companyCode}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="auth-reg-password-toggle"
+                        onClick={() => {
+                          const newCode = generateCompanyCode();
+                          setCompanyCode(newCode);
+                          setFormData(prev => ({ ...prev, companyCode: newCode }));
+                        }}
+                        disabled={isLoading}
+                        title="Regenerate company code"
+                      >
+                        ↻
+                      </button>
+                    </div>
                     {errors.companyCode && <span className="auth-reg-error-text">{errors.companyCode}</span>}
                   </div>
 
