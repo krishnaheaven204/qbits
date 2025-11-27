@@ -1,10 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import './Register.css';
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+
+function generateCompanyCode() {
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let result = "A";
+  for (let i = 0; i < 6; i++) {
+    result += letters[Math.floor(Math.random() * letters.length)];
+  }
+  return result + "T";
+}
 
 export default function Register() {
   const router = useRouter();
@@ -30,6 +40,14 @@ export default function Register() {
     companyCode: '',
     email: ''
   });
+
+  useEffect(() => {
+    if (registrationType === "company" && !formData.companyCode) {
+      const newCode = generateCompanyCode();
+      setFormData(prev => ({ ...prev, companyCode: newCode }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registrationType]);
 
   const validateIndividualForm = () => {
     const newErrors = {};
@@ -387,15 +405,26 @@ export default function Register() {
 
                 <div className="form-group">
                   <label className="form-label">Company Code *</label>
-                  <input
-                    type="text"
-                    name="companyCode"
-                    className={`form-input ${errors.companyCode ? 'error' : ''}`}
-                    placeholder="Enter company code"
-                    value={formData.companyCode}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                  />
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div
+                      className={`form-input ${errors.companyCode ? 'error' : ''}`}
+                      style={{ flex: 1, minHeight: '48px', display: 'flex', alignItems: 'center' }}
+                    >
+                      {formData.companyCode || 'Generating...'}
+                    </div>
+                    <button
+                    className='geneButton'
+                      type="button"
+                      onClick={() => {
+                        const newCode = generateCompanyCode();
+                        setFormData(prev => ({ ...prev, companyCode: newCode }));
+                      }}
+                      disabled={isLoading}
+                      aria-label="Refresh company code"
+                    >
+                    <ArrowPathIcon style={{ width: 22, height: 22, color: "white" }} />
+                    </button>
+                  </div>
                   {errors.companyCode && <span className="error-text">{errors.companyCode}</span>}
                 </div>
 

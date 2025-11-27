@@ -151,7 +151,7 @@ export default function Sidebar() {
                   <Link href="/user-list/all-users" className={`pc-link ${isActive('user-list/all-users') || pathname === '/user-list/all-users' ? 'active' : ''}`}>All Users</Link>
                 </li>
                 <li className="pc-item">
-                  <Link href="/user-list/admins" className={`pc-link ${isActive('user-list/admins') || pathname === '/user-list/admins' ? 'active' : ''}`}>Admins</Link>
+                  <Link href="/user-list/admins" className={`pc-link ${isActive('user-list/admins') || pathname === '/user-list/admins' ? 'active' : ''}`}>Company</Link>
                 </li>
                 <li className="pc-item">
                   <Link href="/user-list/operators" className={`pc-link ${isActive('user-list/operators') || pathname === '/user-list/operators' ? 'active' : ''}`}>Operators</Link>

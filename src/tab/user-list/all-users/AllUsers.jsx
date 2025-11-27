@@ -32,97 +32,192 @@ export default function AllUsers() {
   const [sortOrder] = useState("asc");
   const [totalPages, setTotalPages] = useState(1);
   const [searchInput, setSearchInput] = useState("");
+  // Popup states
+  const [showCompanyPopup, setShowCompanyPopup] = useState(false);
+  const [popupUserId, setPopupUserId] = useState("");
+  const [popupCompanyCode, setPopupCompanyCode] = useState("");
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [companyCodeInput, setCompanyCodeInput] = useState("");
+  const [companyModalLoading, setCompanyModalLoading] = useState(false);
 
-  // Fetch users from API
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
+  // Qbits company code modal states
+  const [showQbitsModal, setShowQbitsModal] = useState(false);
+  const [selectedQbitsUserId, setSelectedQbitsUserId] = useState(null);
+  const [qbitsCodeInput, setQbitsCodeInput] = useState("");
+  const [qbitsModalLoading, setQbitsModalLoading] = useState(false);
+  // Status filter UI state
+const [selectedStatus, setSelectedStatus] = useState(null);
+ // ADD THIS HERE
+ const [inverterTotals, setInverterTotals] = useState({
+  total_all_plant: 0,
+  total_normal_plant: 0,
+  total_alarm_plant: 0,
+  total_offline_plant: 0
+});
 
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        per_page: perPage.toString(),
-        sort_by: sortBy,
-        sort_order: sortOrder,
-      });
+ // Fetch users from API
+ const fetchUsers = async () => {
+  setLoading(true);
+  setError(null);
 
-      if (search.trim()) {
-        params.append("search", search.trim());
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+      sort_by: sortBy,
+      sort_order: sortOrder
+    });
+
+    if (search.trim()) {
+      params.append("search", search.trim());
+    }
+
+    if (!API_BASE_ROOT) {
+      throw new Error("API base URL is not configured");
+    }
+
+    const url = `${API_BASE_ROOT}/client/index?${params.toString()}`;
+
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null;
+
+    const response = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
+    });
 
-      if (!API_BASE_ROOT) {
-        throw new Error("API base URL is not configured");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    let list = [];
+    let lastPage = 1;
+    let total = 0;
+
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data.data && Array.isArray(data.data.clients)) {
+      list = data.data.clients;
+      if (data.meta) {
+        lastPage = Number(data.meta.last_page) || lastPage;
+        total = Number(data.meta.total) || total;
+      } else if (typeof data.last_page !== "undefined") {
+        lastPage = Number(data.last_page) || lastPage;
       }
+    } else if (data.data && Array.isArray(data.data.data)) {
+      list = data.data.data;
+      lastPage = Number(data.data.last_page) || lastPage;
+      total = Number(data.data.total) || total;
+    } else if (Array.isArray(data.items)) {
+      list = data.items;
+      if (data.meta) {
+        lastPage = Number(data.meta.last_page) || lastPage;
+        total = Number(data.meta.total) || total;
+      }
+    }
 
-      const url = `${API_BASE_ROOT}/client/index?${params.toString()}`;
+    if (page === 1) {
+      setUsers(list);
+    } else {
+      setUsers((prev) => [...prev, ...list]);
+    }
 
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    if (!Number.isFinite(lastPage) || lastPage < 1) {
+      lastPage = Math.max(1, Math.ceil((total || list.length) / perPage));
+    }
 
-      const response = await fetch(url, {
+    setTotalPages(lastPage);
+  } catch (err) {
+    setError(err.message || "Failed to fetch users. Please try again.");
+    setUsers([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+// 👉 PASTE HERE
+const fetchInverterTotals = async () => {
+  try {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null;
+
+    if (!token) {
+      console.log("No token found");
+      return;
+    }
+
+    if (!API_BASE_ROOT) {
+      console.log("API base URL missing");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_ROOT}/client/inverter/totals`,
+      {
         method: "GET",
-        mode: "cors",
         headers: {
           Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      // Normalize common Laravel shapes
-      let list = [];
-      let lastPage = 1;
-      let total = 0;
-
-      if (Array.isArray(data)) {
-        list = data;
-      } else if (Array.isArray(data.data.clients)) {
-        list = data.data.clients;
-        if (data.meta) {
-          lastPage = Number(data.meta.last_page) || lastPage;
-          total = Number(data.meta.total) || total;
-        } else if (typeof data.last_page !== "undefined") {
-          lastPage = Number(data.last_page) || lastPage;
-        }
-      } else if (data.data && Array.isArray(data.data.data)) {
-        list = data.data.data;
-        lastPage = Number(data.data.last_page) || lastPage;
-        total = Number(data.data.total) || total;
-      } else if (Array.isArray(data.items)) {
-        list = data.items;
-        if (data.meta) {
-          lastPage = Number(data.meta.last_page) || lastPage;
-          total = Number(data.meta.total) || total;
+          Authorization: `Bearer ${token}`
         }
       }
+    );
 
-      if (page === 1) {
-        setUsers(list);
-      } else {
-        setUsers((prev) => [...prev, ...list]);
-      }
-      if (!Number.isFinite(lastPage) || lastPage < 1) {
-        lastPage = Math.max(1, Math.ceil((total || list.length) / perPage));
-      }
-      setTotalPages(lastPage);
-    } catch (err) {
-      setError(err.message || "Failed to fetch users. Please try again.");
-      setUsers([]);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      console.log("Totals API error", response.status);
+      return;
     }
-  };
+
+    const json = await response.json();
+
+    if (json.success && json.data) {
+      setInverterTotals(json.data);
+    } else {
+      console.log("Invalid totals API structure", json);
+    }
+  } catch (err) {
+    console.log("Error fetching inverter totals", err);
+  }
+};
+
 
   // Fetch users when page or search changes
   useEffect(() => {
     fetchUsers();
+    fetchInverterTotals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
 
+    const date = new Date(dateString);
+    if (isNaN(date)) return "Invalid Date";
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 becomes 12
+    const formattedHours = String(hours).padStart(2, "0");
+
+    return `${day} ${month} ${year}  ${formattedHours}:${minutes} ${ampm}`;
+  };
   // Handle search input with debounce
   const handleSearchChange = (e) => {
     setSearchInput(e.target.value);
@@ -192,67 +287,317 @@ export default function AllUsers() {
     }
   };
 
-const updateFlagsAPI = async (userId, values) => {
-  const normalizedValues = {
-    whatsapp_notification_flag: values.whatsapp_notification_flag ? 1 : 0,
-    inverter_fault_flag: values.inverter_fault_flag ? 1 : 0,
-    daily_generation_report_flag: values.daily_generation_report_flag ? 1 : 0,
-    weekly_generation_report_flag: values.weekly_generation_report_flag ? 1 : 0,
-    monthly_generation_report_flag: values.monthly_generation_report_flag ? 1 : 0,
-  };
+  const updateFlagsAPI = async (userId, values) => {
+    const normalizedValues = {
+      whatsapp_notification_flag: values.whatsapp_notification_flag ? 1 : 0,
+      inverter_fault_flag: values.inverter_fault_flag ? 1 : 0,
+      daily_generation_report_flag: values.daily_generation_report_flag ? 1 : 0,
+      weekly_generation_report_flag: values.weekly_generation_report_flag
+        ? 1
+        : 0,
+      monthly_generation_report_flag: values.monthly_generation_report_flag
+        ? 1
+        : 0,
+    };
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
-  if (!token) {
-    throw new Error("No authentication token found");
-  }
-
-  if (!API_BASE_ROOT) {
-    throw new Error("API base URL is not configured");
-  }
-
-  const url = `${API_BASE_ROOT}/client/whatsapp-notification-update`;
-
-  const payload = {
-    id: userId,
-    ...normalizedValues,
-  };
-
-  const response = await fetch(url, {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    let errorDetails = "";
-    try {
-      const errorText = await response.text();
-      errorDetails = errorText || `HTTP ${response.status}`;
-    } catch {
-      errorDetails = `HTTP ${response.status}`;
+    if (!token) {
+      throw new Error("No authentication token found");
     }
-    throw new Error(`Failed to update flags: ${errorDetails}`);
-  }
 
-  return response.json().catch(() => null);
-};
+    if (!API_BASE_ROOT) {
+      throw new Error("API base URL is not configured");
+    }
 
+    const url = `${API_BASE_ROOT}/client/whatsapp-notification-update`;
+
+    const payload = {
+      id: userId,
+      ...normalizedValues,
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let errorDetails = "";
+      try {
+        const errorText = await response.text();
+        errorDetails = errorText || `HTTP ${response.status}`;
+      } catch {
+        errorDetails = `HTTP ${response.status}`;
+      }
+      throw new Error(`Failed to update flags: ${errorDetails}`);
+    }
+
+    return response.json().catch(() => null);
+  };
+
+  // POST API: set company code (Assign Code popup)
+  const updateCompanyCode = async (userId, companyCode) => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+    if (!token) {
+      alert("No authentication token found");
+      return;
+    }
+
+    const url = `${API_BASE_ROOT}/client/company-code`;
+    let finalCompanyCode = companyCode;
+
+    // If admin left blank, set NULL
+    if (
+      companyCode === "" ||
+      companyCode === " " ||
+      companyCode === null ||
+      companyCode === undefined
+    ) {
+      finalCompanyCode = null;
+    }
+
+    const payload = {
+      id: userId,
+      company_code: finalCompanyCode,
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || "Failed to update company code");
+      }
+
+      alert("Company code updated successfully");
+      // Update UI immediately
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id == userId ? { ...user, company_code: finalCompanyCode } : user
+        )
+      );
+
+      setShowCompanyPopup(false);
+      setPopupUserId("");
+      setPopupCompanyCode("");
+    } catch (err) {
+      alert("Failed to update: " + err.message);
+    }
+  };
+
+  const openCompanyCodeModal = (user) => {
+    if (!user || !user.id) return;
+    setSelectedUserId(user.id);
+    setCompanyCodeInput(user.company_code ?? "");
+    setShowCompanyModal(true);
+  };
+
+  // Qbits modal opener
+  const openQbitsCodeModal = (user) => {
+    if (!user || !user.id) return;
+    setSelectedQbitsUserId(user.id);
+    setQbitsCodeInput(user.qbits_company_code ?? "");
+    setShowQbitsModal(true);
+  };
+
+  const sendQbitsCodeUpdate = async (rawValue) => {
+    if (!selectedQbitsUserId) return false;
+
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+    if (!token) {
+      alert("No authentication token found");
+      return false;
+    }
+
+    const finalValue = rawValue === null || rawValue === "" ? null : rawValue;
+
+    // backend expects company_code, so send that
+    const payload = {
+      id: selectedQbitsUserId,
+      company_code: finalValue, // FIXED HERE
+    };
+
+    setQbitsModalLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_ROOT}/client/set-company-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(json?.message || `HTTP ${response.status}`);
+      }
+
+      // Update frontend
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === selectedQbitsUserId
+            ? { ...user, qbits_company_code: finalValue }
+            : user
+        )
+      );
+
+      return true;
+    } catch (err) {
+      alert("Failed to update Qbits code: " + err.message);
+      return false;
+    } finally {
+      setQbitsModalLoading(false);
+    }
+  };
+
+  const submitQbitsCode = async () => {
+    const success = await sendQbitsCodeUpdate(qbitsCodeInput);
+    if (success) closeQbitsModal();
+  };
+
+  const clearQbitsCode = async () => {
+    const success = await sendQbitsCodeUpdate(null);
+    if (success) closeQbitsModal();
+  };
+
+  const closeQbitsModal = () => {
+    setShowQbitsModal(false);
+    setSelectedQbitsUserId(null);
+    setQbitsCodeInput("");
+  };
+
+  const closeCompanyCodeModal = () => {
+    setShowCompanyModal(false);
+    setSelectedUserId(null);
+    setCompanyCodeInput("");
+  };
+
+  const sendCompanyCodeUpdate = async (rawValue) => {
+    if (!selectedUserId) {
+      return false;
+    }
+
+    if (!API_BASE_ROOT) {
+      alert("API base URL is not configured");
+      return false;
+    }
+
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+    if (!token) {
+      alert("No authentication token found");
+      return false;
+    }
+
+    const finalValue = rawValue === null || rawValue === "" ? null : rawValue;
+
+    const payload = {
+      id: selectedUserId,
+      company_code: finalValue,
+    };
+
+    setCompanyModalLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_ROOT}/client/set-company-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let responseBody = null;
+      try {
+        responseBody = await response.json();
+      } catch {
+        responseBody = null;
+      }
+
+      if (!response.ok) {
+        const message =
+          (responseBody && responseBody.message) || `HTTP ${response.status}`;
+        throw new Error(message);
+      }
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === selectedUserId
+            ? { ...user, company_code: finalValue }
+            : user
+        )
+      );
+      return true;
+    } catch (err) {
+      alert("Failed to update: " + err.message);
+      return false;
+    } finally {
+      setCompanyModalLoading(false);
+    }
+  };
+
+  const submitCompanyCode = async () => {
+    const success = await sendCompanyCodeUpdate(companyCodeInput);
+    if (success) {
+      closeCompanyCodeModal();
+    }
+  };
+
+  const clearCompanyCode = async () => {
+    const success = await sendCompanyCodeUpdate(null);
+    if (success) {
+      closeCompanyCodeModal();
+    }
+  };
+  
+  // STEP 2: FILTER USERS  (this must be INSIDE the function, after hooks)
+  const filteredUsers = users.filter((user) => {
+    if (selectedStatus === "normal") return user.status === "normal";
+    if (selectedStatus === "standby") return user.status === "standby";
+    if (selectedStatus === "fault") return user.status === "fault";
+    if (selectedStatus === "warning") return user.status === "warning";
+    if (selectedStatus === "offline") return user.status === "offline";
+    return true; // show all when nothing selected
+  });
+  
   return (
-    <div className="user-list-page">
-      <div className="ul-container">
-        <div className="ul-card">
+
+    <div className="user-list-page-alluser">
+        <div className="ul-card-allusers">
           <div className="ul-header">
             <div className="ul-header-text">
               <h5 className="ul-title">User List – All Users</h5>
               <p className="ul-subtitle">All users management and listing.</p>
             </div>
+
+            
             <form onSubmit={handleSearchSubmit} className="ul-search">
               <div className="ul-search-input">
                 <span className="ul-search-icon">
@@ -294,14 +639,80 @@ const updateFlagsAPI = async (userId, values) => {
               </div>
             ) : (
               <>
+                <div className="status-box-container">
+                  <div
+                    className="status-card normal"
+                    onClick={() => setSelectedStatus("normal")}
+                  >
+                    <div className="status-left">
+                      <div className="status-icon">●</div>
+                      <div>
+                        <div className="status-title">Normal</div>
+                      </div>
+                    </div>
+                    <div className="status-percent">
+                      {inverterTotals.total_normal_plant}
+                    </div>
+                  </div>
+
+                  <div
+                    className="status-card standby"
+                    onClick={() => setSelectedStatus("standby")}
+                  >
+                    <div className="status-left">
+                      <div className="status-icon">✔</div>
+                      <div>
+                        <div className="status-title">Total</div>
+                        <div className="status-sub">Live Update</div>
+                      </div>
+                    </div>
+                    <div className="status-percent">
+                      {inverterTotals.total_all_plant}
+                    </div>
+                  </div>
+
+                  <div
+                    className="status-card fault"
+                    onClick={() => setSelectedStatus("fault")}
+                  >
+                    <div className="status-left">
+                      <div className="status-icon">⚠</div>
+                      <div>
+                        <div className="status-title">Offline</div>
+                        <div className="status-sub">Live Update</div>
+                      </div>
+                    </div>
+                    <div className="status-percent">
+                      {inverterTotals.total_offline_plant}
+                    </div>
+                  </div>
+
+                  <div
+                    className="status-card warning"
+                    onClick={() => setSelectedStatus("warning")}
+                  >
+                    <div className="status-left">
+                      <div className="status-icon">▲</div>
+                      <div>
+                        <div className="status-title">Fault</div>
+                        <div className="status-sub">Live Update</div>
+                      </div>
+                    </div>
+                    <div className="status-percent">
+                      {inverterTotals.total_alarm_plant}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="table-scroll-container">
-                  <div className="table-inner-force">
+                  <div className="table-inner-force-allusers">
                     <table className="custom-table">
                       <thead>
                         <tr>
                           <th>#</th>
                           <th>ID</th>
-                          <th>Company Code</th>
+                          {/*<th>Company Code</th> */}
+                          <th>Qbits company code</th>
                           <th>Username</th>
                           <th>Phone</th>
                           <th>Email</th>
@@ -324,12 +735,25 @@ const updateFlagsAPI = async (userId, values) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {users && users.length > 0 ? (
-                          users.map((u, index) => (
+                        
+                        {filteredUsers && filteredUsers.length > 0 ? (
+                          filteredUsers.map((u, index) => (
                             <tr key={u.id ?? index}>
                               <td>{index + 1}</td>
                               <td>{u.id ?? "N/A"}</td>
-                              <td>{u.company_code?? "N/A"}</td>
+                              {/* <td
+                                onClick={() => openCompanyCodeModal(u)}
+                                className="company-code-cell"
+                              >
+                                {u.company_code ?? "N/A"}
+                              </td>*/}
+
+                              <td
+                                onClick={() => openQbitsCodeModal(u)}
+                                className="company-code-cell"
+                              >
+                                {u.qbits_company_code ?? "N/A"}
+                              </td>
                               <td>{u.username ?? "N/A"}</td>
                               <td>{u.phone ?? "N/A"}</td>
                               <td>{u.email ?? "N/A"}</td>
@@ -348,7 +772,11 @@ const updateFlagsAPI = async (userId, values) => {
                                     type="checkbox"
                                     checked={u.whatsapp_notification_flag == 1}
                                     onChange={(e) =>
-                                      handleFlagToggle(u.id, "whatsapp_notification_flag", e.target.checked)
+                                      handleFlagToggle(
+                                        u.id,
+                                        "whatsapp_notification_flag",
+                                        e.target.checked
+                                      )
                                     }
                                   />
                                   <span className="toggle-slider"></span>
@@ -361,7 +789,11 @@ const updateFlagsAPI = async (userId, values) => {
                                     checked={u.inverter_fault_flag == 1}
                                     disabled={u.whatsapp_notification_flag != 1}
                                     onChange={(e) =>
-                                      handleFlagToggle(u.id, "inverter_fault_flag", e.target.checked)
+                                      handleFlagToggle(
+                                        u.id,
+                                        "inverter_fault_flag",
+                                        e.target.checked
+                                      )
                                     }
                                   />
                                   <span className="toggle-slider"></span>
@@ -371,10 +803,16 @@ const updateFlagsAPI = async (userId, values) => {
                                 <label className="toggle-switch">
                                   <input
                                     type="checkbox"
-                                    checked={u.daily_generation_report_flag == 1}
+                                    checked={
+                                      u.daily_generation_report_flag == 1
+                                    }
                                     disabled={u.whatsapp_notification_flag != 1}
                                     onChange={(e) =>
-                                      handleFlagToggle(u.id, "daily_generation_report_flag", e.target.checked)
+                                      handleFlagToggle(
+                                        u.id,
+                                        "daily_generation_report_flag",
+                                        e.target.checked
+                                      )
                                     }
                                   />
                                   <span className="toggle-slider"></span>
@@ -384,10 +822,16 @@ const updateFlagsAPI = async (userId, values) => {
                                 <label className="toggle-switch">
                                   <input
                                     type="checkbox"
-                                    checked={u.weekly_generation_report_flag == 1}
+                                    checked={
+                                      u.weekly_generation_report_flag == 1
+                                    }
                                     disabled={u.whatsapp_notification_flag != 1}
                                     onChange={(e) =>
-                                      handleFlagToggle(u.id, "weekly_generation_report_flag", e.target.checked)
+                                      handleFlagToggle(
+                                        u.id,
+                                        "weekly_generation_report_flag",
+                                        e.target.checked
+                                      )
                                     }
                                   />
                                   <span className="toggle-slider"></span>
@@ -397,22 +841,31 @@ const updateFlagsAPI = async (userId, values) => {
                                 <label className="toggle-switch">
                                   <input
                                     type="checkbox"
-                                    checked={u.monthly_generation_report_flag == 1}
+                                    checked={
+                                      u.monthly_generation_report_flag == 1
+                                    }
                                     disabled={u.whatsapp_notification_flag != 1}
                                     onChange={(e) =>
-                                      handleFlagToggle(u.id, "monthly_generation_report_flag", e.target.checked)
+                                      handleFlagToggle(
+                                        u.id,
+                                        "monthly_generation_report_flag",
+                                        e.target.checked
+                                      )
                                     }
                                   />
                                   <span className="toggle-slider"></span>
                                 </label>
-                              </td> 
-                              <td>{u.created_at ?? "N/A"}</td>
-                              <td>{u.updated_at ?? "N/A"}</td>
+                              </td>
+                              <td>{formatDate(u.created_at)}</td>
+                              <td>{formatDate(u.updated_at)}</td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={21} style={{ textAlign: "center", padding: "16px" }}>
+                            <td
+                              colSpan={21}
+                              style={{ textAlign: "center", padding: "16px" }}
+                            >
                               No users found
                             </td>
                           </tr>
@@ -445,7 +898,47 @@ const updateFlagsAPI = async (userId, values) => {
             )}
           </div>
         </div>
-      </div>
+      
+      {showQbitsModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (!qbitsModalLoading) closeQbitsModal();
+          }}
+        >
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Update Qbits Company Code</h3>
+            <input
+              type="text"
+              className="modal-input"
+              value={qbitsCodeInput}
+              onChange={(e) => setQbitsCodeInput(e.target.value)}
+              placeholder="Enter Qbits company code"
+              disabled={qbitsModalLoading}
+            />
+
+            <div className="modal-buttons">
+              <button
+                type="button"
+                className="save-btn"
+                onClick={submitQbitsCode}
+                disabled={qbitsModalLoading}
+              >
+                Save
+              </button>
+
+              <button
+                type="button"
+                className="close-btn"
+                onClick={closeQbitsModal}
+                disabled={qbitsModalLoading}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
