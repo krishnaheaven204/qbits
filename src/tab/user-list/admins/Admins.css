@@ -1,4 +1,414 @@
-.user-list-page {
+.user-list-page-company {
+  width: 90%;
+}
+
+/* Layout */
+
+.ul-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: visible; /* allow inner scrollbars to be visible */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.ul-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ul-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ul-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ul-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+.ul-body {
+  padding: 16px 20px;
+  overflow: visible;
+}
+
+/* Search */
+.ul-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ul-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  min-width: 280px;
+  background: #f8fafc;
+}
+.ul-search-icon {
+  display: inline-flex;
+  color: #94a3b8;
+}
+.ul-input {
+  border: none;
+  outline: none;
   width: 100%;
+  background: transparent;
+  color: #0f172a;
+}
+
+/* Buttons */
+.ul-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.ul-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ul-btn-primary {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+.ul-btn-primary:hover:not(:disabled) {
+  background: #0b1220;
+}
+.ul-btn-ghost {
+  background: #fff;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+.ul-btn-ghost:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+/* States */
+.ul-empty {
+  text-align: center;
+  padding: 40px 0;
+}
+.ul-muted {
+  color: #6b7280;
+}
+.ul-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+/* Pagination */
+.ul-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.ul-pagination-info {
+  color: #6b7280;
+  font-size: 12px;
+}
+.ul-strong {
+  font-weight: 700;
+  color: #111827;
+}
+.ul-pagination-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Table Scroll Container - Both horizontal and vertical scrolling */
+.table-scroll-container-admins {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  position: relative;
+}
+
+/* Force horizontal scrolling by making inner container wider */
+.table-inner-force {
+  width: 100%
+}
+
+/* Table styling */
+.custom-table {
+  border-collapse: collapse;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  table-layout: auto;
+}
+
+/* Sticky header */
+.custom-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+}
+
+.custom-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  padding: 12px 10px;
+  border-bottom: 2px solid #e5e7eb;
+  text-align: left;
+  color: #111827;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+/* Table cells */
+.custom-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  color:  #79808b;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Alternating row colors */
+.custom-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Row hover effect */
+.custom-table tbody tr:hover {
+  background-color: #eff6ff;
+  transition: background-color 0.15s ease;
+}
+
+.table-next-button {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.table-next-button .ul-btn {
+  min-width: 140px;
+}
+
+.ul-load-more-container {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+/* Scrollbar styling for better visibility */
+.table-scroll-container-admins::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroll-container-admins::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-scroll-container-admins::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-scroll-container-admins::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Colorful Toggle Switches - Green ON, Red OFF */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #dc2626; /* RED for OFF */
+  transition: 0.3s ease;
+  border-radius: 34px;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 13px;
+  left: 3px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s ease;
+}
+
+input:checked + .toggle-slider {
+  background-color: #16a34a; /* GREEN for ON */
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.flag-toggle-cell {
+  text-align: center;
+}
+
+/* Disabled toggle switch state */
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #9ca3af; /* Gray when disabled */
+}
+
+.toggle-switch input:disabled:checked + .toggle-slider {
+  background-color: #6b7280; /* Darker gray when disabled and checked */
+}
+
+.toggle-switch input:disabled + .toggle-slider:before {
+  background-color: #e5e7eb;
+}
+
+.company-code-cell {
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.company-code-cell:hover {
+  color: #1d4ed8;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.modal-box h3 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.modal-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.save-btn,
+.clear-btn,
+.close-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.save-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.save-btn:disabled,
+.clear-btn:disabled,
+.close-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.clear-btn {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.clear-btn:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.close-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.close-btn:hover:not(:disabled) {
+  background: #cbd5e1;
 }
 
