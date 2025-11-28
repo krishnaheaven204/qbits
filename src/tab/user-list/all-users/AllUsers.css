@@ -670,3 +670,26 @@ input:checked + .toggle-slider:before {
 .status-card.offline .status-icon { color: #7f8c8d; }
 .status-card.offline .status-percent { color: #7f8c8d; }
 
+/* Highlight active tab */
+.status-card.active {
+  border: 2px solid #2563eb; /* blue highlight */
+  background-color: #f0f6ff;  /* light blue background */
+}
+
+.refresh-btn {
+  margin-left: -1px;
+  padding: 8px 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.refresh-btn:disabled {
+  background: #a5b4fc;
+  cursor: not-allowed;
+}
+
