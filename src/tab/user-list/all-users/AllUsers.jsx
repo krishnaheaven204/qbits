@@ -915,7 +915,7 @@ const getFormattedTime = () => {
                         <th>#</th>
                         <th>ID</th>
                         {/*<th>Company Code</th> */}
-                        <th>Qbits company code</th>
+                        <th>Company code</th>
                         <th>Username</th>
                         <th>Phone</th>
                         <th>Email</th>
