@@ -91,7 +91,6 @@ export default function Login() {
         <div className="login-header">
           <Link href="/" className="login-logo-link">
             <Image
-              src="/Qbits.svg"
               alt="Qbits Energy"
               height={80}
               width={220}
