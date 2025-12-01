@@ -388,26 +388,25 @@ const getFormattedTime = () => {
   };
 
   const handleFlagToggle = async (userId, field, isEnabled) => {
-    const targetUser = users.find((u) => u.id === userId);
-
-    if (!targetUser) {
-      return;
-    }
-
+    const targetUser =
+      displayedUsers.find((u) => u.id === userId) ||
+      users.find((u) => u.id === userId);
+  
+    if (!targetUser) return;
+  
     const previousSnapshot = { ...targetUser };
+  
     const nextFlags = {
       whatsapp_notification_flag: targetUser.whatsapp_notification_flag ?? 0,
       inverter_fault_flag: targetUser.inverter_fault_flag ?? 0,
-      daily_generation_report_flag:
-        targetUser.daily_generation_report_flag ?? 0,
-      weekly_generation_report_flag:
-        targetUser.weekly_generation_report_flag ?? 0,
-      monthly_generation_report_flag:
-        targetUser.monthly_generation_report_flag ?? 0,
+      daily_generation_report_flag: targetUser.daily_generation_report_flag ?? 0,
+      weekly_generation_report_flag: targetUser.weekly_generation_report_flag ?? 0,
+      monthly_generation_report_flag: targetUser.monthly_generation_report_flag ?? 0,
     };
-
+  
     if (field === "whatsapp_notification_flag") {
       nextFlags.whatsapp_notification_flag = isEnabled ? 1 : 0;
+  
       if (!isEnabled) {
         nextFlags.inverter_fault_flag = 1;
         nextFlags.daily_generation_report_flag = 0;
@@ -417,20 +416,51 @@ const getFormattedTime = () => {
     } else {
       nextFlags[field] = isEnabled ? 1 : 0;
     }
-
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, ...nextFlags } : u))
+  
+    // Update groupedClients for instant UI
+    setGroupedClients(prev => {
+      const updateList = (list) =>
+        list.map(item => item.id === userId ? { ...item, ...nextFlags } : item);
+  
+      return {
+        all_plant: updateList(prev.all_plant || []),
+        normal_plant: updateList(prev.normal_plant || []),
+        alarm_plant: updateList(prev.alarm_plant || []),
+        offline_plant: updateList(prev.offline_plant || []),
+      };
+    });
+  
+    // Update users state
+    setUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, ...nextFlags } : u))
     );
-
+  
     try {
       await updateFlagsAPI(userId, nextFlags);
     } catch (err) {
-      console.error("[Flags Update] Failed to sync with API", err);
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? previousSnapshot : u))
+      console.error("Failed to update API", err);
+  
+      // Rollback UI
+      setGroupedClients(prev => {
+        const rollback = (list) =>
+          list.map(item => item.id === userId ? previousSnapshot : item);
+  
+        return {
+          all_plant: rollback(prev.all_plant),
+          normal_plant: rollback(prev.normal_plant),
+          alarm_plant: rollback(prev.alarm_plant),
+          offline_plant: rollback(prev.offline_plant),
+        };
+      });
+  
+      setUsers(prev =>
+        prev.map(u => (u.id === userId ? previousSnapshot : u))
       );
     }
   };
+  
+  
+  
 
   const updateFlagsAPI = async (userId, values) => {
     const normalizedValues = {
