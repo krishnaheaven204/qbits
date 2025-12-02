@@ -1,5 +1,6 @@
-import AuthRegister from '@/pages/auth/register/AuthRegister';
+import Register from '@/pages/register/Register';
 
 export default function AuthRegisterPage() {
-  return <AuthRegister />;
+  return <Register />;
+  
 }

@@ -59,7 +59,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -89,7 +89,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login-container">
         <div className="login-header">
-          <Link href="/" className="login-logo-link">
+          <div className='login-logo-link'>
             <Image
               src="/Qbits.svg"
               alt="Qbits Energy"
@@ -98,7 +98,7 @@ export default function Login() {
               className="login-logo"
               priority
             />
-          </Link>
+          </div>
         </div>
 
         <div className="login-card">

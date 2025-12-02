@@ -834,7 +834,6 @@ const getFormattedTime = () => {
             <>
               <div className="status-box-container">
                 {/* 1. TOTAL */}
-                {/* 1. TOTAL */}
                 <div
                   className={`status-card standby ${
                     selectedStatus === "standby" ? "active" : ""
@@ -1097,6 +1096,7 @@ const getFormattedTime = () => {
           )}
         </div>
       </div>
+
 
       {showQbitsModal && (
         <div

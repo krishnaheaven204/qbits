@@ -4,9 +4,12 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  overflow: visible;
+  overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  width: 60%;
+  width: 100%;
+  max-width: 80vw;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 
 .ul-header {
@@ -149,6 +152,7 @@
 /* Table Scroll Container */
 .table-scroll-container {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: auto;
   max-height: 600px;
@@ -157,16 +161,18 @@
   margin-bottom: 20px;
   background: #ffffff;
   position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-inner-force-allusers {
-  width: 2000px;
-  min-width: 2000px;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Table styling */
 .custom-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   white-space: nowrap;
   font-size: 0.875rem;
@@ -187,7 +193,6 @@
   border-bottom: 2px solid #e5e7eb;
   text-align: left;
   color: #111827;
-  white-space: nowrap;
   position: sticky;
   top: 0;
 }
@@ -197,9 +202,14 @@
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   color: #79808b;
-  white-space: nowrap;
   vertical-align: middle;
 }
+
+.custom-table th,
+.custom-table td {
+  white-space: nowrap;
+}
+
 
 .custom-table tbody tr:nth-child(even) {
   background-color: #f9fafb;
