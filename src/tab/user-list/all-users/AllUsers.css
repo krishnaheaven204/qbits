@@ -61,6 +61,7 @@
   padding: 8px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  border-color: #0b122088;
   min-width: 280px;
   background: #f8fafc;
 }
@@ -82,8 +83,8 @@
 .ul-btn {
   appearance: none;
   border: 1px solid transparent;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #159F6C;
+  color: #ffffff;
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
@@ -189,8 +190,9 @@
 .custom-table th {
   background: #f8f9fa;
   font-weight: 600;
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-bottom: 2px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
   text-align: left;
   color: #111827;
   position: sticky;
@@ -198,11 +200,68 @@
 }
 
 .custom-table td {
-  padding: 12px 10px;
+  padding: 8px 8px;
   border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #edf0f4;
   text-align: left;
   color: #79808b;
   vertical-align: middle;
+  line-height: 1.2;
+}
+
+.custom-table th:last-child,
+.custom-table td:last-child {
+  border-right: none;
+}
+
+.custom-table .sticky-col {
+  position: sticky;
+  background: #ffffff;
+  z-index: 4;
+}
+
+.custom-table .sticky-col-right {
+  background: #ffffff;
+  position: sticky;
+  z-index: 5;
+}
+
+.custom-table thead .sticky-col-right {
+  background: #f8f9fa;
+  z-index: 15;
+}
+
+.custom-table thead .sticky-col {
+  z-index: 14;
+  background: #f8f9fa;
+}
+
+.custom-table .col-no {
+  left: 0;
+  min-width: 50px;
+  text-align: center;
+}
+
+.custom-table .col-id {
+  left: 40px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.custom-table .col-username {
+  left: 85px;
+  min-width: 160px;
+}
+
+.custom-table td.col-username {
+  font-weight: 600;
+  color: #0f172ae0;
+}
+
+.custom-table .col-updated {
+  right: 0;
+  min-width: 150px;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
 }
 
 .custom-table th,
@@ -216,8 +275,14 @@
 }
 
 .custom-table tbody tr:hover {
-  background-color: #eff6ff;
+  background-color: #e7f1ff;
   transition: background-color 0.15s ease;
+}
+
+.custom-table tbody tr:hover td,
+.custom-table tbody tr:hover .sticky-col,
+.custom-table tbody tr:hover .sticky-col-right {
+  background-color: #e7f1ff;
 }
 
 .ul-load-more-container {
@@ -599,7 +664,7 @@ input:checked + .toggle-slider:before {
   width: 230px;
   background: #ffffff;
   padding: 7px 8px;
-  border-radius: 60px;
+  border-radius: 1rem;
   border: 1px solid #e7e7e7;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   cursor: pointer;
@@ -689,7 +754,7 @@ input:checked + .toggle-slider:before {
 .refresh-btn {
   margin-left: -1px;
   padding: 8px 16px;
-  background: #2563eb;
+  background: #159F6C;
   color: white;
   border: none;
   border-radius: 10px;
@@ -699,7 +764,7 @@ input:checked + .toggle-slider:before {
 }
 
 .refresh-btn:disabled {
-  background: #a5b4fc;
+  background: #54c098;
   cursor: not-allowed;
 }
 
