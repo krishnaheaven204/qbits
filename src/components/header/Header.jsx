@@ -51,11 +51,6 @@ export default function Header() {
                 <Bars3Icon className="h-5 w-5" />
               </a>
             </li>
-            <li className="pc-h-item pc-sidebar-popup">
-              <a href="#" className="pc-head-link ms-0" id="mobile-collapse">   
-                <Bars3Icon className="h-5 w-5" />
-              </a>
-            </li>
           </ul>
         </div>
 
