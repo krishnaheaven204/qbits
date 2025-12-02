@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import './Register.css';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import "./Register.css";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 function generateCompanyCode() {
   const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -18,68 +19,115 @@ function generateCompanyCode() {
 
 export default function Register() {
   const router = useRouter();
-  const [registrationType, setRegistrationType] = useState('individual');
+  const [registrationType, setRegistrationType] = useState("individual");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     // Individual fields
-    homeName: '',
-    inverterSerial: '',
-    userId: '',
-    password: '',
-    confirmPassword: '',
-    city: '',
-    wifiSerial: '',
-    timezone: '',
-    stationType: '',
-    whatsapp: '',
+    homeName: "",
+    inverterSerial: "",
+    userId: "",
+    password: "",
+    confirmPassword: "",
+    city: "",
+    wifiSerial: "",
+    timezone: "",
+    stationType: "",
+    whatsapp: "",
     // Company fields
-    account: '',
-    companyPassword: '',
-    companyConfirmPassword: '',
-    companyCode: '',
-    email: ''
+    account: "",
+    companyPassword: "",
+    companyConfirmPassword: "",
+    companyCode: "",
+    email: "",
   });
+
+  const [otpStage, setOtpStage] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [serverData, setServerData] = useState(null);
 
   useEffect(() => {
     if (registrationType === "company" && !formData.companyCode) {
       const newCode = generateCompanyCode();
-      setFormData(prev => ({ ...prev, companyCode: newCode }));
+      setFormData((prev) => ({ ...prev, companyCode: newCode }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registrationType]);
+
+  useEffect(() => {
+    setOtpStage(false);
+    setEmailCode("");
+    setServerData(null);
+    setErrors((prev) => ({ ...prev, emailCode: "" }));
   }, [registrationType]);
 
   const validateIndividualForm = () => {
     const newErrors = {};
 
-    if (!formData.homeName) newErrors.homeName = 'Home name is required';
-    if (!formData.inverterSerial) newErrors.inverterSerial = 'Inverter serial number is required';
-    
+    if (!formData.homeName) newErrors.homeName = "Home name is required";
+    if (!formData.inverterSerial)
+      newErrors.inverterSerial = "Inverter serial number is required";
+
     if (!formData.userId) {
-      newErrors.userId = 'User ID is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.userId) && !/^\d{10}$/.test(formData.userId)) {
-      newErrors.userId = 'Please enter a valid email or 10-digit mobile number';
+      newErrors.userId = "User ID is required";
+    } else if (
+      !/\S+@\S+\.\S+/.test(formData.userId) &&
+      !/^\d{10}$/.test(formData.userId)
+    ) {
+      newErrors.userId = "Please enter a valid email or 10-digit mobile number";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
-    if (!formData.city) newErrors.city = 'City is required';
-    if (!formData.wifiSerial) newErrors.wifiSerial = 'WiFi serial number is required';
-    if (!formData.timezone) newErrors.timezone = 'Timezone is required';
-    if (!formData.stationType) newErrors.stationType = 'Station type is required';
-    
+    if (!formData.city) newErrors.city = "City is required";
+    if (!formData.wifiSerial)
+      newErrors.wifiSerial = "WiFi serial number is required";
+    if (!formData.timezone) newErrors.timezone = "Timezone is required";
+    if (!formData.stationType)
+      newErrors.stationType = "Station type is required";
+
     if (!formData.whatsapp) {
-      newErrors.whatsapp = 'WhatsApp number is required';
+      newErrors.whatsapp = "WhatsApp number is required";
     } else if (!/^\d{10}$/.test(formData.whatsapp)) {
-      newErrors.whatsapp = 'Please enter a valid 10-digit number';
+      newErrors.whatsapp = "Please enter a valid 10-digit number";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Validate only the email or mobile before sending OTP
+  const validateIndividualEmailForOtp = () => {
+    const newErrors = {};
+
+    if (!formData.userId) {
+      newErrors.userId = "User ID is required";
+    } else if (
+      !/\S+@\S+\.\S+/.test(formData.userId) &&
+      !/^\d{10}$/.test(formData.userId)
+    ) {
+      newErrors.userId = "Enter valid email or 10 digit mobile";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateCompanyEmailForOtp = () => {
+    const newErrors = {};
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
     }
 
     setErrors(newErrors);
@@ -89,24 +137,25 @@ export default function Register() {
   const validateCompanyForm = () => {
     const newErrors = {};
 
-    if (!formData.account) newErrors.account = 'Account name is required';
-    
+    if (!formData.account) newErrors.account = "Account name is required";
+
     if (!formData.companyPassword) {
-      newErrors.companyPassword = 'Password is required';
+      newErrors.companyPassword = "Password is required";
     } else if (formData.companyPassword.length < 6) {
-      newErrors.companyPassword = 'Password must be at least 6 characters';
+      newErrors.companyPassword = "Password must be at least 6 characters";
     }
 
     if (formData.companyPassword !== formData.companyConfirmPassword) {
-      newErrors.companyConfirmPassword = 'Passwords do not match';
+      newErrors.companyConfirmPassword = "Passwords do not match";
     }
 
-    if (!formData.companyCode) newErrors.companyCode = 'Company code is required';
-    
+    if (!formData.companyCode)
+      newErrors.companyCode = "Company code is required";
+
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     setErrors(newErrors);
@@ -115,51 +164,287 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error for this field
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const isValid = registrationType === 'individual' 
-      ? validateIndividualForm() 
-      : validateCompanyForm();
+
+    const isValid =
+      registrationType === "individual"
+        ? otpStage
+          ? validateIndividualForm()
+          : validateIndividualEmailForOtp()
+        : otpStage
+        ? validateCompanyForm()
+        : validateCompanyEmailForOtp();
 
     if (!isValid) return;
+
+    if (registrationType === "company") {
+      // FIRST CLICK, SEND OTP
+      if (!otpStage) {
+        const isEmailValid = validateCompanyEmailForOtp();
+        if (!isEmailValid) return;
+
+        const payload = {
+          user_id: formData.account,
+          company_name: formData.account,
+          email: formData.email,
+          password: formData.companyPassword,
+          c_password: formData.companyConfirmPassword,
+          company_code: formData.companyCode,
+          email_code: "",
+        };
+
+        setServerData(payload);
+        setOtpStage(true);
+        setIsLoading(true);
+
+        try {
+          const res = await fetch(`${API_BASE}/company/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const text = await res.text();
+          let data;
+
+          try {
+            data = JSON.parse(text);
+          } catch {
+            alert("Invalid response from server");
+            setIsLoading(false);
+            return;
+          }
+
+          if (data.requires_otp) {
+            alert("OTP sent to your email");
+          } else if (!res.ok) {
+            alert(data.message || "Error sending OTP");
+            setOtpStage(false);
+            setServerData(null);
+          }
+        } catch (err) {
+          alert(err.message);
+          setOtpStage(false);
+          setServerData(null);
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // SECOND CLICK, VERIFY OTP + FULL FORM
+      if (otpStage) {
+        if (!emailCode.trim()) {
+          setErrors((prev) => ({ ...prev, emailCode: "OTP is required" }));
+          return;
+        }
+
+        // VALIDATE FULL FORM NOW
+        const fullValid = validateCompanyForm();
+        if (!fullValid) return;
+
+        setIsLoading(true);
+
+        try {
+          const finalPayload = {
+            ...serverData,
+            email_code: emailCode,
+          };
+
+          const res2 = await fetch(`${API_BASE}/company/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(finalPayload),
+          });
+
+          const text2 = await res2.text();
+          let data2;
+
+          try {
+            data2 = JSON.parse(text2);
+          } catch {
+            alert("Invalid response from server");
+            setIsLoading(false);
+            return;
+          }
+
+          if (res2.ok) {
+            alert("Registration successful");
+            router.push("/login?registered=true");
+          } else {
+            alert(data2.message || "Invalid OTP");
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // INDIVIDUAL USER FLOW
+    if (registrationType === "individual") {
+
+      // STEP 1, SEND OTP
+      if (!otpStage) {
+
+        const emailValid = validateIndividualEmailForOtp();
+        if (!emailValid) return;
+
+        const payload = {
+          user_id: formData.userId,
+          password: formData.password,
+          c_password: formData.confirmPassword,
+
+          whatsapp_no: formData.whatsapp,
+          wifi_serial_number: formData.wifiSerial,
+          home_name: formData.homeName,
+          inverter_serial_number: formData.inverterSerial,
+          city_name: formData.city,
+
+          latitude: "21.1702",   // Temporary valid coordinates
+          longitude: "72.8311",
+
+          time_zone: formData.timezone,
+
+          station_type:
+            formData.stationType === "residential" ? "0" :
+            formData.stationType === "commercial" ? "1" :
+            formData.stationType === "industrial" ? "2" : "0",
+
+          iserial: null,
+          qq: null,
+          email: null,
+          parent: null,
+          company_code: null,
+
+          email_code: ""
+        };
+
+        setServerData(payload);
+        setOtpStage(true);
+        setIsLoading(true);
+
+        try {
+          const res = await fetch(`${API_BASE}/individual`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const raw = await res.text();
+          let data;
+
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            alert("Invalid server response");
+            setIsLoading(false);
+            return;
+          }
+
+          if (data.requires_otp) {
+            alert("OTP sent to your mobile or email");
+          } else {
+            alert(data.message || "OTP sending failed");
+            setOtpStage(false);
+          }
+
+        } catch (err) {
+          alert(err.message);
+          setOtpStage(false);
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // STEP 2, VERIFY OTP
+      if (!emailCode.trim()) {
+        setErrors(prev => ({ ...prev, emailCode: "OTP is required" }));
+        return;
+      }
+
+      const fullValid = validateIndividualForm();
+      if (!fullValid) return;
+
+      setIsLoading(true);
+
+      try {
+        const finalPayload = {
+          ...serverData,
+          email_code: emailCode
+        };
+
+        const res2 = await fetch(`${API_BASE}/individual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalPayload),
+        });
+
+        const raw2 = await res2.text();
+        let data2;
+
+        try {
+          data2 = JSON.parse(raw2);
+        } catch {
+          alert("Invalid OTP verification response");
+          setIsLoading(false);
+          return;
+        }
+
+        if (res2.ok) {
+          alert("Registration successful");
+          router.push("/login?registered=true");
+        } else {
+          alert(data2.message || "Invalid OTP");
+        }
+
+      } catch (err) {
+        alert(err.message);
+      }
+
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
 
     try {
-      // Simulate API call - Replace with actual registration logic
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Store registration data (example)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       const registrationData = {
-        type: registrationType,
-        data: registrationType === 'individual' ? {
+        type: "individual",
+        data: {
           homeName: formData.homeName,
           userId: formData.userId,
           city: formData.city,
           timezone: formData.timezone,
-          stationType: formData.stationType
-        } : {
-          account: formData.account,
-          email: formData.email,
-          companyCode: formData.companyCode
+          stationType: formData.stationType,
         },
-        timestamp: new Date().toISOString()
+        otp: emailCode,
+        timestamp: new Date().toISOString(),
       };
 
-      localStorage.setItem('registrationData', JSON.stringify(registrationData));
-      
-      // Redirect to login page
-      router.push('/login?registered=true');
+      localStorage.setItem(
+        "registrationData",
+        JSON.stringify(registrationData)
+      );
+      setOtpStage(false);
+      setEmailCode("");
+      setErrors((prev) => ({ ...prev, emailCode: "" }));
+      router.push("/login?registered=true");
     } catch (error) {
-      setErrors({ submit: 'Registration failed. Please try again.' });
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -184,14 +469,18 @@ export default function Register() {
         <div className="register-card">
           <div className="register-tabs">
             <button
-              className={`register-tab ${registrationType === 'individual' ? 'active' : ''}`}
-              onClick={() => setRegistrationType('individual')}
+              className={`register-tab ${
+                registrationType === "individual" ? "active" : ""
+              }`}
+              onClick={() => setRegistrationType("individual")}
             >
               Individual
             </button>
             <button
-              className={`register-tab ${registrationType === 'company' ? 'active' : ''}`}
-              onClick={() => setRegistrationType('company')}
+              className={`register-tab ${
+                registrationType === "company" ? "active" : ""
+              }`}
+              onClick={() => setRegistrationType("company")}
             >
               Company
             </button>
@@ -199,25 +488,26 @@ export default function Register() {
 
           <div className="register-content">
             {errors.submit && (
-              <div className="error-message">
-                {errors.submit}
-              </div>
+              <div className="error-message">{errors.submit}</div>
             )}
 
-            {registrationType === 'individual' ? (
+            {registrationType === "individual" ? (
               <form className="register-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label className="form-label">Home Name *</label>
                   <input
                     type="text"
                     name="homeName"
-                    className={`form-input ${errors.homeName ? 'error' : ''}`}
+                    className={`form-input ${errors.homeName ? "error" : ""}`}
                     placeholder="Enter home name"
                     value={formData.homeName}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.homeName && <span className="error-text">{errors.homeName}</span>}
+
+                  {errors.homeName && (
+                    <span className="error-text">{errors.homeName}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -225,27 +515,35 @@ export default function Register() {
                   <input
                     type="text"
                     name="inverterSerial"
-                    className={`form-input ${errors.inverterSerial ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.inverterSerial ? "error" : ""
+                    }`}
                     placeholder="Enter inverter serial number"
                     value={formData.inverterSerial}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.inverterSerial && <span className="error-text">{errors.inverterSerial}</span>}
+                  {errors.inverterSerial && (
+                    <span className="error-text">{errors.inverterSerial}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">User ID (Email or Mobile) *</label>
+                  <label className="form-label">
+                    User ID (Email or Mobile) *
+                  </label>
                   <input
                     type="text"
                     name="userId"
-                    className={`form-input ${errors.userId ? 'error' : ''}`}
+                    className={`form-input ${errors.userId ? "error" : ""}`}
                     placeholder="Enter email or mobile number"
                     value={formData.userId}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.userId && <span className="error-text">{errors.userId}</span>}
+                  {errors.userId && (
+                    <span className="error-text">{errors.userId}</span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -254,26 +552,34 @@ export default function Register() {
                     <input
                       type="password"
                       name="password"
-                      className={`form-input ${errors.password ? 'error' : ''}`}
+                      className={`form-input ${errors.password ? "error" : ""}`}
                       placeholder="Enter password"
                       value={formData.password}
                       onChange={handleChange}
                       disabled={isLoading}
                     />
-                    {errors.password && <span className="error-text">{errors.password}</span>}
+                    {errors.password && (
+                      <span className="error-text">{errors.password}</span>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Confirm Password *</label>
                     <input
                       type="password"
                       name="confirmPassword"
-                      className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                      className={`form-input ${
+                        errors.confirmPassword ? "error" : ""
+                      }`}
                       placeholder="Confirm password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       disabled={isLoading}
                     />
-                    {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
+                    {errors.confirmPassword && (
+                      <span className="error-text">
+                        {errors.confirmPassword}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -282,13 +588,15 @@ export default function Register() {
                   <input
                     type="text"
                     name="city"
-                    className={`form-input ${errors.city ? 'error' : ''}`}
+                    className={`form-input ${errors.city ? "error" : ""}`}
                     placeholder="Enter your city"
                     value={formData.city}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.city && <span className="error-text">{errors.city}</span>}
+                  {errors.city && (
+                    <span className="error-text">{errors.city}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -296,13 +604,15 @@ export default function Register() {
                   <input
                     type="text"
                     name="wifiSerial"
-                    className={`form-input ${errors.wifiSerial ? 'error' : ''}`}
+                    className={`form-input ${errors.wifiSerial ? "error" : ""}`}
                     placeholder="Enter WiFi serial number"
                     value={formData.wifiSerial}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.wifiSerial && <span className="error-text">{errors.wifiSerial}</span>}
+                  {errors.wifiSerial && (
+                    <span className="error-text">{errors.wifiSerial}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -310,20 +620,24 @@ export default function Register() {
                   <input
                     type="text"
                     name="timezone"
-                    className={`form-input ${errors.timezone ? 'error' : ''}`}
+                    className={`form-input ${errors.timezone ? "error" : ""}`}
                     placeholder="Enter timezone (e.g., Asia/Kolkata)"
                     value={formData.timezone}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.timezone && <span className="error-text">{errors.timezone}</span>}
+                  {errors.timezone && (
+                    <span className="error-text">{errors.timezone}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Station Type *</label>
-                  <select 
+                  <select
                     name="stationType"
-                    className={`form-input ${errors.stationType ? 'error' : ''}`}
+                    className={`form-input ${
+                      errors.stationType ? "error" : ""
+                    }`}
                     value={formData.stationType}
                     onChange={handleChange}
                     disabled={isLoading}
@@ -333,7 +647,9 @@ export default function Register() {
                     <option value="commercial">Commercial</option>
                     <option value="industrial">Industrial</option>
                   </select>
-                  {errors.stationType && <span className="error-text">{errors.stationType}</span>}
+                  {errors.stationType && (
+                    <span className="error-text">{errors.stationType}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -343,7 +659,9 @@ export default function Register() {
                     <input
                       type="tel"
                       name="whatsapp"
-                      className={`form-input whatsapp-input ${errors.whatsapp ? 'error' : ''}`}
+                      className={`form-input whatsapp-input ${
+                        errors.whatsapp ? "error" : ""
+                      }`}
                       placeholder="Enter WhatsApp number"
                       value={formData.whatsapp}
                       onChange={handleChange}
@@ -351,105 +669,201 @@ export default function Register() {
                       maxLength="10"
                     />
                   </div>
-                  {errors.whatsapp && <span className="error-text">{errors.whatsapp}</span>}
+                  {errors.whatsapp && (
+                    <span className="error-text">{errors.whatsapp}</span>
+                  )}
                 </div>
+                {/* OTP field starts */}
+                {otpStage && (
+                  <div className="form-group">
+                    <label className="form-label">Enter OTP *</label>
+                    <input
+                      type="text"
+                      className={`form-input ${errors.emailCode ? "error" : ""}`}
+                      placeholder="Enter OTP"
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value)}
+                      maxLength="6"
+                    />
+                    {errors.emailCode && (
+                      <span className="error-text">{errors.emailCode}</span>
+                    )}
+                  </div>
+                )}
 
-                <button type="submit" className="register-button" disabled={isLoading}>
-                  {isLoading ? 'Registering...' : 'Register'}
+                {/* OTP field ends */}
+
+                <button
+                  type="submit"
+                  className="register-button"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Registering..." : "Register"}
                 </button>
               </form>
             ) : (
               <form className="register-form" onSubmit={handleSubmit}>
+                {/* Account */}
                 <div className="form-group">
                   <label className="form-label">Account *</label>
                   <input
                     type="text"
                     name="account"
-                    className={`form-input ${errors.account ? 'error' : ''}`}
+                    className={`form-input ${errors.account ? "error" : ""}`}
                     placeholder="Enter account name"
                     value={formData.account}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.account && <span className="error-text">{errors.account}</span>}
+                  {errors.account && (
+                    <span className="error-text">{errors.account}</span>
+                  )}
                 </div>
 
+                {/* Password + Confirm */}
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Password *</label>
                     <input
                       type="password"
                       name="companyPassword"
-                      className={`form-input ${errors.companyPassword ? 'error' : ''}`}
+                      className={`form-input ${
+                        errors.companyPassword ? "error" : ""
+                      }`}
                       placeholder="Enter password"
                       value={formData.companyPassword}
                       onChange={handleChange}
                       disabled={isLoading}
                     />
-                    {errors.companyPassword && <span className="error-text">{errors.companyPassword}</span>}
+                    {errors.companyPassword && (
+                      <span className="error-text">
+                        {errors.companyPassword}
+                      </span>
+                    )}
                   </div>
+
                   <div className="form-group">
                     <label className="form-label">Confirm Password *</label>
                     <input
                       type="password"
                       name="companyConfirmPassword"
-                      className={`form-input ${errors.companyConfirmPassword ? 'error' : ''}`}
+                      className={`form-input ${
+                        errors.companyConfirmPassword ? "error" : ""
+                      }`}
                       placeholder="Confirm password"
                       value={formData.companyConfirmPassword}
                       onChange={handleChange}
                       disabled={isLoading}
                     />
-                    {errors.companyConfirmPassword && <span className="error-text">{errors.companyConfirmPassword}</span>}
+                    {errors.companyConfirmPassword && (
+                      <span className="error-text">
+                        {errors.companyConfirmPassword}
+                      </span>
+                    )}
                   </div>
                 </div>
 
+                {/* Company Code */}
                 <div className="form-group">
                   <label className="form-label">Company Code *</label>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "center",
+                    }}
+                  >
                     <div
-                      className={`form-input ${errors.companyCode ? 'error' : ''}`}
-                      style={{ flex: 1, minHeight: '48px', display: 'flex', alignItems: 'center' }}
+                      className={`form-input ${
+                        errors.companyCode ? "error" : ""
+                      }`}
+                      style={{
+                        flex: 1,
+                        minHeight: "48px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
                     >
-                      {formData.companyCode || 'Generating...'}
+                      {formData.companyCode || "Generating..."}
                     </div>
+
                     <button
-                    className='geneButton'
+                      className="geneButton"
                       type="button"
                       onClick={() => {
                         const newCode = generateCompanyCode();
-                        setFormData(prev => ({ ...prev, companyCode: newCode }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          companyCode: newCode,
+                        }));
                       }}
                       disabled={isLoading}
-                      aria-label="Refresh company code"
                     >
-                    <ArrowPathIcon style={{ width: 22, height: 22, color: "white" }} />
+                      <ArrowPathIcon
+                        style={{ width: 22, height: 22, color: "white" }}
+                      />
                     </button>
                   </div>
-                  {errors.companyCode && <span className="error-text">{errors.companyCode}</span>}
+                  {errors.companyCode && (
+                    <span className="error-text">{errors.companyCode}</span>
+                  )}
                 </div>
 
+                {/* Email */}
                 <div className="form-group">
                   <label className="form-label">Mail *</label>
                   <input
                     type="email"
                     name="email"
-                    className={`form-input ${errors.email ? 'error' : ''}`}
+                    className={`form-input ${errors.email ? "error" : ""}`}
                     placeholder="Enter company email"
                     value={formData.email}
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-                  {errors.email && <span className="error-text">{errors.email}</span>}
+                  {errors.email && (
+                    <span className="error-text">{errors.email}</span>
+                  )}
                 </div>
 
-                <button type="submit" className="register-button" disabled={isLoading}>
-                  {isLoading ? 'Registering...' : 'Register'}
+                {/* OTP FIELD BELOW EMAIL FIELD */}
+                {otpStage && (
+                  <div className="form-group otp-box">
+                    <label className="form-label">Email OTP *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter OTP sent to your email"
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value)}
+                      disabled={isLoading}
+                      maxLength="6"
+                    />
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="register-button"
+                  disabled={isLoading}
+                >
+                  {isLoading
+                    ? "Processing..."
+                    : otpStage
+                    ? "Verify OTP"
+                    : "Register"}
                 </button>
               </form>
             )}
 
             <div className="register-footer">
-              <p>Already have an account? <Link href="/login" className="login-link">Login here</Link></p>
+              <p>
+                Already have an account?{" "}
+                <Link href="/login" className="login-link">
+                  Login here
+                </Link>
+              </p>
             </div>
           </div>
         </div>
