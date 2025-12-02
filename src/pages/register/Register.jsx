@@ -103,6 +103,24 @@ export default function Register() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Validate only the email or mobile before sending OTP
+  const validateIndividualEmailForOtp = () => {
+    const newErrors = {};
+
+    if (!formData.userId) {
+      newErrors.userId = "User ID is required";
+    } else if (
+      !/\S+@\S+\.\S+/.test(formData.userId) &&
+      !/^\d{10}$/.test(formData.userId)
+    ) {
+      newErrors.userId = "Enter valid email or 10 digit mobile";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const validateCompanyEmailForOtp = () => {
     const newErrors = {};
 
@@ -156,257 +174,249 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-
-    const validateIndividualEmailForOtp = () => {
-      const newErrors = {};
-    
-      if (!formData.userId) {
-        newErrors.userId = "User ID is required";
-      } else if (
-        !/\S+@\S+\.\S+/.test(formData.userId) &&
-        !/^\d{10}$/.test(formData.userId)
-      ) {
-        newErrors.userId = "Enter valid email or 10 digit mobile";
-      }
-    
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-    
     const isValid =
       registrationType === "individual"
-      ? otpStage
-      ? validateIndividualForm()
-      : validateIndividualEmailForOtp()
-    : otpStage
-    ? validateCompanyForm()
-    : validateCompanyEmailForOtp();
+        ? otpStage
+          ? validateIndividualForm()
+          : validateIndividualEmailForOtp()
+        : otpStage
+        ? validateCompanyForm()
+        : validateCompanyEmailForOtp();
 
     if (!isValid) return;
 
-       
-      if (registrationType === "company") {
+    if (registrationType === "company") {
+      // FIRST CLICK, SEND OTP
+      if (!otpStage) {
+        const isEmailValid = validateCompanyEmailForOtp();
+        if (!isEmailValid) return;
 
-        // FIRST CLICK, SEND OTP
-        if (!otpStage) {
-      
-          const isEmailValid = validateCompanyEmailForOtp();
-          if (!isEmailValid) return;
-      
-          const payload = {
-            user_id: formData.account,
-            company_name: formData.account,
-            email: formData.email,
-            password: formData.companyPassword,
-            c_password: formData.companyConfirmPassword,
-            company_code: formData.companyCode,
-            email_code: "",
-          };
-      
-          setServerData(payload);
-          setOtpStage(true);
-          setIsLoading(true);
-      
+        const payload = {
+          user_id: formData.account,
+          company_name: formData.account,
+          email: formData.email,
+          password: formData.companyPassword,
+          c_password: formData.companyConfirmPassword,
+          company_code: formData.companyCode,
+          email_code: "",
+        };
+
+        setServerData(payload);
+        setOtpStage(true);
+        setIsLoading(true);
+
+        try {
+          const res = await fetch(`${API_BASE}/company/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const text = await res.text();
+          let data;
+
           try {
-            const res = await fetch(`${API_BASE}/company/register`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
-      
-            const text = await res.text();
-            let data;
-      
-            try {
-              data = JSON.parse(text);
-            } catch {
-              alert("Invalid response from server");
-              setIsLoading(false);
-              return;
-            }
-      
-            if (data.requires_otp) {
-              alert("OTP sent to your email");
-            } else if (!res.ok) {
-              alert(data.message || "Error sending OTP");
-              setOtpStage(false);
-              setServerData(null);
-            }
-      
-          } catch (err) {
-            alert(err.message);
+            data = JSON.parse(text);
+          } catch {
+            alert("Invalid response from server");
+            setIsLoading(false);
+            return;
+          }
+
+          if (data.requires_otp) {
+            alert("OTP sent to your email");
+          } else if (!res.ok) {
+            alert(data.message || "Error sending OTP");
             setOtpStage(false);
             setServerData(null);
           }
-      
-          setIsLoading(false);
-          return;
+        } catch (err) {
+          alert(err.message);
+          setOtpStage(false);
+          setServerData(null);
         }
-      
-        // SECOND CLICK, VERIFY OTP + FULL FORM
-        if (otpStage) {
-      
-          if (!emailCode.trim()) {
-            setErrors((prev) => ({ ...prev, emailCode: "OTP is required" }));
-            return;
-          }
-      
-          // VALIDATE FULL FORM NOW
-          const fullValid = validateCompanyForm();
-          if (!fullValid) return;
-      
-          setIsLoading(true);
-      
-          try {
-            const finalPayload = {
-              ...serverData,
-              email_code: emailCode,
-            };
-      
-            const res2 = await fetch(`${API_BASE}/company/register`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(finalPayload),
-            });
-      
-            const text2 = await res2.text();
-            let data2;
-      
-            try {
-              data2 = JSON.parse(text2);
-            } catch {
-              alert("Invalid response from server");
-              setIsLoading(false);
-              return;
-            }
-      
-            if (res2.ok) {
-              alert("Registration successful");
-              router.push("/login?registered=true");
-            } else {
-              alert(data2.message || "Invalid OTP");
-            }
-      
-          } catch (err) {
-            alert(err.message);
-          }
-      
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-  
- // INDIVIDUAL USER FLOW
-if (registrationType === "individual") {
 
-  // STEP 1, SEND OTP
-  if (!otpStage) {
-
-    const emailValid = validateIndividualEmailForOtp();
-    if (!emailValid) return;
-
-    const payload = {
-      user_id: formData.userId,
-      home_name: formData.homeName,
-      city: formData.city,
-      timezone: formData.timezone,
-      station_type: formData.stationType,
-      wifi_serial: formData.wifiSerial,
-      inverter_serial: formData.inverterSerial,
-      
-      email_code: "",  // VERY IMPORTANT → tell server "send OTP"
-    };
-
-    setServerData(payload);
-    setOtpStage(true);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch(`${API_BASE}/individual`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const raw = await res.text();
-      let data;
-
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        alert("Server sent invalid response");
         setIsLoading(false);
         return;
       }
 
-      if (data.requires_otp) {
-        alert("OTP sent to your email or mobile");
-      } else if (!res.ok) {
-        alert(data.message || "Unable to send OTP");
-        setOtpStage(false);
-      }
+      // SECOND CLICK, VERIFY OTP + FULL FORM
+      if (otpStage) {
+        if (!emailCode.trim()) {
+          setErrors((prev) => ({ ...prev, emailCode: "OTP is required" }));
+          return;
+        }
 
-    } catch (error) {
-      alert(error.message);
-      setOtpStage(false);
+        // VALIDATE FULL FORM NOW
+        const fullValid = validateCompanyForm();
+        if (!fullValid) return;
+
+        setIsLoading(true);
+
+        try {
+          const finalPayload = {
+            ...serverData,
+            email_code: emailCode,
+          };
+
+          const res2 = await fetch(`${API_BASE}/company/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(finalPayload),
+          });
+
+          const text2 = await res2.text();
+          let data2;
+
+          try {
+            data2 = JSON.parse(text2);
+          } catch {
+            alert("Invalid response from server");
+            setIsLoading(false);
+            return;
+          }
+
+          if (res2.ok) {
+            alert("Registration successful");
+            router.push("/login?registered=true");
+          } else {
+            alert(data2.message || "Invalid OTP");
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+
+        setIsLoading(false);
+        return;
+      }
     }
 
-    setIsLoading(false);
-    return;
-  }
+    // INDIVIDUAL USER FLOW
+    if (registrationType === "individual") {
 
-  // STEP 2, USER MUST ENTER OTP
-  if (!emailCode.trim()) {
-    setErrors(prev => ({ ...prev, emailCode: "OTP is required" }));
-    return;
-  }
+      // STEP 1, SEND OTP
+      if (!otpStage) {
 
-  const fullValid = validateIndividualForm();
-  if (!fullValid) return;
+        const emailValid = validateIndividualEmailForOtp();
+        if (!emailValid) return;
 
-  setIsLoading(true);
+        const payload = {
+          user_id: formData.userId,
+          password: formData.password,
+          c_password: formData.confirmPassword,
 
-  try {
-    const finalPayload = {
-      ...serverData,
-      email_code: emailCode,  // VERIFY OTP AND REGISTER
-    };
+          whatsapp_no: formData.whatsapp,
+          wifi_serial_number: formData.wifiSerial,
+          home_name: formData.homeName,
+          inverter_serial_number: formData.inverterSerial,
+          city_name: formData.city,
 
-    const res2 = await fetch(`${API_BASE}/individual`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(finalPayload),
-    });
+          latitude: "21.1702",   // Temporary valid coordinates
+          longitude: "72.8311",
 
-    const raw2 = await res2.text();
-    let data2;
+          time_zone: formData.timezone,
 
-    try {
-      data2 = JSON.parse(raw2);
-    } catch {
-      alert("Server sent invalid response");
+          station_type:
+            formData.stationType === "residential" ? "0" :
+            formData.stationType === "commercial" ? "1" :
+            formData.stationType === "industrial" ? "2" : "0",
+
+          iserial: null,
+          qq: null,
+          email: null,
+          parent: null,
+          company_code: null,
+
+          email_code: ""
+        };
+
+        setServerData(payload);
+        setOtpStage(true);
+        setIsLoading(true);
+
+        try {
+          const res = await fetch(`${API_BASE}/individual`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const raw = await res.text();
+          let data;
+
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            alert("Invalid server response");
+            setIsLoading(false);
+            return;
+          }
+
+          if (data.requires_otp) {
+            alert("OTP sent to your mobile or email");
+          } else {
+            alert(data.message || "OTP sending failed");
+            setOtpStage(false);
+          }
+
+        } catch (err) {
+          alert(err.message);
+          setOtpStage(false);
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // STEP 2, VERIFY OTP
+      if (!emailCode.trim()) {
+        setErrors(prev => ({ ...prev, emailCode: "OTP is required" }));
+        return;
+      }
+
+      const fullValid = validateIndividualForm();
+      if (!fullValid) return;
+
+      setIsLoading(true);
+
+      try {
+        const finalPayload = {
+          ...serverData,
+          email_code: emailCode
+        };
+
+        const res2 = await fetch(`${API_BASE}/individual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalPayload),
+        });
+
+        const raw2 = await res2.text();
+        let data2;
+
+        try {
+          data2 = JSON.parse(raw2);
+        } catch {
+          alert("Invalid OTP verification response");
+          setIsLoading(false);
+          return;
+        }
+
+        if (res2.ok) {
+          alert("Registration successful");
+          router.push("/login?registered=true");
+        } else {
+          alert(data2.message || "Invalid OTP");
+        }
+
+      } catch (err) {
+        alert(err.message);
+      }
+
       setIsLoading(false);
       return;
     }
 
-    if (res2.ok) {
-      alert("Registration successful");
-      router.push("/login?registered=true");
-    } else {
-      alert(data2.message || "Invalid OTP");
-    }
-
-  } catch (error) {
-    alert(error.message);
-  }
-
-  setIsLoading(false);
-  return;
-}
-
-
-     
     setIsLoading(true);
 
     try {
@@ -669,18 +679,10 @@ if (registrationType === "individual") {
                     <label className="form-label">Enter OTP *</label>
                     <input
                       type="text"
-                      className={`form-input ${
-                        errors.emailCode ? "error" : ""
-                      }`}
-                      placeholder="Enter OTP sent to your email"
+                      className={`form-input ${errors.emailCode ? "error" : ""}`}
+                      placeholder="Enter OTP"
                       value={emailCode}
-                      onChange={(e) => {
-                        setEmailCode(e.target.value);
-                        if (errors.emailCode) {
-                          setErrors((prev) => ({ ...prev, emailCode: "" }));
-                        }
-                      }}
-                      disabled={isLoading}
+                      onChange={(e) => setEmailCode(e.target.value)}
                       maxLength="6"
                     />
                     {errors.emailCode && (
@@ -688,6 +690,7 @@ if (registrationType === "individual") {
                     )}
                   </div>
                 )}
+
                 {/* OTP field ends */}
 
                 <button
@@ -697,8 +700,6 @@ if (registrationType === "individual") {
                 >
                   {isLoading ? "Registering..." : "Register"}
                 </button>
-
-                 
               </form>
             ) : (
               <form className="register-form" onSubmit={handleSubmit}>
@@ -825,7 +826,6 @@ if (registrationType === "individual") {
                   )}
                 </div>
 
-                 
                 {/* OTP FIELD BELOW EMAIL FIELD */}
                 {otpStage && (
                   <div className="form-group otp-box">
