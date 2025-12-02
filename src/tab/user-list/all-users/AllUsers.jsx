@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./AllUsers.css";
 
 const API_BASE_URL =
@@ -49,6 +49,22 @@ export default function AllUsers() {
   const [selectedQbitsUserId, setSelectedQbitsUserId] = useState(null);
   const [qbitsCodeInput, setQbitsCodeInput] = useState("");
   const [qbitsModalLoading, setQbitsModalLoading] = useState(false);
+  const initialCooldownState = useMemo(() => {
+    if (typeof window === "undefined") {
+      return { disabled: false, time: 0 };
+    }
+
+    const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
+
+    if (savedTimestamp && savedTimestamp > Date.now()) {
+      return {
+        disabled: true,
+        time: Math.ceil((savedTimestamp - Date.now()) / 1000),
+      };
+    }
+
+    return { disabled: false, time: 0 };
+  }, []);
   // Status filter UI state (default to Total tab "standby"), persisted across reloads
   const [selectedStatus, setSelectedStatus] = useState(() => {
     if (typeof window !== "undefined") {
@@ -65,8 +81,10 @@ export default function AllUsers() {
   });
 
   // Refresh button states
-  const [refreshDisabled, setRefreshDisabled] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0);
+  const [refreshDisabled, setRefreshDisabled] = useState(
+    initialCooldownState.disabled
+  );
+  const [cooldownTime, setCooldownTime] = useState(initialCooldownState.time);
   const COOLDOWN_DURATION_SECONDS = 900;
 // Last refreshed time
   const [lastRefreshedAt, setLastRefreshedAt] = useState("");
@@ -303,10 +321,10 @@ export default function AllUsers() {
       fetchInverterTotals();
       fetchGroupedClients();
 
-      alert("Sync started successfully!");
+      console.info("Sync command triggered successfully.");
     } catch (err) {
       clearRefreshCooldown();
-      alert("Refresh failed: " + err.message);
+      console.error("Refresh failed", err);
     }
   };
 
@@ -885,14 +903,6 @@ const getFormattedTime = () => {
             <div className="ul-error" role="alert">
               {error}
             </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="ul-empty">
-              <p className="ul-muted">
-                {searchInput.trim()
-                  ? "No matching users for that search."
-                  : "No users found."}
-              </p>
-            </div>
           ) : (
             <>
               <div className="status-box-container">
@@ -1001,136 +1011,127 @@ const getFormattedTime = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedUsers && paginatedUsers.length > 0 ? (
-                        paginatedUsers.map((u, index) => (
-                          <tr key={u.id ?? index}>
-                            <td className="sticky-col col-no">{rowStartIndex + index + 1}</td>
-                            <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
-                            <td className="sticky-col col-username">{u.username ?? "N/A"}</td>
-                            {/* <td
-                                onClick={() => openCompanyCodeModal(u)}
+                      {paginatedUsers && paginatedUsers.length > 0
+                        ? paginatedUsers.map((u, index) => (
+                            <tr key={u.id ?? index}>
+                              <td className="sticky-col col-no">{rowStartIndex + index + 1}</td>
+                              <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
+                              <td className="sticky-col col-username">{u.username ?? "N/A"}</td>
+                              {/* <td
+                                  onClick={() => openCompanyCodeModal(u)}
+                                  className="company-code-cell"
+                                >
+                                  {u.company_code ?? "N/A"}
+                                </td>*/}
+
+                              <td
+                                onClick={() => openQbitsCodeModal(u)}
                                 className="company-code-cell"
                               >
-                                {u.company_code ?? "N/A"}
-                              </td>*/}
-
-                            <td
-                              onClick={() => openQbitsCodeModal(u)}
-                              className="company-code-cell"
-                            >
-                              {u.qbits_company_code ?? "N/A"}
-                            </td>
-                            <td>{u.phone ?? "N/A"}</td>
-                            <td>{u.email ?? "N/A"}</td>
-                            <td>{u.plant_name ?? "N/A"}</td>
-                            <td>{u.inverter_type ?? "N/A"}</td>
-                            <td>{u.city_name ?? "N/A"}</td>
-                            <td>{u.collector ?? "N/A"}</td>
-                            <td>{u.longitude ?? "N/A"}</td>
-                            <td>{u.latitude ?? "N/A"}</td>
-                            <td>{u.gmt ?? "N/A"}</td>
-                            <td>{u.plant_type ?? "N/A"}</td>
-                            <td>{u.iserial ?? "N/A"}</td>
-                            <td className="flag-toggle-cell">
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={u.whatsapp_notification_flag == 1}
-                                  onChange={(e) =>
-                                    handleFlagToggle(
-                                      u.id,
-                                      "whatsapp_notification_flag",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="toggle-slider"></span>
-                              </label>
-                            </td>
-                            <td className="flag-toggle-cell">
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={u.inverter_fault_flag == 1}
-                                  disabled={u.whatsapp_notification_flag != 1}
-                                  onChange={(e) =>
-                                    handleFlagToggle(
-                                      u.id,
-                                      "inverter_fault_flag",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="toggle-slider"></span>
-                              </label>
-                            </td>
-                            <td className="flag-toggle-cell">
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={u.daily_generation_report_flag == 1}
-                                  disabled={u.whatsapp_notification_flag != 1}
-                                  onChange={(e) =>
-                                    handleFlagToggle(
-                                      u.id,
-                                      "daily_generation_report_flag",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="toggle-slider"></span>
-                              </label>
-                            </td>
-                            <td className="flag-toggle-cell">
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={u.weekly_generation_report_flag == 1}
-                                  disabled={u.whatsapp_notification_flag != 1}
-                                  onChange={(e) =>
-                                    handleFlagToggle(
-                                      u.id,
-                                      "weekly_generation_report_flag",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="toggle-slider"></span>
-                              </label>
-                            </td>
-                            <td className="flag-toggle-cell">
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    u.monthly_generation_report_flag == 1
-                                  }
-                                  disabled={u.whatsapp_notification_flag != 1}
-                                  onChange={(e) =>
-                                    handleFlagToggle(
-                                      u.id,
-                                      "monthly_generation_report_flag",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="toggle-slider"></span>
-                              </label>
-                            </td>
-                            <td>{formatDate(u.created_at)}</td>
-                            <td className="sticky-col sticky-col-right col-updated">{formatDate(u.updated_at)}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={21}
-                            style={{ textAlign: "center", padding: "16px" }}
-                          >
-                            No users found
-                          </td>
-                        </tr>
-                      )}
+                                {u.qbits_company_code ?? "N/A"}
+                              </td>
+                              <td>{u.phone ?? "N/A"}</td>
+                              <td>{u.email ?? "N/A"}</td>
+                              <td>{u.plant_name ?? "N/A"}</td>
+                              <td>{u.inverter_type ?? "N/A"}</td>
+                              <td>{u.city_name ?? "N/A"}</td>
+                              <td>{u.collector ?? "N/A"}</td>
+                              <td>{u.longitude ?? "N/A"}</td>
+                              <td>{u.latitude ?? "N/A"}</td>
+                              <td>{u.gmt ?? "N/A"}</td>
+                              <td>{u.plant_type ?? "N/A"}</td>
+                              <td>{u.iserial ?? "N/A"}</td>
+                              <td className="flag-toggle-cell">
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={u.whatsapp_notification_flag == 1}
+                                    onChange={(e) =>
+                                      handleFlagToggle(
+                                        u.id,
+                                        "whatsapp_notification_flag",
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                              </td>
+                              <td className="flag-toggle-cell">
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={u.inverter_fault_flag == 1}
+                                    disabled={u.whatsapp_notification_flag != 1}
+                                    onChange={(e) =>
+                                      handleFlagToggle(
+                                        u.id,
+                                        "inverter_fault_flag",
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                              </td>
+                              <td className="flag-toggle-cell">
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={u.daily_generation_report_flag == 1}
+                                    disabled={u.whatsapp_notification_flag != 1}
+                                    onChange={(e) =>
+                                      handleFlagToggle(
+                                        u.id,
+                                        "daily_generation_report_flag",
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                              </td>
+                              <td className="flag-toggle-cell">
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={u.weekly_generation_report_flag == 1}
+                                    disabled={u.whatsapp_notification_flag != 1}
+                                    onChange={(e) =>
+                                      handleFlagToggle(
+                                        u.id,
+                                        "weekly_generation_report_flag",
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                              </td>
+                              <td className="flag-toggle-cell">
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      u.monthly_generation_report_flag == 1
+                                    }
+                                    disabled={u.whatsapp_notification_flag != 1}
+                                    onChange={(e) =>
+                                      handleFlagToggle(
+                                        u.id,
+                                        "monthly_generation_report_flag",
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="toggle-slider"></span>
+                                </label>
+                              </td>
+                              <td>{formatDate(u.created_at)}</td>
+                              <td className="sticky-col sticky-col-right col-updated">{formatDate(u.updated_at)}</td>
+                            </tr>
+                          ))
+                        : null}
                     </tbody>
                   </table>
                 </div>
