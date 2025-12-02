@@ -165,7 +165,7 @@ export default function Header() {
                   role="button"
                   onClick={(e) => { e.preventDefault(); setShowProfile(!showProfile); }}
                 >
-                  <div className="user-avtar" style={{width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '600'}}>
+                  <div className="user-avtar">
                     AU
                   </div>
                   <span className="ms-2">
