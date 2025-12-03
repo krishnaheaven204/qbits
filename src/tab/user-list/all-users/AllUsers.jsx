@@ -86,9 +86,9 @@ export default function AllUsers() {
   );
   const [cooldownTime, setCooldownTime] = useState(initialCooldownState.time);
   const COOLDOWN_DURATION_SECONDS = 900;
-// Last refreshed time
+  // Last refreshed time
   const [lastRefreshedAt, setLastRefreshedAt] = useState("");
-  
+
   const [groupedClients, setGroupedClients] = useState({
     all_plant: [],
     normal_plant: [],
@@ -335,30 +335,30 @@ export default function AllUsers() {
     fetchGroupedClients();
 
     // Refresh button countdown timer
-     
+
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
-// Refresh button countdown timer
-useEffect(() => {
-  const syncCooldownState = () => {
-    const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
+  // Refresh button countdown timer
+  useEffect(() => {
+    const syncCooldownState = () => {
+      const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
 
-    if (savedTimestamp && savedTimestamp > Date.now()) {
-      setRefreshDisabled(true);
-      setCooldownTime(Math.ceil((savedTimestamp - Date.now()) / 1000));
-    } else {
-      setRefreshDisabled(false);
-      setCooldownTime(0);
-      localStorage.removeItem("refreshCooldownUntil");
-    }
-  };
+      if (savedTimestamp && savedTimestamp > Date.now()) {
+        setRefreshDisabled(true);
+        setCooldownTime(Math.ceil((savedTimestamp - Date.now()) / 1000));
+      } else {
+        setRefreshDisabled(false);
+        setCooldownTime(0);
+        localStorage.removeItem("refreshCooldownUntil");
+      }
+    };
 
-  syncCooldownState();
-  const interval = setInterval(syncCooldownState, 1000);
-  return () => clearInterval(interval);
-}, []);
+    syncCooldownState();
+    const interval = setInterval(syncCooldownState, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
 
 
@@ -384,15 +384,15 @@ useEffect(() => {
   };
 
   // Format time for "last refreshed at"
-const getFormattedTime = () => {
-  const now = new Date();
-  return now.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-};
+  const getFormattedTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+  };
 
   // Handle search input with debounce
   const handleSearchChange = (e) => {
@@ -440,11 +440,11 @@ const getFormattedTime = () => {
     const targetUser =
       displayedUsers.find((u) => u.id === userId) ||
       users.find((u) => u.id === userId);
-  
+
     if (!targetUser) return;
-  
+
     const previousSnapshot = { ...targetUser };
-  
+
     const nextFlags = {
       whatsapp_notification_flag: targetUser.whatsapp_notification_flag ?? 0,
       inverter_fault_flag: targetUser.inverter_fault_flag ?? 0,
@@ -452,10 +452,10 @@ const getFormattedTime = () => {
       weekly_generation_report_flag: targetUser.weekly_generation_report_flag ?? 0,
       monthly_generation_report_flag: targetUser.monthly_generation_report_flag ?? 0,
     };
-  
+
     if (field === "whatsapp_notification_flag") {
       nextFlags.whatsapp_notification_flag = isEnabled ? 1 : 0;
-  
+
       if (!isEnabled) {
         nextFlags.inverter_fault_flag = 1;
         nextFlags.daily_generation_report_flag = 0;
@@ -465,12 +465,12 @@ const getFormattedTime = () => {
     } else {
       nextFlags[field] = isEnabled ? 1 : 0;
     }
-  
+
     // Update groupedClients for instant UI
     setGroupedClients(prev => {
       const updateList = (list) =>
         list.map(item => item.id === userId ? { ...item, ...nextFlags } : item);
-  
+
       return {
         all_plant: updateList(prev.all_plant || []),
         normal_plant: updateList(prev.normal_plant || []),
@@ -478,22 +478,22 @@ const getFormattedTime = () => {
         offline_plant: updateList(prev.offline_plant || []),
       };
     });
-  
+
     // Update users state
     setUsers(prev =>
       prev.map(u => (u.id === userId ? { ...u, ...nextFlags } : u))
     );
-  
+
     try {
       await updateFlagsAPI(userId, nextFlags);
     } catch (err) {
       console.error("Failed to update API", err);
-  
+
       // Rollback UI
       setGroupedClients(prev => {
         const rollback = (list) =>
           list.map(item => item.id === userId ? previousSnapshot : item);
-  
+
         return {
           all_plant: rollback(prev.all_plant),
           normal_plant: rollback(prev.normal_plant),
@@ -501,15 +501,15 @@ const getFormattedTime = () => {
           offline_plant: rollback(prev.offline_plant),
         };
       });
-  
+
       setUsers(prev =>
         prev.map(u => (u.id === userId ? previousSnapshot : u))
       );
     }
   };
-  
-  
-  
+
+
+
 
   const updateFlagsAPI = async (userId, values) => {
     const normalizedValues = {
@@ -821,22 +821,22 @@ const getFormattedTime = () => {
   const normalizedSearchTerm = searchInput.trim().toLowerCase();
   const filteredUsers = normalizedSearchTerm
     ? displayedUsers.filter((user) => {
-        const idValue = String(user.id ?? "").toLowerCase();
-        const usernameValue = (user.username ?? "").toLowerCase();
-        const phoneValue = (user.phone ?? "").toLowerCase();
-        const emailValue = (user.email ?? "").toLowerCase();
-        const companyCodeValue = (user.company_code ?? "").toLowerCase();
-        const collectorValue = (user.collector ?? "").toLowerCase();
+      const idValue = String(user.id ?? "").toLowerCase();
+      const usernameValue = (user.username ?? "").toLowerCase();
+      const phoneValue = (user.phone ?? "").toLowerCase();
+      const emailValue = (user.email ?? "").toLowerCase();
+      const companyCodeValue = (user.company_code ?? "").toLowerCase();
+      const collectorValue = (user.collector ?? "").toLowerCase();
 
-        return [
-          idValue,
-          usernameValue,
-          phoneValue,
-          emailValue,
-          companyCodeValue,
-          collectorValue,
-        ].some((field) => field.includes(normalizedSearchTerm));
-      })
+      return [
+        idValue,
+        usernameValue,
+        phoneValue,
+        emailValue,
+        companyCodeValue,
+        collectorValue,
+      ].some((field) => field.includes(normalizedSearchTerm));
+    })
     : displayedUsers;
 
   const totalTablePages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
@@ -870,10 +870,10 @@ const getFormattedTime = () => {
             >
               {refreshDisabled
                 ? `⟳ Refresh in ${Math.floor(cooldownTime / 60)}:${(
-                    cooldownTime % 60
-                  )
-                    .toString()
-                    .padStart(2, "0")}`
+                  cooldownTime % 60
+                )
+                  .toString()
+                  .padStart(2, "0")}`
                 : "⟳ Refresh"}
             </button>
           </div>
@@ -915,9 +915,8 @@ const getFormattedTime = () => {
               <div className="status-box-container">
                 {/* 1. TOTAL */}
                 <div
-                  className={`status-card standby ${
-                    selectedStatus === "standby" ? "active" : ""
-                  }`}
+                  className={`status-card standby ${selectedStatus === "standby" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("standby")}
                 >
                   <div className="status-left">
@@ -934,9 +933,8 @@ const getFormattedTime = () => {
 
                 {/* 2. NORMAL */}
                 <div
-                  className={`status-card normal ${
-                    selectedStatus === "normal" ? "active" : ""
-                  }`}
+                  className={`status-card normal ${selectedStatus === "normal" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("normal")}
                 >
                   <div className="status-left">
@@ -950,9 +948,8 @@ const getFormattedTime = () => {
 
                 {/* 3. FAULT */}
                 <div
-                  className={`status-card warning ${
-                    selectedStatus === "warning" ? "active" : ""
-                  }`}
+                  className={`status-card warning ${selectedStatus === "warning" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("warning")}
                 >
                   <div className="status-left">
@@ -969,9 +966,8 @@ const getFormattedTime = () => {
 
                 {/* 4. OFFLINE */}
                 <div
-                  className={`status-card fault ${
-                    selectedStatus === "fault" ? "active" : ""
-                  }`}
+                  className={`status-card fault ${selectedStatus === "fault" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("fault")}
                 >
                   <div className="status-left">
@@ -996,6 +992,7 @@ const getFormattedTime = () => {
                         <th className="sticky-col col-id">ID</th>
                         <th className="sticky-col col-username">Username</th>
                         {/*<th>Company Code</th> */}
+                        <th>Password</th>
                         <th>Company code</th>
                         <th>Phone</th>
                         <th>Email</th>
@@ -1020,124 +1017,125 @@ const getFormattedTime = () => {
                     <tbody>
                       {paginatedUsers && paginatedUsers.length > 0
                         ? paginatedUsers.map((u, index) => (
-                            <tr key={u.id ?? index}>
-                              <td className="sticky-col col-no">{rowStartIndex + index + 1}</td>
-                              <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
-                              <td className="sticky-col col-username">{u.username ?? "N/A"}</td>
-                              {/* <td
+                          <tr key={u.id ?? index}>
+                            <td className="sticky-col col-no">{rowStartIndex + index + 1}</td>
+                            <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
+                            <td className="sticky-col col-username">{u.username ?? "N/A"}</td>
+                            {/* <td
                                   onClick={() => openCompanyCodeModal(u)}
                                   className="company-code-cell"
                                 >
                                   {u.company_code ?? "N/A"}
                                 </td>*/}
 
-                              <td
-                                onClick={() => openQbitsCodeModal(u)}
-                                className="company-code-cell"
-                              >
-                                {u.qbits_company_code ?? "N/A"}
-                              </td>
-                              <td>{u.phone ?? "N/A"}</td>
-                              <td>{u.email ?? "N/A"}</td>
-                              <td>{u.plant_name ?? "N/A"}</td>
-                              <td>{u.inverter_type ?? "N/A"}</td>
-                              <td>{u.city_name ?? "N/A"}</td>
-                              <td>{u.collector ?? "N/A"}</td>
-                              <td>{u.longitude ?? "N/A"}</td>
-                              <td>{u.latitude ?? "N/A"}</td>
-                              <td>{u.gmt ?? "N/A"}</td>
-                              <td>{u.plant_type ?? "N/A"}</td>
-                              <td>{u.iserial ?? "N/A"}</td>
-                              <td className="flag-toggle-cell">
-                                <label className="toggle-switch">
-                                  <input
-                                    type="checkbox"
-                                    checked={u.whatsapp_notification_flag == 1}
-                                    onChange={(e) =>
-                                      handleFlagToggle(
-                                        u.id,
-                                        "whatsapp_notification_flag",
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="toggle-slider"></span>
-                                </label>
-                              </td>
-                              <td className="flag-toggle-cell">
-                                <label className="toggle-switch">
-                                  <input
-                                    type="checkbox"
-                                    checked={u.inverter_fault_flag == 1}
-                                    disabled={u.whatsapp_notification_flag != 1}
-                                    onChange={(e) =>
-                                      handleFlagToggle(
-                                        u.id,
-                                        "inverter_fault_flag",
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="toggle-slider"></span>
-                                </label>
-                              </td>
-                              <td className="flag-toggle-cell">
-                                <label className="toggle-switch">
-                                  <input
-                                    type="checkbox"
-                                    checked={u.daily_generation_report_flag == 1}
-                                    disabled={u.whatsapp_notification_flag != 1}
-                                    onChange={(e) =>
-                                      handleFlagToggle(
-                                        u.id,
-                                        "daily_generation_report_flag",
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="toggle-slider"></span>
-                                </label>
-                              </td>
-                              <td className="flag-toggle-cell">
-                                <label className="toggle-switch">
-                                  <input
-                                    type="checkbox"
-                                    checked={u.weekly_generation_report_flag == 1}
-                                    disabled={u.whatsapp_notification_flag != 1}
-                                    onChange={(e) =>
-                                      handleFlagToggle(
-                                        u.id,
-                                        "weekly_generation_report_flag",
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="toggle-slider"></span>
-                                </label>
-                              </td>
-                              <td className="flag-toggle-cell">
-                                <label className="toggle-switch">
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      u.monthly_generation_report_flag == 1
-                                    }
-                                    disabled={u.whatsapp_notification_flag != 1}
-                                    onChange={(e) =>
-                                      handleFlagToggle(
-                                        u.id,
-                                        "monthly_generation_report_flag",
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="toggle-slider"></span>
-                                </label>
-                              </td>
-                              <td>{formatDate(u.created_at)}</td>
-                              <td className="sticky-col sticky-col-right col-updated">{formatDate(u.updated_at)}</td>
-                            </tr>
-                          ))
+                            <td>{u.password ?? "N/A"}</td>
+                            <td
+                              onClick={() => openQbitsCodeModal(u)}
+                              className="company-code-cell"
+                            >
+                              {u.qbits_company_code ?? "N/A"}
+                            </td>
+                            <td>{u.phone ?? "N/A"}</td>
+                            <td>{u.email ?? "N/A"}</td>
+                            <td>{u.plant_name ?? "N/A"}</td>
+                            <td>{u.inverter_type ?? "N/A"}</td>
+                            <td>{u.city_name ?? "N/A"}</td>
+                            <td>{u.collector ?? "N/A"}</td>
+                            <td>{u.longitude ?? "N/A"}</td>
+                            <td>{u.latitude ?? "N/A"}</td>
+                            <td>{u.gmt ?? "N/A"}</td>
+                            <td>{u.plant_type ?? "N/A"}</td>
+                            <td>{u.iserial ?? "N/A"}</td>
+                            <td className="flag-toggle-cell">
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={u.whatsapp_notification_flag == 1}
+                                  onChange={(e) =>
+                                    handleFlagToggle(
+                                      u.id,
+                                      "whatsapp_notification_flag",
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                            </td>
+                            <td className="flag-toggle-cell">
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={u.inverter_fault_flag == 1}
+                                  disabled={u.whatsapp_notification_flag != 1}
+                                  onChange={(e) =>
+                                    handleFlagToggle(
+                                      u.id,
+                                      "inverter_fault_flag",
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                            </td>
+                            <td className="flag-toggle-cell">
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={u.daily_generation_report_flag == 1}
+                                  disabled={u.whatsapp_notification_flag != 1}
+                                  onChange={(e) =>
+                                    handleFlagToggle(
+                                      u.id,
+                                      "daily_generation_report_flag",
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                            </td>
+                            <td className="flag-toggle-cell">
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={u.weekly_generation_report_flag == 1}
+                                  disabled={u.whatsapp_notification_flag != 1}
+                                  onChange={(e) =>
+                                    handleFlagToggle(
+                                      u.id,
+                                      "weekly_generation_report_flag",
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                            </td>
+                            <td className="flag-toggle-cell">
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    u.monthly_generation_report_flag == 1
+                                  }
+                                  disabled={u.whatsapp_notification_flag != 1}
+                                  onChange={(e) =>
+                                    handleFlagToggle(
+                                      u.id,
+                                      "monthly_generation_report_flag",
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                            </td>
+                            <td>{formatDate(u.created_at)}</td>
+                            <td className="sticky-col sticky-col-right col-updated">{formatDate(u.updated_at)}</td>
+                          </tr>
+                        ))
                         : null}
                     </tbody>
                   </table>
@@ -1171,9 +1169,9 @@ const getFormattedTime = () => {
                     {displayedUsers.length === 0
                       ? 0
                       : `${rowStartIndex + 1}–${Math.min(
-                          rowStartIndex + paginatedUsers.length,
-                          displayedUsers.length
-                        )}`}
+                        rowStartIndex + paginatedUsers.length,
+                        displayedUsers.length
+                      )}`}
                   </span>{" "}
                   of <span className="ul-strong">{displayedUsers.length}</span> users •
                   Page <span className="ul-strong">{tablePage}</span> of{" "}
