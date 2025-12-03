@@ -825,10 +825,17 @@ const getFormattedTime = () => {
         const usernameValue = (user.username ?? "").toLowerCase();
         const phoneValue = (user.phone ?? "").toLowerCase();
         const emailValue = (user.email ?? "").toLowerCase();
+        const companyCodeValue = (user.company_code ?? "").toLowerCase();
+        const collectorValue = (user.collector ?? "").toLowerCase();
 
-        return [idValue, usernameValue, phoneValue, emailValue].some((field) =>
-          field.includes(normalizedSearchTerm)
-        );
+        return [
+          idValue,
+          usernameValue,
+          phoneValue,
+          emailValue,
+          companyCodeValue,
+          collectorValue,
+        ].some((field) => field.includes(normalizedSearchTerm));
       })
     : displayedUsers;
 
@@ -887,7 +894,7 @@ const getFormattedTime = () => {
               <input
                 type="text"
                 className="ul-input"
-                placeholder="Search by username..."
+                placeholder="Search by username, company code, collector..."
                 value={searchInput}
                 onChange={handleSearchChange}
               />
