@@ -23,7 +23,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     // Individual fields
@@ -827,15 +827,6 @@ export default function Register() {
                 </button>
               </form>
             )}
-
-            <div className="register-footer">
-              <p>
-                Already have an account?{" "}
-                <Link href="/login" className="login-link">
-                  Login here
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>
