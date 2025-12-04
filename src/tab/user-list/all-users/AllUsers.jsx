@@ -1067,7 +1067,7 @@ export default function AllUsers() {
                     </div>
                   </div>
                   <div className="status-percent">
-                    {inverterTotals.total_all_plant}
+                    {inverterTotals.total_all_plant}  
                   </div>
                 </div>
 
