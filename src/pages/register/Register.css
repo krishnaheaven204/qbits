@@ -8,7 +8,7 @@
 }
 
 .register-container {
-  width: 100%;
+   
   max-width: 700px;
 }
 .geneButton{
@@ -21,7 +21,7 @@
 }
 .register-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .register-logo-link {
@@ -377,4 +377,103 @@
   bottom: 12px;
   cursor: pointer;
   font-size: 16px;
+}
+
+.company-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.form-input {
+  width: 100 percent;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #00a36c;
+  box-shadow: 0 0 0 2px rgba(0,163,108,0.15);
+  outline: none;
+}
+
+.readonly {
+  background: #f4f4f4;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50 percent;
+  transform: translateY(-50 percent);
+  cursor: pointer;
+}
+
+.company-code-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.refresh-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #00a36c;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.refresh-btn:hover {
+  background: #008f5c;
+}
+
+.error-text {
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+.register-button {
+  width: 100 percent;
+  padding: 14px;
+  background: #00a36c;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  margin-top: 6px;
+}
+
+.register-button:hover {
+  background: #008f5c;
 }
