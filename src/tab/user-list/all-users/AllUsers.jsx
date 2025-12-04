@@ -1005,6 +1005,10 @@ export default function AllUsers() {
                         <th>GMT</th>
                         <th>Plant Type</th>
                         <th>Iserial</th>
+                        <th>Keep live power</th>
+                        <th>Capacity(kw)</th>
+                        <th>Day production(kWH)</th>
+                        <th>Total Production(kWH)</th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
                         <th>Daily Gen</th>
@@ -1046,6 +1050,10 @@ export default function AllUsers() {
                             <td>{u.gmt ?? "N/A"}</td>
                             <td>{u.plant_type ?? "N/A"}</td>
                             <td>{u.iserial ?? "N/A"}</td>
+                            <td>{u.capacity ?? "N/A"}</td>
+                            <td>{u.day_power ?? "N/A"}</td>
+                            <td>{u.total_power ?? "N/A"}</td>
+                            <td>{u.power ?? "N/A"}</td>
                             <td className="flag-toggle-cell">
                               <label className="toggle-switch">
                                 <input

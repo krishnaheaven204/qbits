@@ -365,3 +365,16 @@
   border-color: #059669;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
 }
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  cursor: pointer;
+  font-size: 16px;
+}

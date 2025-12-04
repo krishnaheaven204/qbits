@@ -207,6 +207,7 @@
   color: #79808b;
   vertical-align: middle;
   line-height: 1.2;
+  font-weight: 400;
 }
 
 .custom-table th:last-child,
@@ -313,7 +314,6 @@
 
 .company-code-cell {
   color: #2563eb;
-  font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
 }
