@@ -899,6 +899,20 @@ export default function AllUsers() {
     }
   }, [selectedStatus]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedInverter = localStorage.getItem("userListSelectedInverter");
+    if (savedInverter !== null) {
+      setSelectedInverter(savedInverter);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userListSelectedInverter", selectedInverter);
+    }
+  }, [selectedInverter]);
+
   const filterMenu =
     isFilterOpen && typeof document !== "undefined"
       ? createPortal(
