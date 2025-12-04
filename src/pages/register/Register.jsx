@@ -22,6 +22,9 @@ export default function Register() {
   const [registrationType, setRegistrationType] = useState("individual");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  
+
   const [formData, setFormData] = useState({
     // Individual fields
     homeName: "",
@@ -34,6 +37,9 @@ export default function Register() {
     timezone: "",
     stationType: "",
     whatsapp: "",
+    longitude: "",
+    latitude: "",
+
     // Company fields
     account: "",
     companyPassword: "",
@@ -49,7 +55,10 @@ export default function Register() {
   useEffect(() => {
     if (registrationType === "company" && !formData.companyCode) {
       const newCode = generateCompanyCode();
-      setFormData((prev) => ({ ...prev, companyCode: newCode }));
+      setFormData((prev) => ({
+        ...prev,
+        companyCode: newCode,
+      }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrationType]);
@@ -64,57 +73,76 @@ export default function Register() {
   const validateIndividualForm = () => {
     const newErrors = {};
 
-    if (!formData.homeName) newErrors.homeName = "Home name is required";
-    if (!formData.inverterSerial)
-      newErrors.inverterSerial = "Inverter serial number is required";
+    const trimmedHomeName = formData.homeName?.trim();
+    const trimmedInverterSerial = formData.inverterSerial?.trim();
+    const trimmedUserId = formData.userId?.trim();
+    const trimmedPassword = formData.password?.trim();
+    const trimmedConfirmPassword = formData.confirmPassword?.trim();
+    const trimmedCity = formData.city?.trim();
+    const trimmedWifiSerial = formData.wifiSerial?.trim();
+    const trimmedTimezone = formData.timezone?.trim();
+    const trimmedStationType = formData.stationType?.trim();
+    const trimmedWhatsapp = formData.whatsapp?.trim();
 
-    if (!formData.userId) {
+    if (!trimmedHomeName) {
+      newErrors.homeName = "Home name is required";
+    }
+
+    if (!trimmedInverterSerial) {
+      newErrors.inverterSerial = "Inverter serial number is required";
+    }
+
+    if (!trimmedUserId) {
       newErrors.userId = "User ID is required";
     } else if (
-      !/\S+@\S+\.\S+/.test(formData.userId) &&
-      !/^\d{10}$/.test(formData.userId)
+      !/\S+@\S+\.\S+/.test(trimmedUserId) &&
+      !/^\d{10}$/.test(trimmedUserId)
     ) {
       newErrors.userId = "Please enter a valid email or 10-digit mobile number";
     }
 
-    if (!formData.password) {
+    if (!trimmedPassword) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
+    } else if (trimmedPassword.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!trimmedConfirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (trimmedPassword !== trimmedConfirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
-    if (!formData.city) newErrors.city = "City is required";
-    if (!formData.wifiSerial)
-      newErrors.wifiSerial = "WiFi serial number is required";
-    if (!formData.timezone) newErrors.timezone = "Timezone is required";
-    if (!formData.stationType)
-      newErrors.stationType = "Station type is required";
-
-    if (!formData.whatsapp) {
-      newErrors.whatsapp = "WhatsApp number is required";
-    } else if (!/^\d{10}$/.test(formData.whatsapp)) {
-      newErrors.whatsapp = "Please enter a valid 10-digit number";
+    if (!trimmedCity) {
+      newErrors.city = "City is required";
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    if (!trimmedWifiSerial) {
+      newErrors.wifiSerial = "WiFi serial number is required";
+    }
 
-  // Validate only the email or mobile before sending OTP
-  const validateIndividualEmailForOtp = () => {
-    const newErrors = {};
+    if (!trimmedTimezone) {
+      newErrors.timezone = "Timezone is required";
+    } else if (isNaN(Number(trimmedTimezone))) {
+      newErrors.timezone = "Timezone must be a valid number";
+    }
 
-    if (!formData.userId) {
-      newErrors.userId = "User ID is required";
-    } else if (
-      !/\S+@\S+\.\S+/.test(formData.userId) &&
-      !/^\d{10}$/.test(formData.userId)
-    ) {
-      newErrors.userId = "Enter valid email or 10 digit mobile";
+    if (!trimmedStationType) {
+      newErrors.stationType = "Station type is required";
+    } else if (isNaN(Number(trimmedStationType))) {
+      newErrors.stationType = "Station type must be a valid number";
+    }
+
+    if (!trimmedWhatsapp) {
+      newErrors.whatsapp = "WhatsApp number is required";
+    } else {
+      // Allow 10-digit local, or with optional +91/91 prefix
+      const whatsappDigits = trimmedWhatsapp.replace(/\D/g, "");
+      const whatsappPattern = /^(91)?\d{10}$/;
+      if (!whatsappPattern.test(whatsappDigits)) {
+        newErrors.whatsapp =
+          "Please enter a valid WhatsApp number (10 digits, with optional 91 country code)";
+      }
     }
 
     setErrors(newErrors);
@@ -171,285 +199,139 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Normalize WhatsApp number to always be `91` + 10-digit local number (total 12 digits)
+  const normalizeWhatsapp = (rawValue = "") => {
+    if (!rawValue) return "";
 
-    const isValid =
-      registrationType === "individual"
-        ? otpStage
-          ? validateIndividualForm()
-          : validateIndividualEmailForOtp()
-        : otpStage
-        ? validateCompanyForm()
-        : validateCompanyEmailForOtp();
+    // Keep only digits
+    let digits = String(rawValue).replace(/\D/g, "");
 
-    if (!isValid) return;
-
-    if (registrationType === "company") {
-      // FIRST CLICK, SEND OTP
-      if (!otpStage) {
-        const isEmailValid = validateCompanyEmailForOtp();
-        if (!isEmailValid) return;
-
-        const payload = {
-          user_id: formData.account,
-          company_name: formData.account,
-          email: formData.email,
-          password: formData.companyPassword,
-          c_password: formData.companyConfirmPassword,
-          company_code: formData.companyCode,
-          email_code: "",
-        };
-
-        setServerData(payload);
-        setOtpStage(true);
-        setIsLoading(true);
-
-        try {
-          const res = await fetch(`${API_BASE}/company/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          const text = await res.text();
-          let data;
-
-          try {
-            data = JSON.parse(text);
-          } catch {
-            alert("Invalid response from server");
-            setIsLoading(false);
-            return;
-          }
-
-          if (data.requires_otp) {
-            alert("OTP sent to your email");
-          } else if (!res.ok) {
-            alert(data.message || "Error sending OTP");
-            setOtpStage(false);
-            setServerData(null);
-          }
-        } catch (err) {
-          alert(err.message);
-          setOtpStage(false);
-          setServerData(null);
-        }
-
-        setIsLoading(false);
-        return;
-      }
-
-      // SECOND CLICK, VERIFY OTP + FULL FORM
-      if (otpStage) {
-        if (!emailCode.trim()) {
-          setErrors((prev) => ({ ...prev, emailCode: "OTP is required" }));
-          return;
-        }
-
-        // VALIDATE FULL FORM NOW
-        const fullValid = validateCompanyForm();
-        if (!fullValid) return;
-
-        setIsLoading(true);
-
-        try {
-          const finalPayload = {
-            ...serverData,
-            email_code: emailCode,
-          };
-
-          const res2 = await fetch(`${API_BASE}/company/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(finalPayload),
-          });
-
-          const text2 = await res2.text();
-          let data2;
-
-          try {
-            data2 = JSON.parse(text2);
-          } catch {
-            alert("Invalid response from server");
-            setIsLoading(false);
-            return;
-          }
-
-          if (res2.ok) {
-            alert("Registration successful");
-            router.push("/login?registered=true");
-          } else {
-            alert(data2.message || "Invalid OTP");
-          }
-        } catch (err) {
-          alert(err.message);
-        }
-
-        setIsLoading(false);
-        return;
-      }
+    // If it starts with 91 and is longer than 10, keep the last 10 as local part
+    if (digits.startsWith("91") && digits.length >= 12) {
+      digits = digits.slice(-10);
+    } else if (digits.length > 10) {
+      // Fallback: if more than 10 digits without clear prefix, keep last 10
+      digits = digits.slice(-10);
     }
 
-    // INDIVIDUAL USER FLOW
-    if (registrationType === "individual") {
-
-      // STEP 1, SEND OTP
-      if (!otpStage) {
-
-        const emailValid = validateIndividualEmailForOtp();
-        if (!emailValid) return;
-
-        const payload = {
-          user_id: formData.userId,
-          password: formData.password,
-          c_password: formData.confirmPassword,
-
-          whatsapp_no: formData.whatsapp,
-          wifi_serial_number: formData.wifiSerial,
-          home_name: formData.homeName,
-          inverter_serial_number: formData.inverterSerial,
-          city_name: formData.city,
-
-          latitude: "21.1702",   // Temporary valid coordinates
-          longitude: "72.8311",
-
-          time_zone: formData.timezone,
-
-          station_type:
-            formData.stationType === "residential" ? "0" :
-            formData.stationType === "commercial" ? "1" :
-            formData.stationType === "industrial" ? "2" : "0",
-
-          iserial: null,
-          qq: null,
-          email: null,
-          parent: null,
-          company_code: null,
-
-          email_code: ""
-        };
-
-        setServerData(payload);
-        setOtpStage(true);
-        setIsLoading(true);
-
-        try {
-          const res = await fetch(`${API_BASE}/individual`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          const raw = await res.text();
-          let data;
-
-          try {
-            data = JSON.parse(raw);
-          } catch {
-            alert("Invalid server response");
-            setIsLoading(false);
-            return;
-          }
-
-          if (data.requires_otp) {
-            alert("OTP sent to your mobile or email");
-          } else {
-            alert(data.message || "OTP sending failed");
-            setOtpStage(false);
-          }
-
-        } catch (err) {
-          alert(err.message);
-          setOtpStage(false);
-        }
-
-        setIsLoading(false);
-        return;
-      }
-
-      // STEP 2, VERIFY OTP
-      if (!emailCode.trim()) {
-        setErrors(prev => ({ ...prev, emailCode: "OTP is required" }));
-        return;
-      }
-
-      const fullValid = validateIndividualForm();
-      if (!fullValid) return;
-
-      setIsLoading(true);
-
-      try {
-        const finalPayload = {
-          ...serverData,
-          email_code: emailCode
-        };
-
-        const res2 = await fetch(`${API_BASE}/individual`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalPayload),
-        });
-
-        const raw2 = await res2.text();
-        let data2;
-
-        try {
-          data2 = JSON.parse(raw2);
-        } catch {
-          alert("Invalid OTP verification response");
-          setIsLoading(false);
-          return;
-        }
-
-        if (res2.ok) {
-          alert("Registration successful");
-          router.push("/login?registered=true");
-        } else {
-          alert(data2.message || "Invalid OTP");
-        }
-
-      } catch (err) {
-        alert(err.message);
-      }
-
-      setIsLoading(false);
-      return;
+    // At this point we expect exactly 10 local digits
+    if (digits.length !== 10) {
+      return "";
     }
 
-    setIsLoading(true);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const registrationData = {
-        type: "individual",
-        data: {
-          homeName: formData.homeName,
-          userId: formData.userId,
-          city: formData.city,
-          timezone: formData.timezone,
-          stationType: formData.stationType,
-        },
-        otp: emailCode,
-        timestamp: new Date().toISOString(),
-      };
-
-      localStorage.setItem(
-        "registrationData",
-        JSON.stringify(registrationData)
-      );
-      setOtpStage(false);
-      setEmailCode("");
-      setErrors((prev) => ({ ...prev, emailCode: "" }));
-      router.push("/login?registered=true");
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setIsLoading(false);
-    }
+    return `91${digits}`;
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    if (registrationType !== "individual") return;
+  
+    const valid = validateIndividualForm();
+    if (!valid) return;
+  
+    setIsLoading(true);
+  
+    const trimmedUserId = formData.userId?.trim() || "";
+    const trimmedPassword = formData.password?.trim() || "";
+    const trimmedConfirmPassword = formData.confirmPassword?.trim() || "";
+    const trimmedWhatsapp = formData.whatsapp?.trim() || "";
+    const trimmedWifiSerial = formData.wifiSerial?.trim() || "";
+    const trimmedHomeName = formData.homeName?.trim() || "";
+    const trimmedInverterSerial = formData.inverterSerial?.trim() || "";
+    const trimmedCity = formData.city?.trim() || "";
+    const trimmedLongitude = formData.longitude?.trim() || "";
+    const trimmedLatitude = formData.latitude?.trim() || "";
+  
+    const normalizedTimezone = formData.timezone?.trim() || "";
+    const normalizedStationType = formData.stationType?.trim() || "";
+  
+    // FIXED WHATSAPP: must send 12 digits (91 + 10 digits)
+    function normalizeWhatsapp(num) {
+      let n = num.replace(/\D/g, ""); // remove all non digits
+      n = n.replace(/^91/, ""); // remove leading 91 if typed
+      return "91" + n; // always prepend 91
+    }
+  
+    // Build final payload EXACTLY as backend expects
+    const payload = {
+      user_id: trimmedUserId,
+      password: trimmedPassword,
+      c_password: trimmedConfirmPassword,
+  
+      whatsapp_no: normalizeWhatsapp(trimmedWhatsapp),
+      wifi_serial_number: trimmedWifiSerial,
+      home_name: trimmedHomeName,
+      inverter_serial_number: trimmedInverterSerial,
+      city_name: trimmedCity,
+  
+      longitude: trimmedLongitude,
+      latitude: trimmedLatitude,
+  
+      time_zone: String(normalizedTimezone),
+      station_type: String(normalizedStationType),
+  
+      iserial: "",
+      qq: "",
+      email: "",
+      parent: "",
+      company_code: ""
+    };
+  
+    console.log("FINAL PAYLOAD SENT TO API:", payload);
+  
+    try {
+      const res = await fetch(`${API_BASE}/individual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+  
+      const text = await res.text();
+      let data = {};
+  
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.log("SERVER RAW RESPONSE:", text);
+        alert("Invalid server response");
+        setIsLoading(false);
+        return;
+      }
+  
+      console.log("SERVER RESPONSE PARSED:", data);
+  
+      if (res.ok && data.success) {
+        alert("Registration successful");
+        router.push("/login?registered=true");
+        return;
+      }
+  
+      // Laravel validation error handling
+      if (data?.data && typeof data.data === "object") {
+        const apiErrors = {};
+        Object.entries(data.data).forEach(([field, messages]) => {
+          if (Array.isArray(messages) && messages.length) {
+            apiErrors[field] = messages[0];
+          }
+        });
+        setErrors(apiErrors);
+  
+        console.log("VALIDATION ERRORS:", apiErrors);
+        alert("Some fields are invalid, please check");
+      } else {
+        alert(data.message || "Registration failed");
+      }
+  
+    } catch (error) {
+      console.log("NETWORK ERROR:", error.message);
+      alert("Network error: " + error.message);
+    }
+  
+    setIsLoading(false);
+  };
+  
+   
   return (
     <div className="register-page">
       <div className="register-container">
@@ -493,6 +375,7 @@ export default function Register() {
 
             {registrationType === "individual" ? (
               <form className="register-form" onSubmit={handleSubmit}>
+                {/* Home Name */}
                 <div className="form-group">
                   <label className="form-label">Home Name *</label>
                   <input
@@ -504,30 +387,50 @@ export default function Register() {
                     onChange={handleChange}
                     disabled={isLoading}
                   />
-
                   {errors.homeName && (
                     <span className="error-text">{errors.homeName}</span>
                   )}
                 </div>
 
+                {/* Inverter Serial Dropdown */}
                 <div className="form-group">
                   <label className="form-label">Inverter Serial Number *</label>
-                  <input
-                    type="text"
+                  <select
                     name="inverterSerial"
                     className={`form-input ${
                       errors.inverterSerial ? "error" : ""
                     }`}
-                    placeholder="Enter inverter serial number"
                     value={formData.inverterSerial}
                     onChange={handleChange}
                     disabled={isLoading}
-                  />
+                  >
+                    <option value="">Select Inverter Model</option>
+                    <option value="QB-2.7KTLS">QB-2.7KTLS</option>
+                    <option value="QB-3KTLS">QB-3KTLS</option>
+                    <option value="QB-3.3KTLS">QB-3.3KTLS</option>
+                    <option value="QB-3.6KTLS">QB-3.6KTLS</option>
+                    <option value="QB-4KTLS">QB-4KTLS</option>
+                    <option value="QB-4.2KTLD">QB-4.2KTLD</option>
+                    <option value="QB-5KTLD">QB-5KTLD</option>
+                    <option value="QB-5.3KTLD">QB-5.3KTLD</option>
+                    <option value="QB-6KTLC">QB-6KTLC</option>
+                    <option value="QB-6KTLD">QB-6KTLD</option>
+                    <option value="QB-8KTLC">QB-8KTLC</option>
+                    <option value="QB-10KTLC">QB-10KTLC</option>
+                    <option value="QB-12KTLC">QB-12KTLC</option>
+                    <option value="QB-15KTLC">QB-15KTLC</option>
+                    <option value="QB-17KTLC">QB-17KTLC</option>
+                    <option value="QB-20KTLC">QB-20KTLC</option>
+                    <option value="QB-25KTLC">QB-25KTLC</option>
+                    <option value="QB-28KTLC">QB-28KTLC</option>
+                    <option value="QB-30KTLC">QB-30KTLC</option>
+                  </select>
                   {errors.inverterSerial && (
                     <span className="error-text">{errors.inverterSerial}</span>
                   )}
                 </div>
 
+                {/* User ID */}
                 <div className="form-group">
                   <label className="form-label">
                     User ID (Email or Mobile) *
@@ -546,35 +449,60 @@ export default function Register() {
                   )}
                 </div>
 
+                {/* Password + Confirm */}
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Password *</label>
-                    <input
-                      type="password"
-                      name="password"
-                      className={`form-input ${errors.password ? "error" : ""}`}
-                      placeholder="Enter password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                    />
+                    <div className="password-wrapper">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className={`form-input ${
+                          errors.password ? "error" : ""
+                        }`}
+                        placeholder="Enter password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                      />
+
+                      <span
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? "✖" : "👁"}
+                      </span>
+                    </div>
                     {errors.password && (
                       <span className="error-text">{errors.password}</span>
                     )}
                   </div>
+
+                  {/* Confirm Password */}
                   <div className="form-group">
                     <label className="form-label">Confirm Password *</label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      className={`form-input ${
-                        errors.confirmPassword ? "error" : ""
-                      }`}
-                      placeholder="Confirm password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                    />
+                    <div className="password-wrapper">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        className={`form-input ${
+                          errors.confirmPassword ? "error" : ""
+                        }`}
+                        placeholder="Confirm password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                      />
+
+                      <span
+                        className="password-toggle"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? "✖" : "👁"}
+                      </span>
+                    </div>
                     {errors.confirmPassword && (
                       <span className="error-text">
                         {errors.confirmPassword}
@@ -583,6 +511,7 @@ export default function Register() {
                   </div>
                 </div>
 
+                {/* City */}
                 <div className="form-group">
                   <label className="form-label">Your City *</label>
                   <input
@@ -599,6 +528,7 @@ export default function Register() {
                   )}
                 </div>
 
+                {/* WiFi Serial */}
                 <div className="form-group">
                   <label className="form-label">WiFi Serial Number *</label>
                   <input
@@ -615,22 +545,50 @@ export default function Register() {
                   )}
                 </div>
 
+                {/* Timezone Dropdown */}
                 <div className="form-group">
                   <label className="form-label">Timezone *</label>
-                  <input
-                    type="text"
+                  <select
                     name="timezone"
                     className={`form-input ${errors.timezone ? "error" : ""}`}
-                    placeholder="Enter timezone (e.g., Asia/Kolkata)"
                     value={formData.timezone}
                     onChange={handleChange}
                     disabled={isLoading}
-                  />
+                  >
+                    <option value="">Select Timezone</option>
+                    <option value="0">GMT 0</option>
+                    <option value="1">GMT 1</option>
+                    <option value="2">GMT 2</option>
+                    <option value="3">GMT 3</option>
+                    <option value="4">GMT 4</option>
+                    <option value="5">GMT 5</option>
+                    <option value="55">GMT 5.5</option>
+                    <option value="6">GMT 6</option>
+                    <option value="7">GMT 7</option>
+                    <option value="8">GMT 8</option>
+                    <option value="9">GMT 9</option>
+                    <option value="10">GMT 10</option>
+                    <option value="11">GMT 11</option>
+                    <option value="12">GMT 12</option>
+                    <option value="-1">GMT -1</option>
+                    <option value="-2">GMT -2</option>
+                    <option value="-3">GMT -3</option>
+                    <option value="-4">GMT -4</option>
+                    <option value="-5">GMT -5</option>
+                    <option value="-6">GMT -6</option>
+                    <option value="-7">GMT -7</option>
+                    <option value="-8">GMT -8</option>
+                    <option value="-9">GMT -9</option>
+                    <option value="-10">GMT -10</option>
+                    <option value="-11">GMT -11</option>
+                    <option value="-12">GMT -12</option>
+                  </select>
                   {errors.timezone && (
                     <span className="error-text">{errors.timezone}</span>
                   )}
                 </div>
 
+                {/* Solar Station Type */}
                 <div className="form-group">
                   <label className="form-label">Station Type *</label>
                   <select
@@ -642,16 +600,20 @@ export default function Register() {
                     onChange={handleChange}
                     disabled={isLoading}
                   >
-                    <option value="">Select station type</option>
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="industrial">Industrial</option>
+                    <option value="">Select Station Type</option>
+                    <option value="0">Solar System</option>
+                    <option value="1">Battery Storage System</option>
+                    <option value="2">
+                      {" "}
+                      Solar System (with output-limition){" "}
+                    </option>
                   </select>
                   {errors.stationType && (
                     <span className="error-text">{errors.stationType}</span>
                   )}
                 </div>
 
+                {/* WhatsApp */}
                 <div className="form-group">
                   <label className="form-label">WhatsApp Number *</label>
                   <div className="whatsapp-input-group">
@@ -673,25 +635,34 @@ export default function Register() {
                     <span className="error-text">{errors.whatsapp}</span>
                   )}
                 </div>
-                {/* OTP field starts */}
-                {otpStage && (
-                  <div className="form-group">
-                    <label className="form-label">Enter OTP *</label>
-                    <input
-                      type="text"
-                      className={`form-input ${errors.emailCode ? "error" : ""}`}
-                      placeholder="Enter OTP"
-                      value={emailCode}
-                      onChange={(e) => setEmailCode(e.target.value)}
-                      maxLength="6"
-                    />
-                    {errors.emailCode && (
-                      <span className="error-text">{errors.emailCode}</span>
-                    )}
-                  </div>
-                )}
 
-                {/* OTP field ends */}
+                {/* Longitude */}
+                <div className="form-group">
+                  <label className="form-label">Longitude</label>
+                  <input
+                    type="text"
+                    name="longitude"
+                    className="form-input"
+                    placeholder="Enter longitude or leave blank"
+                    value={formData.longitude}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Latitude */}
+                <div className="form-group">
+                  <label className="form-label">Latitude</label>
+                  <input
+                    type="text"
+                    name="latitude"
+                    className="form-input"
+                    placeholder="Enter latitude or leave blank"
+                    value={formData.latitude}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
 
                 <button
                   type="submit"
