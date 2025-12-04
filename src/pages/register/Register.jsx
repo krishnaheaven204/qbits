@@ -336,7 +336,6 @@ export default function Register() {
     <div className="register-page">
       <div className="register-container">
         <div className="register-header">
-          <Link href="/dashboard" className="register-logo-link">
             <Image
               src="/Qbits.svg"
               alt="Qbits Energy"
@@ -345,7 +344,6 @@ export default function Register() {
               className="register-logo"
               priority
             />
-          </Link>
         </div>
 
         <div className="register-card">
