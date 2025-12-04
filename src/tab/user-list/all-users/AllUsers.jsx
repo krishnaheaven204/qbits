@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./AllUsers.css";
 
 const API_BASE_URL =
@@ -20,6 +20,7 @@ const normalizeApiBase = (input) => {
 };
 
 const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
+const GROUPED_CLIENTS_PER_PAGE = 200;
 
 export default function AllUsers() {
   const [users, setUsers] = useState([]);
@@ -27,6 +28,8 @@ export default function AllUsers() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [perPage] = useState(150);
+  const [tablePage, setTablePage] = useState(1);
+  const rowsPerPage = 25;
   const [search, setSearch] = useState("");
   const [sortBy] = useState("username");
   const [sortOrder] = useState("asc");
@@ -46,8 +49,29 @@ export default function AllUsers() {
   const [selectedQbitsUserId, setSelectedQbitsUserId] = useState(null);
   const [qbitsCodeInput, setQbitsCodeInput] = useState("");
   const [qbitsModalLoading, setQbitsModalLoading] = useState(false);
-  // Status filter UI state
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const initialCooldownState = useMemo(() => {
+    if (typeof window === "undefined") {
+      return { disabled: false, time: 0 };
+    }
+
+    const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
+
+    if (savedTimestamp && savedTimestamp > Date.now()) {
+      return {
+        disabled: true,
+        time: Math.ceil((savedTimestamp - Date.now()) / 1000),
+      };
+    }
+
+    return { disabled: false, time: 0 };
+  }, []);
+  // Status filter UI state (default to Total tab "standby"), persisted across reloads
+  const [selectedStatus, setSelectedStatus] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("userListSelectedStatus") || "standby";
+    }
+    return "standby";
+  });
   // ADD THIS HERE
   const [inverterTotals, setInverterTotals] = useState({
     total_all_plant: 0,
@@ -57,11 +81,14 @@ export default function AllUsers() {
   });
 
   // Refresh button states
-  const [refreshDisabled, setRefreshDisabled] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0);
-// Last refreshed time
+  const [refreshDisabled, setRefreshDisabled] = useState(
+    initialCooldownState.disabled
+  );
+  const [cooldownTime, setCooldownTime] = useState(initialCooldownState.time);
+  const COOLDOWN_DURATION_SECONDS = 900;
+  // Last refreshed time
   const [lastRefreshedAt, setLastRefreshedAt] = useState("");
-  
+
   const [groupedClients, setGroupedClients] = useState({
     all_plant: [],
     normal_plant: [],
@@ -217,7 +244,7 @@ export default function AllUsers() {
         return;
       }
 
-      const url = `${API_BASE_ROOT}/client/grouped-clients?search=&per_page=20&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
+      const url = `${API_BASE_ROOT}/client/grouped-clients?search=&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -249,6 +276,18 @@ export default function AllUsers() {
     }
   };
 
+  const startRefreshCooldown = (duration = COOLDOWN_DURATION_SECONDS) => {
+    setRefreshDisabled(true);
+    setCooldownTime(duration);
+    localStorage.setItem("refreshCooldownUntil", Date.now() + duration * 1000);
+  };
+
+  const clearRefreshCooldown = () => {
+    setRefreshDisabled(false);
+    setCooldownTime(0);
+    localStorage.removeItem("refreshCooldownUntil");
+  };
+
   // Call Refresh/Sync API
   const runInverterCommand = async () => {
     try {
@@ -261,6 +300,9 @@ export default function AllUsers() {
         alert("No authentication token found");
         return;
       }
+
+      // Immediately reflect cooldown state in UI
+      startRefreshCooldown();
 
       const response = await fetch(`${API_BASE_ROOT}/run-inverter-command`, {
         method: "GET",
@@ -279,14 +321,10 @@ export default function AllUsers() {
       fetchInverterTotals();
       fetchGroupedClients();
 
-      // Disable the button for 15 minutes (900 seconds)
-      setRefreshDisabled(true);
-      setCooldownTime(900);
-      localStorage.setItem("refreshCooldownUntil", Date.now() + 900000);
-
-      alert("Sync started successfully!");
+      console.info("Sync command triggered successfully.");
     } catch (err) {
-      alert("Refresh failed: " + err.message);
+      clearRefreshCooldown();
+      console.error("Refresh failed", err);
     }
   };
 
@@ -297,37 +335,30 @@ export default function AllUsers() {
     fetchGroupedClients();
 
     // Refresh button countdown timer
-     
+
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
-// Refresh button countdown timer
-useEffect(() => {
-  const savedTimestamp = localStorage.getItem("refreshCooldownUntil");
+  // Refresh button countdown timer
+  useEffect(() => {
+    const syncCooldownState = () => {
+      const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
 
-  if (savedTimestamp) {
-    const remaining = Math.floor((savedTimestamp - Date.now()) / 1000);
-
-    if (remaining > 0) {
-      setRefreshDisabled(true);
-      setCooldownTime(remaining);
-    }
-  }
-
-  const interval = setInterval(() => {
-    setCooldownTime(prev => {
-      if (prev <= 1) {
+      if (savedTimestamp && savedTimestamp > Date.now()) {
+        setRefreshDisabled(true);
+        setCooldownTime(Math.ceil((savedTimestamp - Date.now()) / 1000));
+      } else {
         setRefreshDisabled(false);
+        setCooldownTime(0);
         localStorage.removeItem("refreshCooldownUntil");
-        return 0;
       }
-      return prev - 1;
-    });
-  }, 1000);
+    };
 
-  return () => clearInterval(interval);
-}, []);
+    syncCooldownState();
+    const interval = setInterval(syncCooldownState, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
 
 
@@ -353,15 +384,15 @@ useEffect(() => {
   };
 
   // Format time for "last refreshed at"
-const getFormattedTime = () => {
-  const now = new Date();
-  return now.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-};
+  const getFormattedTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+  };
 
   // Handle search input with debounce
   const handleSearchChange = (e) => {
@@ -370,9 +401,27 @@ const getFormattedTime = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setUsers([]);
-    setPage(1);
-    setSearch(searchInput);
+  };
+
+  useEffect(() => {
+    const normalizedInput = searchInput.trim();
+
+    const handler = setTimeout(() => {
+      if (normalizedInput === search) return;
+      setUsers([]);
+      setPage(1);
+      setSearch(normalizedInput);
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [searchInput, search]);
+
+  const handleTablePrevious = () => {
+    setTablePage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleTableNext = (totalTablePages) => {
+    setTablePage((prev) => Math.min(totalTablePages, prev + 1));
   };
 
   const handlePrevious = () => {
@@ -391,11 +440,11 @@ const getFormattedTime = () => {
     const targetUser =
       displayedUsers.find((u) => u.id === userId) ||
       users.find((u) => u.id === userId);
-  
+
     if (!targetUser) return;
-  
+
     const previousSnapshot = { ...targetUser };
-  
+
     const nextFlags = {
       whatsapp_notification_flag: targetUser.whatsapp_notification_flag ?? 0,
       inverter_fault_flag: targetUser.inverter_fault_flag ?? 0,
@@ -403,10 +452,10 @@ const getFormattedTime = () => {
       weekly_generation_report_flag: targetUser.weekly_generation_report_flag ?? 0,
       monthly_generation_report_flag: targetUser.monthly_generation_report_flag ?? 0,
     };
-  
+
     if (field === "whatsapp_notification_flag") {
       nextFlags.whatsapp_notification_flag = isEnabled ? 1 : 0;
-  
+
       if (!isEnabled) {
         nextFlags.inverter_fault_flag = 1;
         nextFlags.daily_generation_report_flag = 0;
@@ -416,12 +465,12 @@ const getFormattedTime = () => {
     } else {
       nextFlags[field] = isEnabled ? 1 : 0;
     }
-  
+
     // Update groupedClients for instant UI
     setGroupedClients(prev => {
       const updateList = (list) =>
         list.map(item => item.id === userId ? { ...item, ...nextFlags } : item);
-  
+
       return {
         all_plant: updateList(prev.all_plant || []),
         normal_plant: updateList(prev.normal_plant || []),
@@ -429,22 +478,22 @@ const getFormattedTime = () => {
         offline_plant: updateList(prev.offline_plant || []),
       };
     });
-  
+
     // Update users state
     setUsers(prev =>
       prev.map(u => (u.id === userId ? { ...u, ...nextFlags } : u))
     );
-  
+
     try {
       await updateFlagsAPI(userId, nextFlags);
     } catch (err) {
       console.error("Failed to update API", err);
-  
+
       // Rollback UI
       setGroupedClients(prev => {
         const rollback = (list) =>
           list.map(item => item.id === userId ? previousSnapshot : item);
-  
+
         return {
           all_plant: rollback(prev.all_plant),
           normal_plant: rollback(prev.normal_plant),
@@ -452,15 +501,15 @@ const getFormattedTime = () => {
           offline_plant: rollback(prev.offline_plant),
         };
       });
-  
+
       setUsers(prev =>
         prev.map(u => (u.id === userId ? previousSnapshot : u))
       );
     }
   };
-  
-  
-  
+
+
+
 
   const updateFlagsAPI = async (userId, values) => {
     const normalizedValues = {
@@ -769,6 +818,44 @@ const getFormattedTime = () => {
     displayedUsers = groupedClients.all_plant;
   }
 
+  const normalizedSearchTerm = searchInput.trim().toLowerCase();
+  const filteredUsers = normalizedSearchTerm
+    ? displayedUsers.filter((user) => {
+      const idValue = String(user.id ?? "").toLowerCase();
+      const usernameValue = (user.username ?? "").toLowerCase();
+      const phoneValue = (user.phone ?? "").toLowerCase();
+      const emailValue = (user.email ?? "").toLowerCase();
+      const companyCodeValue = (user.company_code ?? "").toLowerCase();
+      const collectorValue = (user.collector ?? "").toLowerCase();
+
+      return [
+        idValue,
+        usernameValue,
+        phoneValue,
+        emailValue,
+        companyCodeValue,
+        collectorValue,
+      ].some((field) => field.includes(normalizedSearchTerm));
+    })
+    : displayedUsers;
+
+  const totalTablePages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
+  const rowStartIndex = (tablePage - 1) * rowsPerPage;
+  const paginatedUsers = filteredUsers.slice(
+    rowStartIndex,
+    rowStartIndex + rowsPerPage
+  );
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [selectedStatus, search, searchInput, groupedClients]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedStatus) {
+      localStorage.setItem("userListSelectedStatus", selectedStatus);
+    }
+  }, [selectedStatus]);
+
   return (
     <div className="user-list-page-alluser">
       <div className="ul-card-allusers">
@@ -783,10 +870,10 @@ const getFormattedTime = () => {
             >
               {refreshDisabled
                 ? `⟳ Refresh in ${Math.floor(cooldownTime / 60)}:${(
-                    cooldownTime % 60
-                  )
-                    .toString()
-                    .padStart(2, "0")}`
+                  cooldownTime % 60
+                )
+                  .toString()
+                  .padStart(2, "0")}`
                 : "⟳ Refresh"}
             </button>
           </div>
@@ -807,14 +894,11 @@ const getFormattedTime = () => {
               <input
                 type="text"
                 className="ul-input"
-                placeholder="Search by username..."
+                placeholder="Search by username, company code, collector..."
                 value={searchInput}
                 onChange={handleSearchChange}
               />
             </div>
-            <button type="submit" className="ul-btn ul-btn-primary">
-              Search
-            </button>
           </form>
         </div>
         <div className="ul-body">
@@ -826,18 +910,13 @@ const getFormattedTime = () => {
             <div className="ul-error" role="alert">
               {error}
             </div>
-          ) : users.length === 0 ? (
-            <div className="ul-empty">
-              <p className="ul-muted">No users found.</p>
-            </div>
           ) : (
             <>
               <div className="status-box-container">
                 {/* 1. TOTAL */}
                 <div
-                  className={`status-card standby ${
-                    selectedStatus === "standby" ? "active" : ""
-                  }`}
+                  className={`status-card standby ${selectedStatus === "standby" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("standby")}
                 >
                   <div className="status-left">
@@ -854,9 +933,8 @@ const getFormattedTime = () => {
 
                 {/* 2. NORMAL */}
                 <div
-                  className={`status-card normal ${
-                    selectedStatus === "normal" ? "active" : ""
-                  }`}
+                  className={`status-card normal ${selectedStatus === "normal" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("normal")}
                 >
                   <div className="status-left">
@@ -870,9 +948,8 @@ const getFormattedTime = () => {
 
                 {/* 3. FAULT */}
                 <div
-                  className={`status-card warning ${
-                    selectedStatus === "warning" ? "active" : ""
-                  }`}
+                  className={`status-card warning ${selectedStatus === "warning" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("warning")}
                 >
                   <div className="status-left">
@@ -889,9 +966,8 @@ const getFormattedTime = () => {
 
                 {/* 4. OFFLINE */}
                 <div
-                  className={`status-card fault ${
-                    selectedStatus === "fault" ? "active" : ""
-                  }`}
+                  className={`status-card fault ${selectedStatus === "fault" ? "active" : ""
+                    }`}
                   onClick={() => setSelectedStatus("fault")}
                 >
                   <div className="status-left">
@@ -912,11 +988,12 @@ const getFormattedTime = () => {
                   <table className="custom-table">
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>ID</th>
+                        <th className="sticky-col col-no">No.</th>
+                        <th className="sticky-col col-id">ID</th>
+                        <th className="sticky-col col-username">Username</th>
                         {/*<th>Company Code</th> */}
+                        <th>Password</th>
                         <th>Company code</th>
-                        <th>Username</th>
                         <th>Phone</th>
                         <th>Email</th>
                         <th>Plant Name</th>
@@ -928,35 +1005,40 @@ const getFormattedTime = () => {
                         <th>GMT</th>
                         <th>Plant Type</th>
                         <th>Iserial</th>
+                        <th>Keep live power</th>
+                        <th>Capacity(kw)</th>
+                        <th>Day production(kWH)</th>
+                        <th>Total Production(kWH)</th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
                         <th>Daily Gen</th>
                         <th>Weekly Gen</th>
                         <th>Monthly Gen</th>
                         <th>Created At</th>
-                        <th>Updated At</th>
+                        <th className="sticky-col sticky-col-right col-updated">Updated At</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {displayedUsers && displayedUsers.length > 0 ? (
-                        displayedUsers.map((u, index) => (
+                      {paginatedUsers && paginatedUsers.length > 0
+                        ? paginatedUsers.map((u, index) => (
                           <tr key={u.id ?? index}>
-                            <td>{index + 1}</td>
-                            <td>{u.id ?? "N/A"}</td>
+                            <td className="sticky-col col-no">{rowStartIndex + index + 1}</td>
+                            <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
+                            <td className="sticky-col col-username">{u.username ?? "N/A"}</td>
                             {/* <td
-                                onClick={() => openCompanyCodeModal(u)}
-                                className="company-code-cell"
-                              >
-                                {u.company_code ?? "N/A"}
-                              </td>*/}
+                                  onClick={() => openCompanyCodeModal(u)}
+                                  className="company-code-cell"
+                                >
+                                  {u.company_code ?? "N/A"}
+                                </td>*/}
 
+                            <td>{u.password ?? "N/A"}</td>
                             <td
                               onClick={() => openQbitsCodeModal(u)}
                               className="company-code-cell"
                             >
                               {u.qbits_company_code ?? "N/A"}
                             </td>
-                            <td>{u.username ?? "N/A"}</td>
                             <td>{u.phone ?? "N/A"}</td>
                             <td>{u.email ?? "N/A"}</td>
                             <td>{u.plant_name ?? "N/A"}</td>
@@ -968,6 +1050,10 @@ const getFormattedTime = () => {
                             <td>{u.gmt ?? "N/A"}</td>
                             <td>{u.plant_type ?? "N/A"}</td>
                             <td>{u.iserial ?? "N/A"}</td>
+                            <td>{u.capacity ?? "N/A"}</td>
+                            <td>{u.day_power ?? "N/A"}</td>
+                            <td>{u.total_power ?? "N/A"}</td>
+                            <td>{u.power ?? "N/A"}</td>
                             <td className="flag-toggle-cell">
                               <label className="toggle-switch">
                                 <input
@@ -1055,19 +1141,10 @@ const getFormattedTime = () => {
                               </label>
                             </td>
                             <td>{formatDate(u.created_at)}</td>
-                            <td>{formatDate(u.updated_at)}</td>
+                            <td className="sticky-col sticky-col-right col-updated">{formatDate(u.updated_at)}</td>
                           </tr>
                         ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={21}
-                            style={{ textAlign: "center", padding: "16px" }}
-                          >
-                            No users found
-                          </td>
-                        </tr>
-                      )}
+                        : null}
                     </tbody>
                   </table>
                 </div>
@@ -1086,11 +1163,36 @@ const getFormattedTime = () => {
               )}
 
               <div className="ul-pagination">
+                <button
+                  type="button"
+                  className="ul-btn"
+                  onClick={handleTablePrevious}
+                  disabled={tablePage === 1}
+                >
+                  Previous
+                </button>
                 <div className="ul-pagination-info">
-                  Showing <span className="ul-strong">{users.length}</span>{" "}
-                  users • Page <span className="ul-strong">{page}</span> of{" "}
-                  <span className="ul-strong">{totalPages}</span>
+                  Showing
+                  <span className="ul-strong">
+                    {displayedUsers.length === 0
+                      ? 0
+                      : `${rowStartIndex + 1}–${Math.min(
+                        rowStartIndex + paginatedUsers.length,
+                        displayedUsers.length
+                      )}`}
+                  </span>{" "}
+                  of <span className="ul-strong">{displayedUsers.length}</span> users •
+                  Page <span className="ul-strong">{tablePage}</span> of{" "}
+                  <span className="ul-strong">{totalTablePages}</span>
                 </div>
+                <button
+                  type="button"
+                  className="ul-btn"
+                  onClick={() => handleTableNext(totalTablePages)}
+                  disabled={tablePage === totalTablePages}
+                >
+                  Next
+                </button>
               </div>
             </>
           )}
@@ -1106,13 +1208,13 @@ const getFormattedTime = () => {
           }}
         >
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Update Qbits Company Code</h3>
+            <h3>Update Company Code</h3>
             <input
               type="text"
               className="modal-input"
               value={qbitsCodeInput}
               onChange={(e) => setQbitsCodeInput(e.target.value)}
-              placeholder="Enter Qbits company code"
+              placeholder="Enter company code"
               disabled={qbitsModalLoading}
             />
 

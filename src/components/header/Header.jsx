@@ -51,11 +51,6 @@ export default function Header() {
                 <Bars3Icon className="h-5 w-5" />
               </a>
             </li>
-            <li className="pc-h-item pc-sidebar-popup">
-              <a href="#" className="pc-head-link ms-0" id="mobile-collapse">   
-                <Bars3Icon className="h-5 w-5" />
-              </a>
-            </li>
           </ul>
         </div>
 
@@ -165,7 +160,7 @@ export default function Header() {
                   role="button"
                   onClick={(e) => { e.preventDefault(); setShowProfile(!showProfile); }}
                 >
-                  <div className="user-avtar" style={{width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '600'}}>
+                  <div className="user-avtar">
                     AU
                   </div>
                   <span className="ms-2">
