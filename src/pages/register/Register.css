@@ -382,6 +382,7 @@
 .company-form {
   display: flex;
   flex-direction: column;
+  padding: 2rem;
   gap: 7px;
 }
 

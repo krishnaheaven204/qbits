@@ -28,6 +28,7 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [manualLocation, setManualLocation] = useState(false);
 
   // Combined form data for both registrations
   const [formData, setFormData] = useState({
@@ -65,6 +66,29 @@ export default function Register() {
       }));
     }
   }, [registrationType]);
+
+  // Auto detect user geolocation for Individual Registration
+  useEffect(() => {
+    if (registrationType !== "individual" || manualLocation) return;
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toString();
+          const lng = position.coords.longitude.toString();
+
+          setFormData((prev) => ({
+            ...prev,
+            latitude: lat,
+            longitude: lng,
+          }));
+        },
+        (error) => {
+          console.warn("Geolocation error", error);
+        }
+      );
+    }
+  }, [registrationType, manualLocation]);
 
   // Handle input change
   const handleChange = (e) => {
@@ -435,7 +459,11 @@ export default function Register() {
 
           {/* INDIVIDUAL FORM */}
           {registrationType === "individual" && (
-            <form className="individual-form" onSubmit={handleIndividualSubmit}>
+            <form
+              className="individual-form"
+              style={{ padding: "2rem" }}
+              onSubmit={handleIndividualSubmit}
+            >
               <div className="form-group">
                 <label className="form-label">Home Name *</label>
                 <input
@@ -551,6 +579,8 @@ export default function Register() {
                 />
               </div>
 
+              
+
               <div className="form-group">
                 <label className="form-label">Timezone *</label>
                 <select
@@ -591,6 +621,7 @@ export default function Register() {
 
               <div className="form-group">
                 <label className="form-label">Station Type *</label>
+
                 <select
                   name="stationType"
                   className="form-input"
@@ -602,6 +633,44 @@ export default function Register() {
                   <option value="1">Battery Storage</option>
                   <option value="2">Solar with Limitation</option>
                 </select>
+                <div className="form-group">
+                <label className="form-label">Location Mode</label>
+                <button
+                  type="button"
+                  className="form-input"
+                  style={{ background: "#e6e6e6", cursor: "pointer" }}
+                  onClick={() => setManualLocation(!manualLocation)}
+                >
+                  {manualLocation
+                    ? "Switch to Auto Location"
+                    : "Enter Manually"}
+                </button>
+              </div>
+                <div className="form-group">
+                  <label className="form-label">Latitude</label>
+                  <input
+                    type="text"
+                    name="latitude"
+                    className="form-input"
+                    placeholder="Latitude"
+                    value={formData.latitude}
+                    onChange={manualLocation ? handleChange : undefined}
+                    readOnly={!manualLocation}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Longitude</label>
+                  <input
+                    type="text"
+                    name="longitude"
+                    className="form-input"
+                    placeholder="Longitude"
+                    value={formData.longitude}
+                    onChange={manualLocation ? handleChange : undefined}
+                    readOnly={!manualLocation}
+                  />
+                </div>
               </div>
 
               <button className="register-button">Register</button>
