@@ -34,6 +34,7 @@ export default function AllUsers() {
   const [search, setSearch] = useState("");
   const [sortBy] = useState("username");
   const [sortOrder] = useState("asc");
+  const [sortField, setSortField] = useState("id_asc");
    
   const [searchInput, setSearchInput] = useState("");
 
@@ -797,25 +798,47 @@ export default function AllUsers() {
   }
 
   const normalizedSearchTerm = searchInput.trim().toLowerCase();
-  const filteredUsers = normalizedSearchTerm
-    ? displayedUsers.filter((user) => {
-        const idValue = String(user.id ?? "").toLowerCase();
-        const usernameValue = (user.username ?? "").toLowerCase();
-        const phoneValue = (user.phone ?? "").toLowerCase();
-        const emailValue = (user.email ?? "").toLowerCase();
-        const companyCodeValue = (user.company_code ?? "").toLowerCase();
-        const collectorValue = (user.collector ?? "").toLowerCase();
+  const sortData = (data) => {
+    const sorted = [...data];
+    switch (sortField) {
+      case "id_asc":
+        sorted.sort((a, b) => Number(a.id) - Number(b.id));
+        break;
+      case "username_asc":
+        sorted.sort((a, b) =>
+          (a.username || "").localeCompare(b.username || "")
+        );
+        break;
+      case "day_power_desc":
+        sorted.sort((a, b) => Number(b.day_power) - Number(a.day_power));
+        break;
+      case "total_power_desc":
+        sorted.sort((a, b) => Number(b.total_power) - Number(a.total_power));
+        break;
+    }
+    return sorted;
+  };
 
-        return [
-          idValue,
-          usernameValue,
-          phoneValue,
-          emailValue,
-          companyCodeValue,
-          collectorValue,
-        ].some((field) => field.includes(normalizedSearchTerm));
-      })
-    : displayedUsers;
+  const filteredUsers = normalizedSearchTerm
+    ? sortData(
+        displayedUsers.filter((user) => {
+          const idValue = String(user.id ?? "").toLowerCase();
+          const usernameValue = (user.username ?? "").toLowerCase();
+          const phoneValue = (user.phone ?? "").toLowerCase();
+          const emailValue = (user.email ?? "").toLowerCase();
+          const companyCodeValue = (user.company_code ?? "").toLowerCase();
+          const collectorValue = (user.collector ?? "").toLowerCase();
+          return [
+            idValue,
+            usernameValue,
+            phoneValue,
+            emailValue,
+            companyCodeValue,
+            collectorValue,
+          ].some((field) => field.includes(normalizedSearchTerm));
+        })
+      )
+    : sortData(displayedUsers);
 
   const totalTablePages = Math.max(
     1,
@@ -1021,8 +1044,18 @@ export default function AllUsers() {
                     <thead>
                       <tr>
                         <th className="sticky-col col-no">No.</th>
-                        <th className="sticky-col col-id">ID</th>
-                        <th className="sticky-col col-username">Username</th>
+                        <th
+                          className="sticky-col col-id sortable"
+                          onClick={() => setSortField("id_asc")}
+                        >
+                          ID ↑
+                        </th>
+                        <th
+                          className="sticky-col col-username sortable"
+                          onClick={() => setSortField("username_asc")}
+                        >
+                          Username A→Z
+                        </th>
                         {/*<th>Company Code</th> */}
                         <th>Password</th>
                         <th>Company code</th>
@@ -1077,8 +1110,18 @@ export default function AllUsers() {
                         <th>Iserial</th>
                         <th>Keep live power</th>
                         <th>Capacity(kw)</th>
-                        <th>Day production(kWH)</th>
-                        <th>Total Production(kWH)</th>
+                        <th
+                          className="sortable"
+                          onClick={() => setSortField("day_power_desc")}
+                        >
+                          Day production(kWH) ↓
+                        </th>
+                        <th
+                          className="sortable"
+                          onClick={() => setSortField("total_power_desc")}
+                        >
+                          Total Production(kWH) ↓
+                        </th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
                         <th>Daily Gen</th>

@@ -27,11 +27,15 @@ export default function AllUsers() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [perPage] = useState(150);
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
   const [sortBy] = useState("username");
   const [sortOrder] = useState("asc");
   const [totalPages, setTotalPages] = useState(1);
   const [searchInput, setSearchInput] = useState("");
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("id_asc");
+  const [tablePage, setTablePage] = useState(1);
+  const rowsPerPage = 25;
 
   // Fetch users from API
   const fetchUsers = async () => {
@@ -152,21 +156,6 @@ export default function AllUsers() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setUsers([]);
-    setPage(1);
-    setSearch(searchInput);
-  };
-
-  const handlePrevious = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-    }
   };
 
   const handleFlagToggle = async (userId, field, isEnabled) => {
@@ -266,6 +255,85 @@ const updateFlagsAPI = async (userId, values) => {
   return response.json().catch(() => null);
 };
 
+  useEffect(() => {
+    const normalizedInput = searchInput.trim();
+    const handler = setTimeout(() => {
+      if (normalizedInput === clientSearchTerm) return;
+      setClientSearchTerm(normalizedInput);
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [searchInput, clientSearchTerm]);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [clientSearchTerm, users]);
+
+  const normalizedSearchTerm = clientSearchTerm.trim().toLowerCase();
+
+  const sortData = (data) => {
+    const sorted = [...data];
+    switch (sortField) {
+      case "id_asc":
+        sorted.sort((a, b) => Number(a.id) - Number(b.id));
+        break;
+      case "username_asc":
+        sorted.sort((a, b) =>
+          (a.username || "").localeCompare(b.username || "")
+        );
+        break;
+      case "created_desc": {
+        const toTime = (value) => new Date(value ?? "").getTime() || 0;
+        sorted.sort((a, b) => toTime(b.created_at) - toTime(a.created_at));
+        break;
+      }
+      case "updated_desc": {
+        const toTime = (value) => new Date(value ?? "").getTime() || 0;
+        sorted.sort((a, b) => toTime(b.updated_at) - toTime(a.updated_at));
+        break;
+      }
+      default:
+        break;
+    }
+    return sorted;
+  };
+
+  const filteredUsers = normalizedSearchTerm
+    ? users.filter((user) => {
+        const usernameValue = (user.username ?? "").toLowerCase();
+        const phoneValue = (user.phone ?? "").toLowerCase();
+        const emailValue = (user.email ?? "").toLowerCase();
+        const companyCodeValue = (user.company_code ?? "").toLowerCase();
+
+        return [
+          usernameValue,
+          phoneValue,
+          emailValue,
+          companyCodeValue,
+        ].some((field) => field.includes(normalizedSearchTerm));
+      })
+    : users;
+
+  const sortedUsers = sortData(filteredUsers);
+  const totalTablePages = Math.max(1, Math.ceil(sortedUsers.length / rowsPerPage));
+  const rowStartIndex = (tablePage - 1) * rowsPerPage;
+  const paginatedUsers = sortedUsers.slice(
+    rowStartIndex,
+    rowStartIndex + rowsPerPage
+  );
+
+  useEffect(() => {
+    setTablePage((prev) => Math.min(prev, totalTablePages));
+  }, [totalTablePages]);
+
+  const handleTablePrevious = () => {
+    setTablePage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleTableNext = () => {
+    setTablePage((prev) => Math.min(totalTablePages, prev + 1));
+  };
+
   return (
     <div className="user-list-page-company">
       <div className="ul-container">
@@ -291,14 +359,11 @@ const updateFlagsAPI = async (userId, values) => {
                 <input
                   type="text"
                   className="ul-input"
-                  placeholder="Search by username..."
+                  placeholder="Search by username, company code, phone, email..."
                   value={searchInput}
                   onChange={handleSearchChange}
                 />
               </div>
-              <button type="submit" className="ul-btn ul-btn-primary">
-                Search
-              </button>
             </form>
           </div>
           <div className="ul-body">
@@ -316,41 +381,67 @@ const updateFlagsAPI = async (userId, values) => {
               </div>
             ) : (
               <>
-                <div className="table-scroll-container-admins">
-                  <div className="table-inner-force">
+                <div className="table-scroll-container">
+                  <div className="table-inner-force-allusers">
                     <table className="custom-table">
                       <thead>
                         <tr>
-                          <th>#</th>
-                          <th>ID</th>
-                          <th>Company Code</th>
-                          <th>Username</th>
+                          <th className="sticky-col col-no">No.</th>
+                          <th
+                            className="sticky-col col-id sortable"
+                            onClick={() => setSortField("id_asc")}
+                          >
+                            ID ↑
+                          </th>
+                          <th>Code</th>
+                          <th
+                            className="sticky-col col-username sortable"
+                            onClick={() => setSortField("username_asc")}
+                          >
+                            Username A→Z
+                          </th>
                           <th>Phone</th>
                           <th>Email</th>
                           <th>Password</th>
-                          <th>Created At</th>
-                          <th>Updated At</th>
+                          <th
+                            className="sortable"
+                            onClick={() => setSortField("created_desc")}
+                          >
+                            Created At ↓
+                          </th>
+                          <th
+                            className="sortable sticky-col sticky-col-right col-updated"
+                            onClick={() => setSortField("updated_desc")}
+                          >
+                            Updated At ↓
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {users && users.length > 0 ? (
-                          users.map((u, index) => (
+                        {paginatedUsers && paginatedUsers.length > 0 ? (
+                          paginatedUsers.map((u, index) => (
                             <tr key={u.id ?? index}>
-                              <td>{index + 1}</td>
-                              <td>{u.id ?? "N/A"}</td>
-                              <td>{u.company_code?? "N/A"}</td>
-                              <td>{u.username ?? "N/A"}</td>
+                              <td className="sticky-col col-no">
+                                {rowStartIndex + index + 1}
+                              </td>
+                              <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
+                              <td>{u.company_code ?? "N/A"}</td>
+                              <td className="sticky-col col-username">
+                                {u.username ?? "N/A"}
+                              </td>
                               <td>{u.phone ?? "N/A"}</td>
                               <td>{u.email ?? "N/A"}</td>
                               <td>{u.password ?? "N/A"}</td>
                               <td>{formatDate(u.created_at)}</td>
-                              <td>{formatDate(u.updated_at)}</td>
+                              <td className="sticky-col sticky-col-right col-updated">
+                                {formatDate(u.updated_at)}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={21} style={{ textAlign: "center", padding: "16px" }}>
-                              No users found
+                            <td colSpan={8} style={{ textAlign: "center", padding: "16px" }}>
+                              No matching users found
                             </td>
                           </tr>
                         )}
@@ -372,11 +463,36 @@ const updateFlagsAPI = async (userId, values) => {
                 )}
 
                 <div className="ul-pagination">
+                  <button
+                    type="button"
+                    className="ul-btn"
+                    onClick={handleTablePrevious}
+                    disabled={tablePage === 1}
+                  >
+                    Previous
+                  </button>
                   <div className="ul-pagination-info">
-                    Showing <span className="ul-strong">{users.length}</span>{" "}
-                    users • Page <span className="ul-strong">{page}</span> of{" "}
-                    <span className="ul-strong">{totalPages}</span>
+                    Showing
+                    <span className="ul-strong">
+                      {sortedUsers.length === 0
+                        ? 0
+                        : `${rowStartIndex + 1}–${Math.min(
+                            rowStartIndex + paginatedUsers.length,
+                            sortedUsers.length
+                          )}`}
+                    </span>{" "}
+                    of <span className="ul-strong">{sortedUsers.length}</span>{" "}
+                    users • Page <span className="ul-strong">{tablePage}</span> of{" "}
+                    <span className="ul-strong">{totalTablePages}</span>
                   </div>
+                  <button
+                    type="button"
+                    className="ul-btn"
+                    onClick={handleTableNext}
+                    disabled={tablePage === totalTablePages}
+                  >
+                    Next
+                  </button>
                 </div>
               </>
             )}
