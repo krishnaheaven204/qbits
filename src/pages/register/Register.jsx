@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -49,6 +49,11 @@ export default function Register() {
     whatsapp: "",
     longitude: "",
     latitude: "",
+    iserial: "", // add this
+    qq: "", // add this
+    email: "", // add this
+    parent: "", // add this
+    company_code: "", // add this
   });
 
   // Auto-generate company code when switching to company mode
@@ -197,23 +202,31 @@ export default function Register() {
     const err = {};
 
     if (!formData.homeName.trim()) err.homeName = "Home name required";
+
     if (!formData.inverterSerial.trim())
-      err.inverterSerial = "Inverter serial required";
+      err.inverterSerial = "Select inverter model";
+
     if (!formData.userId.trim()) err.userId = "User ID required";
+
     if (!formData.password.trim()) err.password = "Password required";
-    if (formData.password.trim().length < 6)
-      err.password = "Minimum 6 characters";
+    else if (formData.password.trim().length < 8)
+      err.password = "Minimum 8 characters";
+    else if (!/[A-Za-z]/.test(formData.password.trim()))
+      err.password = "Must include letters";
+
     if (formData.password.trim() !== formData.confirmPassword.trim())
       err.confirmPassword = "Passwords do not match";
 
-    if (!/^\d{10}$/.test(formData.whatsapp))
-      err.whatsapp = "10-digit WhatsApp required";
+    if (!/^\d{10}$/.test(formData.whatsapp.trim()))
+      err.whatsapp = "Enter 10 digit WhatsApp";
 
-    if (!formData.wifiSerial.trim())
-      err.wifiSerial = "WiFi Serial required";
+    if (!formData.wifiSerial.trim()) err.wifiSerial = "WiFi Serial required";
 
-    if (!formData.timezone.trim()) err.timezone = "Timezone required";
-    if (!formData.stationType.trim()) err.stationType = "Station type required";
+    if (!formData.city.trim()) err.city = "City required";
+
+    if (!formData.timezone.trim()) err.timezone = "Select timezone";
+
+    if (!formData.stationType.trim()) err.stationType = "Select station type";
 
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -225,18 +238,19 @@ export default function Register() {
     if (!validateIndividual()) return;
 
     const payload = {
-      user_id: formData.userId.trim(),
+      user_id: formData.userId.trim().toLowerCase(), // backend expects lowercase
       password: formData.password.trim(),
       c_password: formData.confirmPassword.trim(),
-      whatsapp_no: "91" + formData.whatsapp.trim(),
+      whatsapp_no: "91" + formData.whatsapp.trim(), // format required by backend
       wifi_serial_number: formData.wifiSerial.trim(),
       home_name: formData.homeName.trim(),
       inverter_serial_number: formData.inverterSerial.trim(),
-      city_name: formData.city.trim(),
-      longitude: formData.longitude || "",
-      latitude: formData.latitude || "",
-      time_zone: formData.timezone.trim(),
-      station_type: formData.stationType.trim(),
+      city_name: formData.city.trim().toLowerCase(),
+      longitude: formData.longitude?.trim() || "0",
+      latitude: formData.latitude?.trim() || "0",
+
+      time_zone: String(formData.timezone).trim(),
+      station_type: String(formData.stationType).trim(),
       iserial: "",
       qq: "",
       email: "",
@@ -244,6 +258,9 @@ export default function Register() {
       company_code: "",
     };
 
+    console.log("INDIVIDUAL PAYLOAD --->", payload);
+
+    setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/individual`, {
         method: "POST",
@@ -252,18 +269,29 @@ export default function Register() {
       });
 
       const text = await res.text();
-      const data = JSON.parse(text);
+      let data = {};
+
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        alert("Invalid server response");
+        setIsLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         alert(data.message || "Registration failed");
+        setIsLoading(false);
         return;
       }
 
       alert("Individual registration successful");
-      router.push("/login");
+      router.push("/login?registered=true");
     } catch (err) {
-      alert("Network error " + err.message);
+      alert("Network error: " + err.message);
     }
+
+    setIsLoading(false);
   };
 
   /* ----------------------------------------------------
@@ -283,7 +311,6 @@ export default function Register() {
         </div>
 
         <div className="register-card">
-
           {/* TOP TABS */}
           <div className="register-tabs">
             <button
@@ -423,14 +450,33 @@ export default function Register() {
 
               <div className="form-group">
                 <label className="form-label">Inverter Serial *</label>
-                <input
-                  type="text"
+                <select
                   name="inverterSerial"
                   className="form-input"
-                  placeholder="Enter serial"
                   value={formData.inverterSerial}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select Inverter Model</option>
+                  <option value="QB-2.7KTLS">QB-2.7KTLS</option>
+                  <option value="QB-3KTLS">QB-3KTLS</option>
+                  <option value="QB-3.3KTLS">QB-3.3KTLS</option>
+                  <option value="QB-3.6KTLS">QB-3.6KTLS</option>
+                  <option value="QB-4KTLS">QB-4KTLS</option>
+                  <option value="QB-4.2KTLD">QB-4.2KTLD</option>
+                  <option value="QB-5KTLD">QB-5KTLD</option>
+                  <option value="QB-5.3KTLD">QB-5.3KTLD</option>
+                  <option value="QB-6KTLC">QB-6KTLC</option>
+                  <option value="QB-6KTLD">QB-6KTLD</option>
+                  <option value="QB-8KTLC">QB-8KTLC</option>
+                  <option value="QB-10KTLC">QB-10KTLC</option>
+                  <option value="QB-12KTLC">QB-12KTLC</option>
+                  <option value="QB-15KTLC">QB-15KTLC</option>
+                  <option value="QB-17KTLC">QB-17KTLC</option>
+                  <option value="QB-20KTLC">QB-20KTLC</option>
+                  <option value="QB-25KTLC">QB-25KTLC</option>
+                  <option value="QB-28KTLC">QB-28KTLC</option>
+                  <option value="QB-30KTLC">QB-30KTLC</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -440,7 +486,6 @@ export default function Register() {
                   name="userId"
                   className="form-input"
                   placeholder="Enter User ID"
-
                   value={formData.userId}
                   onChange={handleChange}
                 />
@@ -508,13 +553,40 @@ export default function Register() {
 
               <div className="form-group">
                 <label className="form-label">Timezone *</label>
-                <input
-                  type="text"
+                <select
                   name="timezone"
                   className="form-input"
                   value={formData.timezone}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select Timezone</option>
+                  <option value="0">GMT 0</option>
+                  <option value="1">GMT 1</option>
+                  <option value="2">GMT 2</option>
+                  <option value="3">GMT 3</option>
+                  <option value="4">GMT 4</option>
+                  <option value="5">GMT 5</option>
+                  <option value="55">GMT 5.5</option>
+                  <option value="6">GMT 6</option>
+                  <option value="7">GMT 7</option>
+                  <option value="8">GMT 8</option>
+                  <option value="9">GMT 9</option>
+                  <option value="10">GMT 10</option>
+                  <option value="11">GMT 11</option>
+                  <option value="12">GMT 12</option>
+                  <option value="-1">GMT -1</option>
+                  <option value="-2">GMT -2</option>
+                  <option value="-3">GMT -3</option>
+                  <option value="-4">GMT -4</option>
+                  <option value="-5">GMT -5</option>
+                  <option value="-6">GMT -6</option>
+                  <option value="-7">GMT -7</option>
+                  <option value="-8">GMT -8</option>
+                  <option value="-9">GMT -9</option>
+                  <option value="-10">GMT -10</option>
+                  <option value="-11">GMT -11</option>
+                  <option value="-12">GMT -12</option>
+                </select>
               </div>
 
               <div className="form-group">
