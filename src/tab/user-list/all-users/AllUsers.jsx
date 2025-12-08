@@ -24,17 +24,18 @@ const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
 const GROUPED_CLIENTS_PER_PAGE = 200;
 
 export default function AllUsers() {
-  const [users, setUsers] = useState([]);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(150);
+   
+   
   const [tablePage, setTablePage] = useState(1);
   const rowsPerPage = 25;
   const [search, setSearch] = useState("");
   const [sortBy] = useState("username");
   const [sortOrder] = useState("asc");
-  const [totalPages, setTotalPages] = useState(1);
+  const [sortField, setSortField] = useState("id_asc");
+   
   const [searchInput, setSearchInput] = useState("");
 
   // Inverter type filter states
@@ -135,92 +136,7 @@ export default function AllUsers() {
   };
 
   // Fetch users from API
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        per_page: perPage.toString(),
-        sort_by: sortBy,
-        sort_order: sortOrder,
-      });
-
-      if (search.trim()) {
-        params.append("search", search.trim());
-      }
-
-      if (!API_BASE_ROOT) {
-        throw new Error("API base URL is not configured");
-      }
-
-      const url = `${API_BASE_ROOT}/client/index?${params.toString()}`;
-
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("authToken")
-          : null;
-
-      const response = await fetch(url, {
-        method: "GET",
-        mode: "cors",
-        headers: {
-          Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      let list = [];
-      let lastPage = 1;
-      let total = 0;
-
-      if (Array.isArray(data)) {
-        list = data;
-      } else if (data.data && Array.isArray(data.data.clients)) {
-        list = data.data.clients;
-        if (data.meta) {
-          lastPage = Number(data.meta.last_page) || lastPage;
-          total = Number(data.meta.total) || total;
-        } else if (typeof data.last_page !== "undefined") {
-          lastPage = Number(data.last_page) || lastPage;
-        }
-      } else if (data.data && Array.isArray(data.data.data)) {
-        list = data.data.data;
-        lastPage = Number(data.data.last_page) || lastPage;
-        total = Number(data.data.total) || total;
-      } else if (Array.isArray(data.items)) {
-        list = data.items;
-        if (data.meta) {
-          lastPage = Number(data.meta.last_page) || lastPage;
-          total = Number(data.meta.total) || total;
-        }
-      }
-
-      if (page === 1) {
-        setUsers(list);
-      } else {
-        setUsers((prev) => [...prev, ...list]);
-      }
-
-      if (!Number.isFinite(lastPage) || lastPage < 1) {
-        lastPage = Math.max(1, Math.ceil((total || list.length) / perPage));
-      }
-
-      setTotalPages(lastPage);
-    } catch (err) {
-      setError(err.message || "Failed to fetch users. Please try again.");
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+   
 
   // 👉 PASTE HERE
   const fetchInverterTotals = async () => {
@@ -266,24 +182,23 @@ export default function AllUsers() {
   };
 
   const fetchGroupedClients = async () => {
+    setLoading(true);
+    setError(null);
+  
     try {
       const token =
         typeof window !== "undefined"
           ? localStorage.getItem("authToken")
           : null;
-
+  
       if (!token) {
-        console.log("No token for grouped clients");
+        setError("No authentication token");
+        setLoading(false);
         return;
       }
-
-      if (!API_BASE_ROOT) {
-        console.log("API base URL missing for grouped clients");
-        return;
-      }
-
-      const url = `${API_BASE_ROOT}/client/grouped-clients?search=&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
-
+  
+      const url = `${API_BASE_ROOT}/client/grouped-clients?search=${search}&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
+  
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -291,28 +206,26 @@ export default function AllUsers() {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       if (!response.ok) {
-        console.log("Grouped clients API error", response.status);
-        return;
+        throw new Error(`HTTP ${response.status}`);
       }
-
+  
       const json = await response.json();
-
-      if (json.success && json.data) {
-        setGroupedClients({
-          all_plant: json.data.all_plant?.data || [],
-          normal_plant: json.data.normal_plant?.data || [],
-          alarm_plant: json.data.alarm_plant?.data || [],
-          offline_plant: json.data.offline_plant?.data || [],
-        });
-      } else {
-        console.log("Invalid grouped clients structure", json);
-      }
+  
+      setGroupedClients({
+        all_plant: json.data?.all_plant?.data || [],
+        normal_plant: json.data?.normal_plant?.data || [],
+        alarm_plant: json.data?.alarm_plant?.data || [],
+        offline_plant: json.data?.offline_plant?.data || [],
+      });
     } catch (err) {
-      console.log("Error fetching grouped clients", err);
+      setError("Failed to load user list");
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   // Call Refresh/Sync API
   const runInverterCommand = async () => {
@@ -344,7 +257,7 @@ export default function AllUsers() {
       }
 
       // Refresh all tables
-      fetchUsers();
+      
       fetchInverterTotals();
       fetchGroupedClients();
 
@@ -358,14 +271,15 @@ export default function AllUsers() {
 
   // Fetch users when page or search changes
   useEffect(() => {
-    fetchUsers();
     fetchInverterTotals();
     fetchGroupedClients();
+  
+  
 
     // Refresh button countdown timer
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, [search]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -413,8 +327,7 @@ export default function AllUsers() {
 
     const handler = setTimeout(() => {
       if (normalizedInput === search) return;
-      setUsers([]);
-      setPage(1);
+      
       setSearch(normalizedInput);
     }, 400);
 
@@ -429,22 +342,11 @@ export default function AllUsers() {
     setTablePage((prev) => Math.min(totalTablePages, prev + 1));
   };
 
-  const handlePrevious = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-    }
-  };
+  
 
   const handleFlagToggle = async (userId, field, isEnabled) => {
-    const targetUser =
-      displayedUsers.find((u) => u.id === userId) ||
-      users.find((u) => u.id === userId);
+    const targetUser = displayedUsers.find((u) => u.id === userId);
+
 
     if (!targetUser) return;
 
@@ -490,9 +392,7 @@ export default function AllUsers() {
     });
 
     // Update users state
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, ...nextFlags } : u))
-    );
+     
 
     try {
       await updateFlagsAPI(userId, nextFlags);
@@ -621,11 +521,7 @@ export default function AllUsers() {
 
       alert("Company code updated successfully");
       // Update UI immediately
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id == userId ? { ...user, company_code: finalCompanyCode } : user
-        )
-      );
+       
 
       setShowCompanyPopup(false);
       setPopupUserId("");
@@ -689,13 +585,7 @@ export default function AllUsers() {
       }
 
       // Update frontend
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === selectedQbitsUserId
-            ? { ...user, qbits_company_code: finalValue }
-            : user
-        )
-      );
+       
 
       return true;
     } catch (err) {
@@ -854,25 +744,47 @@ export default function AllUsers() {
   }
 
   const normalizedSearchTerm = searchInput.trim().toLowerCase();
-  const filteredUsers = normalizedSearchTerm
-    ? displayedUsers.filter((user) => {
-        const idValue = String(user.id ?? "").toLowerCase();
-        const usernameValue = (user.username ?? "").toLowerCase();
-        const phoneValue = (user.phone ?? "").toLowerCase();
-        const emailValue = (user.email ?? "").toLowerCase();
-        const companyCodeValue = (user.company_code ?? "").toLowerCase();
-        const collectorValue = (user.collector ?? "").toLowerCase();
+  const sortData = (data) => {
+    const sorted = [...data];
+    switch (sortField) {
+      case "id_asc":
+        sorted.sort((a, b) => Number(a.id) - Number(b.id));
+        break;
+      case "username_asc":
+        sorted.sort((a, b) =>
+          (a.username || "").localeCompare(b.username || "")
+        );
+        break;
+      case "day_power_desc":
+        sorted.sort((a, b) => Number(b.day_power) - Number(a.day_power));
+        break;
+      case "total_power_desc":
+        sorted.sort((a, b) => Number(b.total_power) - Number(a.total_power));
+        break;
+    }
+    return sorted;
+  };
 
-        return [
-          idValue,
-          usernameValue,
-          phoneValue,
-          emailValue,
-          companyCodeValue,
-          collectorValue,
-        ].some((field) => field.includes(normalizedSearchTerm));
-      })
-    : displayedUsers;
+  const filteredUsers = normalizedSearchTerm
+    ? sortData(
+        displayedUsers.filter((user) => {
+          const idValue = String(user.id ?? "").toLowerCase();
+          const usernameValue = (user.username ?? "").toLowerCase();
+          const phoneValue = (user.phone ?? "").toLowerCase();
+          const emailValue = (user.email ?? "").toLowerCase();
+          const companyCodeValue = (user.company_code ?? "").toLowerCase();
+          const collectorValue = (user.collector ?? "").toLowerCase();
+          return [
+            idValue,
+            usernameValue,
+            phoneValue,
+            emailValue,
+            companyCodeValue,
+            collectorValue,
+          ].some((field) => field.includes(normalizedSearchTerm));
+        })
+      )
+    : sortData(displayedUsers);
 
   const totalTablePages = Math.max(
     1,
@@ -1086,8 +998,18 @@ export default function AllUsers() {
                     <thead>
                       <tr>
                         <th className="sticky-col col-no">No.</th>
-                        <th className="sticky-col col-id">ID</th>
-                        <th className="sticky-col col-username">Username</th>
+                        <th
+                          className="sticky-col col-id sortable"
+                          onClick={() => setSortField("id_asc")}
+                        >
+                          ID ↑
+                        </th>
+                        <th
+                          className="sticky-col col-username sortable"
+                          onClick={() => setSortField("username_asc")}
+                        >
+                          Username A→Z
+                        </th>
                         {/*<th>Company Code</th> */}
                         <th>Password</th>
                         <th>Company code</th>
@@ -1142,8 +1064,18 @@ export default function AllUsers() {
                         <th>Iserial</th>
                         <th>Keep live power</th>
                         <th>Capacity(kw)</th>
-                        <th>Day production(kWH)</th>
-                        <th>Total Production(kWH)</th>
+                        <th
+                          className="sortable"
+                          onClick={() => setSortField("day_power_desc")}
+                        >
+                          Day production(kWH) ↓
+                        </th>
+                        <th
+                          className="sortable"
+                          onClick={() => setSortField("total_power_desc")}
+                        >
+                          Total Production(kWH) ↓
+                        </th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
                         <th>Daily Gen</th>
@@ -1302,18 +1234,7 @@ export default function AllUsers() {
                 </div>
               </div>
 
-              {page < totalPages && (
-                <div className="ul-load-more-container">
-                  <button
-                    className="ul-btn ul-btn-primary"
-                    onClick={() => setPage((prev) => prev + 1)}
-                    disabled={loading}
-                  >
-                    Load More
-                  </button>
-                </div>
-              )}
-
+               
               <div className="ul-pagination">
                 <button
                   type="button"

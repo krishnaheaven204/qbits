@@ -139,8 +139,9 @@
 }
 
 /* Table Scroll Container - Both horizontal and vertical scrolling */
-.table-scroll-container-admins {
+.table-scroll-container {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: auto;
   max-height: 600px;
@@ -149,15 +150,18 @@
   margin-bottom: 20px;
   background: #ffffff;
   position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Force horizontal scrolling by making inner container wider */
-.table-inner-force {
-  width: 100%
+.table-inner-force-allusers {
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Table styling */
 .custom-table {
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   white-space: nowrap;
   font-size: 0.875rem;
@@ -175,8 +179,9 @@
 .custom-table th {
   background: #f8f9fa;
   font-weight: 600;
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-bottom: 2px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
   text-align: left;
   color: #111827;
   white-space: nowrap;
@@ -186,12 +191,73 @@
 
 /* Table cells */
 .custom-table td {
-  padding: 12px 10px;
+  padding: 8px 8px;
   border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #edf0f4;
   text-align: left;
   color:  #79808b;
   white-space: nowrap;
   vertical-align: middle;
+}
+
+.custom-table th:last-child,
+.custom-table td:last-child {
+  border-right: none;
+}
+
+.custom-table .sticky-col {
+  position: sticky;
+  background: #ffffff;
+  z-index: 4;
+}
+
+.custom-table .sticky-col-right {
+  background: #ffffff;
+  position: sticky;
+  z-index: 5;
+}
+
+.custom-table thead .sticky-col-right {
+  background: #f8f9fa;
+  z-index: 15;
+}
+
+.custom-table thead .sticky-col {
+  z-index: 14;
+  background: #f8f9fa;
+}
+
+.custom-table .col-no {
+  left: 0;
+  min-width: 50px;
+  text-align: center;
+}
+
+.custom-table .col-id {
+  left: 40px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.custom-table .col-username {
+  left: 110px;
+  min-width: 160px;
+}
+
+.custom-table td.col-username {
+  font-weight: 600;
+  color: #0f172ae0;
+}
+
+.custom-table .col-updated {
+  right: 0;
+  min-width: 150px;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+.custom-table tbody tr:hover .sticky-col,
+.custom-table tbody tr:hover .sticky-col-right {
+  background-color: #e7f1ff;
 }
 
 /* Alternating row colors */
