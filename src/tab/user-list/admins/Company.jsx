@@ -37,7 +37,7 @@ export default function AllUsers() {
   const rowsPerPage = 25;
   const [companySortConfig, setCompanySortConfig] = useState({
     field: "id",
-    direction: "asc"
+    direction: "desc"
   });
 
   // Fetch users from API
@@ -387,6 +387,25 @@ const updateFlagsAPI = async (userId, values) => {
     setTablePage((prev) => Math.min(totalTablePages, prev + 1));
   };
 
+  // Reusable sortable header component
+  function SortableHeader({ label, field }) {
+    const isActive = companySortConfig.field === field;
+    const direction = isActive ? companySortConfig.direction : null;
+
+    return (
+      <button
+        type="button"
+        className={`th-sortable ${isActive ? "th-sortable-active" : ""}`}
+        onClick={() => handleCompanySort(field)}
+      >
+        <span className="th-label">{label}</span>
+        <span className={`th-icon ${direction === "asc" ? "asc" : direction === "desc" ? "desc" : ""}`}>
+          ▲
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div className="user-list-page-company">
       <div className="ul-container">
@@ -440,53 +459,21 @@ const updateFlagsAPI = async (userId, values) => {
                       <thead>
                         <tr>
                           <th className="sticky-col col-no">No.</th>
-                          <th className="sortable-col sticky-col col-id"
-                              onClick={() => handleCompanySort("id")}
-                          >
-                            ID
-                            <span className={
-                              "sort-arrow" +
-                              (companySortConfig.field === "id" ? " sort-arrow-active" : "")
-                            }>
-                              {companySortConfig.field === "id" && companySortConfig.direction === "asc" ? "↑" : "↓"}
-                            </span>
+                          <th className="sticky-col col-id">
+                            <SortableHeader label="ID" field="id" />
                           </th>
                           <th>Code</th>
-                          <th className="sortable-col sticky-col col-username"
-                              onClick={() => handleCompanySort("username")}
-                          >
-                            Username
-                            <span className={
-                              "sort-arrow" +
-                              (companySortConfig.field === "username" ? " sort-arrow-active" : "")
-                            }>
-                              {companySortConfig.field === "username" && companySortConfig.direction === "asc" ? "↑" : "↓"}
-                            </span>
+                          <th className="sticky-col col-username">
+                            <SortableHeader label="Username" field="username" />
                           </th>
                           <th>Phone</th>
                           <th>Email</th>
                           <th>Password</th>
-                          <th className="sortable-col"
-                              onClick={() => handleCompanySort("created_at")}
-                          >
-                            Created At
-                            <span className={
-                              "sort-arrow" +
-                              (companySortConfig.field === "created_at" ? " sort-arrow-active" : "")
-                            }>
-                              {companySortConfig.field === "created_at" && companySortConfig.direction === "asc" ? "↑" : "↓"}
-                            </span>
+                          <th>
+                            <SortableHeader label="Created At" field="created_at" />
                           </th>
-                          <th className="sortable-col sticky-col sticky-col-right col-updated"
-                              onClick={() => handleCompanySort("updated_at")}
-                          >
-                            Updated At
-                            <span className={
-                              "sort-arrow" +
-                              (companySortConfig.field === "updated_at" ? " sort-arrow-active" : "")
-                            }>
-                              {companySortConfig.field === "updated_at" && companySortConfig.direction === "asc" ? "↑" : "↓"}
-                            </span>
+                          <th className="sticky-col sticky-col-right col-updated">
+                            <SortableHeader label="Updated At" field="updated_at" />
                           </th>
                         </tr>
                       </thead>
