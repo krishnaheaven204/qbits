@@ -33,9 +33,12 @@ export default function AllUsers() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [clientSearchTerm, setClientSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("id_asc");
   const [tablePage, setTablePage] = useState(1);
   const rowsPerPage = 25;
+  const [companySortConfig, setCompanySortConfig] = useState({
+    field: "id",
+    direction: "asc"
+  });
 
   // Fetch users from API
   const fetchUsers = async () => {
@@ -147,7 +150,84 @@ export default function AllUsers() {
   
     return `${day} ${month} ${year}  ${formattedHours}:${minutes} ${ampm}`;
   };
-  
+
+  // Date helper for sorting
+  const toDate = (value) => {
+    if (!value) return 0;
+    return new Date(value).getTime();
+  };
+
+  // Sort handler for company table
+  const handleCompanySort = (field) => {
+    setCompanySortConfig((prev) => {
+      if (prev.field === field) {
+        return {
+          field,
+          direction: prev.direction === "asc" ? "desc" : "asc"
+        };
+      }
+
+      // default directions per column
+      if (field === "id" || field === "username") {
+        return { field, direction: "asc" };
+      }
+
+      if (field === "created_at" || field === "updated_at") {
+        return { field, direction: "desc" };
+      }
+
+      return { field, direction: "asc" };
+    });
+  };
+
+  // Sort company data function
+  const sortCompanyData = (list) => {
+    const { field, direction } = companySortConfig;
+    const sorted = [...list];
+
+    const dir = direction === "asc" ? 1 : -1;
+
+    sorted.sort((a, b) => {
+
+      // ID SORTING
+      if (field === "id") {
+        return (Number(a.id) - Number(b.id)) * dir;
+      }
+
+      // USERNAME SORTING (A→Z then numbers in ascending, Z→A then numbers in descending)
+      if (field === "username") {
+        const A = (a.username || "").trim().toLowerCase();
+        const B = (b.username || "").trim().toLowerCase();
+
+        const AisNum = /^\d/.test(A);
+        const BisNum = /^\d/.test(B);
+
+        if (!AisNum && BisNum) return direction === "asc" ? -1 : 1;
+        if (AisNum && !BisNum) return direction === "asc" ? 1 : -1;
+
+        const cmp = A.localeCompare(B);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // CREATED_AT DATE SORT
+      if (field === "created_at") {
+        const da = toDate(a.created_at);
+        const db = toDate(b.created_at);
+        return direction === "asc" ? da - db : db - da;
+      }
+
+      // UPDATED_AT DATE SORT
+      if (field === "updated_at") {
+        const da = toDate(a.updated_at);
+        const db = toDate(b.updated_at);
+        return direction === "asc" ? da - db : db - da;
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  };
   
   // Handle search input with debounce
   const handleSearchChange = (e) => {
@@ -271,33 +351,6 @@ const updateFlagsAPI = async (userId, values) => {
 
   const normalizedSearchTerm = clientSearchTerm.trim().toLowerCase();
 
-  const sortData = (data) => {
-    const sorted = [...data];
-    switch (sortField) {
-      case "id_asc":
-        sorted.sort((a, b) => Number(a.id) - Number(b.id));
-        break;
-      case "username_asc":
-        sorted.sort((a, b) =>
-          (a.username || "").localeCompare(b.username || "")
-        );
-        break;
-      case "created_desc": {
-        const toTime = (value) => new Date(value ?? "").getTime() || 0;
-        sorted.sort((a, b) => toTime(b.created_at) - toTime(a.created_at));
-        break;
-      }
-      case "updated_desc": {
-        const toTime = (value) => new Date(value ?? "").getTime() || 0;
-        sorted.sort((a, b) => toTime(b.updated_at) - toTime(a.updated_at));
-        break;
-      }
-      default:
-        break;
-    }
-    return sorted;
-  };
-
   const filteredUsers = normalizedSearchTerm
     ? users.filter((user) => {
         const usernameValue = (user.username ?? "").toLowerCase();
@@ -314,7 +367,7 @@ const updateFlagsAPI = async (userId, values) => {
       })
     : users;
 
-  const sortedUsers = sortData(filteredUsers);
+  const sortedUsers = sortCompanyData(filteredUsers);
   const totalTablePages = Math.max(1, Math.ceil(sortedUsers.length / rowsPerPage));
   const rowStartIndex = (tablePage - 1) * rowsPerPage;
   const paginatedUsers = sortedUsers.slice(
@@ -387,33 +440,53 @@ const updateFlagsAPI = async (userId, values) => {
                       <thead>
                         <tr>
                           <th className="sticky-col col-no">No.</th>
-                          <th
-                            className="sticky-col col-id sortable"
-                            onClick={() => setSortField("id_asc")}
+                          <th className="sortable-col sticky-col col-id"
+                              onClick={() => handleCompanySort("id")}
                           >
-                            ID ↑
+                            ID
+                            <span className={
+                              "sort-arrow" +
+                              (companySortConfig.field === "id" ? " sort-arrow-active" : "")
+                            }>
+                              {companySortConfig.field === "id" && companySortConfig.direction === "asc" ? "↑" : "↓"}
+                            </span>
                           </th>
                           <th>Code</th>
-                          <th
-                            className="sticky-col col-username sortable"
-                            onClick={() => setSortField("username_asc")}
+                          <th className="sortable-col sticky-col col-username"
+                              onClick={() => handleCompanySort("username")}
                           >
-                            Username A→Z
+                            Username
+                            <span className={
+                              "sort-arrow" +
+                              (companySortConfig.field === "username" ? " sort-arrow-active" : "")
+                            }>
+                              {companySortConfig.field === "username" && companySortConfig.direction === "asc" ? "↑" : "↓"}
+                            </span>
                           </th>
                           <th>Phone</th>
                           <th>Email</th>
                           <th>Password</th>
-                          <th
-                            className="sortable"
-                            onClick={() => setSortField("created_desc")}
+                          <th className="sortable-col"
+                              onClick={() => handleCompanySort("created_at")}
                           >
-                            Created At ↓
+                            Created At
+                            <span className={
+                              "sort-arrow" +
+                              (companySortConfig.field === "created_at" ? " sort-arrow-active" : "")
+                            }>
+                              {companySortConfig.field === "created_at" && companySortConfig.direction === "asc" ? "↑" : "↓"}
+                            </span>
                           </th>
-                          <th
-                            className="sortable sticky-col sticky-col-right col-updated"
-                            onClick={() => setSortField("updated_desc")}
+                          <th className="sortable-col sticky-col sticky-col-right col-updated"
+                              onClick={() => handleCompanySort("updated_at")}
                           >
-                            Updated At ↓
+                            Updated At
+                            <span className={
+                              "sort-arrow" +
+                              (companySortConfig.field === "updated_at" ? " sort-arrow-active" : "")
+                            }>
+                              {companySortConfig.field === "updated_at" && companySortConfig.direction === "asc" ? "↑" : "↓"}
+                            </span>
                           </th>
                         </tr>
                       </thead>
