@@ -859,58 +859,6 @@ export default function AllUsers() {
 
   const filteredUsers = sortData(filteredUsersRaw);
 
-  // 1. ID SORTING
-  if (idSortOrder === "asc") {
-    filteredUsers.sort((a, b) => Number(a.id) - Number(b.id));
-  } else {
-    filteredUsers.sort((a, b) => Number(b.id) - Number(a.id));
-  }
-
-  // 2. USERNAME SORTING (HIGH QUALITY LOGIC)
-  if (usernameSortOrder === "asc") {
-    filteredUsers.sort((a, b) => {
-      const A = (a.username || "").toString();
-      const B = (b.username || "").toString();
-
-      const AisNum = /^\d/.test(A);
-      const BisNum = /^\d/.test(B);
-
-      if (!AisNum && BisNum) return -1;      // letters first
-      if (AisNum && !BisNum) return 1;
-
-      return A.localeCompare(B, undefined, { sensitivity: "base" });
-    });
-  } else {
-    filteredUsers.sort((a, b) => {
-      const A = (a.username || "").toString();
-      const B = (b.username || "").toString();
-
-      const AisNum = /^\d/.test(A);
-      const BisNum = /^\d/.test(B);
-
-      if (!AisNum && BisNum) return -1;      // letters first
-      if (AisNum && !BisNum) return 1;
-
-      return B.localeCompare(A, undefined, { sensitivity: "base" });
-    });
-  }
-
-  // 3. DAY PRODUCTION SORTING
-  if (daySortOrder === "asc") {
-    // highest → lowest
-    filteredUsers.sort((a, b) => Number(b.day_power || 0) - Number(a.day_power || 0));
-  } else {
-    // lowest → highest
-    filteredUsers.sort((a, b) => Number(a.day_power || 0) - Number(b.day_power || 0));
-  }
-
-  // 4. TOTAL PRODUCTION SORTING
-  if (totalSortOrder === "asc") {
-    filteredUsers.sort((a, b) => Number(b.total_power || 0) - Number(a.total_power || 0));
-  } else {
-    filteredUsers.sort((a, b) => Number(a.total_power || 0) - Number(b.total_power || 0));
-  }
-
   const totalTablePages = Math.max(
     1,
     Math.ceil(filteredUsers.length / rowsPerPage)
