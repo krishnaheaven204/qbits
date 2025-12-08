@@ -1349,7 +1349,7 @@ export default function AllUsers() {
               <div className="ul-pagination">
                 <button
                   type="button"
-                  className="ul-btn"
+                  className="page-btn"
                   onClick={handleTablePrevious}
                   disabled={tablePage === 1}
                 >
@@ -1371,7 +1371,7 @@ export default function AllUsers() {
                 </div>
                 <button
                   type="button"
-                  className="ul-btn"
+                  className="page-btn"
                   onClick={() => handleTableNext(totalTablePages)}
                   disabled={tablePage === totalTablePages}
                 >
