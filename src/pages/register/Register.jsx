@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import "./Register.css";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,20 +26,33 @@ export default function Register() {
   const [otpStage, setOtpStage] = useState(false);
   const [emailCode, setEmailCode] = useState("");
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [manualLocation, setManualLocation] = useState(false);
 
-  // Combined form data for both registrations
-  const [formData, setFormData] = useState({
-    // Company fields
+  // Separate password visibility states for company form
+  const [companyShowPassword, setCompanyShowPassword] = useState(false);
+  const [companyShowConfirmPassword, setCompanyShowConfirmPassword] = useState(false);
+
+  // Separate password visibility states for individual form
+  const [individualShowPassword, setIndividualShowPassword] = useState(false);
+  const [individualShowConfirmPassword, setIndividualShowConfirmPassword] = useState(false);
+
+  // Helper to get current password visibility states
+  const showPassword = registrationType === "company" ? companyShowPassword : individualShowPassword;
+  const setShowPassword = registrationType === "company" ? setCompanyShowPassword : setIndividualShowPassword;
+  const showConfirmPassword = registrationType === "company" ? companyShowConfirmPassword : individualShowConfirmPassword;
+  const setShowConfirmPassword = registrationType === "company" ? setCompanyShowConfirmPassword : setIndividualShowConfirmPassword;
+
+  // Separate form data for company registration
+  const [companyFormData, setCompanyFormData] = useState({
     companyName: "",
     email: "",
     password: "",
     confirmPassword: "",
     companyCode: "",
+  });
 
-    // Individual fields
+  // Separate form data for individual registration
+  const [individualFormData, setIndividualFormData] = useState({
     homeName: "",
     inverterSerial: "",
     userId: "",
@@ -50,22 +63,28 @@ export default function Register() {
     whatsapp: "",
     longitude: "",
     latitude: "",
-    iserial: "", // add this
-    qq: "", // add this
-    email: "", // add this
-    parent: "", // add this
-    company_code: "", // add this
+    password: "",
+    confirmPassword: "",
+    iserial: "",
+    qq: "",
+    email: "",
+    parent: "",
+    company_code: "",
   });
+
+  // Helper to get current form data
+  const formData = registrationType === "company" ? companyFormData : individualFormData;
+  const setFormData = registrationType === "company" ? setCompanyFormData : setIndividualFormData;
 
   // Auto-generate company code when switching to company mode
   useEffect(() => {
-    if (registrationType === "company" && !formData.companyCode) {
-      setFormData((prev) => ({
+    if (registrationType === "company" && !companyFormData.companyCode) {
+      setCompanyFormData((prev) => ({
         ...prev,
         companyCode: generateCompanyCode(),
       }));
     }
-  }, [registrationType]);
+  }, [registrationType, companyFormData.companyCode]);
 
   // Auto detect user geolocation for Individual Registration
   useEffect(() => {
@@ -77,7 +96,7 @@ export default function Register() {
           const lat = position.coords.latitude.toString();
           const lng = position.coords.longitude.toString();
 
-          setFormData((prev) => ({
+          setIndividualFormData((prev) => ({
             ...prev,
             latitude: lat,
             longitude: lng,
@@ -374,26 +393,52 @@ export default function Register() {
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Password *</label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    className="form-input"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      className="form-input"
+                      placeholder="Password"
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon width={20} height={20} />
+                      ) : (
+                        <EyeIcon width={20} height={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Confirm Password *</label>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    className="form-input"
-                    placeholder="Confirm password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      className="form-input"
+                      placeholder="Confirm password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon width={20} height={20} />
+                      ) : (
+                        <EyeIcon width={20} height={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -522,24 +567,52 @@ export default function Register() {
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Password *</label>
-                  <input
-                    type="password"
-                    name="password"
-                    className="form-input"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      className="form-input"
+                      placeholder="Enter Password"
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon width={20} height={20} />
+                      ) : (
+                        <EyeIcon width={20} height={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Confirm Password *</label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    className="form-input"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      className="form-input"
+                      placeholder="Enter Confirm Password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon width={20} height={20} />
+                      ) : (
+                        <EyeIcon width={20} height={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
