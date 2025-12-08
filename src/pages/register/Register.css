@@ -503,3 +503,15 @@
   cursor: pointer;
   transition: 0.2s ease;
 }
+
+/* Input error - red border for empty required fields */
+.form-input.input-error {
+  border: 1px solid #e11d48 !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15) !important;
+  background-color: #ffe4e6;
+}
+
+.form-input.input-error:focus {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15) !important;
+}
