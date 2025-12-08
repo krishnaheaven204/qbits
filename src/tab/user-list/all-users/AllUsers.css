@@ -366,6 +366,15 @@
   min-width: 160px;
 }
 
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-header:hover {
+  color: #0d6efd;
+}
+
 .custom-table td.col-username {
   font-weight: 600;
   color: #0f172ae0;
@@ -375,6 +384,20 @@
   right: 0;
   min-width: 150px;
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+.sortable {
+  cursor: pointer;
+}
+
+.sort-arrow {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.sort-arrow-active {
+  color: #16a34a;
 }
 
 .custom-table th,
