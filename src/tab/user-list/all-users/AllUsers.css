@@ -366,6 +366,15 @@
   min-width: 160px;
 }
 
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-header:hover {
+  color: #0d6efd;
+}
+
 .custom-table td.col-username {
   font-weight: 600;
   color: #0f172ae0;

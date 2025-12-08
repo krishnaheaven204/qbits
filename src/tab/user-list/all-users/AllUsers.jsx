@@ -87,6 +87,10 @@ export default function AllUsers() {
     }
     return "standby";
   });
+  const [idSortOrder, setIdSortOrder] = useState("asc");
+  const [usernameSortOrder, setUsernameSortOrder] = useState("asc");
+  const [daySortOrder, setDaySortOrder] = useState("asc");
+  const [totalSortOrder, setTotalSortOrder] = useState("asc");
   // ADD THIS HERE
   const [inverterTotals, setInverterTotals] = useState({
     total_all_plant: 0,
@@ -765,7 +769,7 @@ export default function AllUsers() {
     return sorted;
   };
 
-  const filteredUsers = normalizedSearchTerm
+  let filteredUsers = normalizedSearchTerm
     ? sortData(
         displayedUsers.filter((user) => {
           const idValue = String(user.id ?? "").toLowerCase();
@@ -785,6 +789,58 @@ export default function AllUsers() {
         })
       )
     : sortData(displayedUsers);
+
+  // 1. ID SORTING
+  if (idSortOrder === "asc") {
+    filteredUsers.sort((a, b) => Number(a.id) - Number(b.id));
+  } else {
+    filteredUsers.sort((a, b) => Number(b.id) - Number(a.id));
+  }
+
+  // 2. USERNAME SORTING (HIGH QUALITY LOGIC)
+  if (usernameSortOrder === "asc") {
+    filteredUsers.sort((a, b) => {
+      const A = (a.username || "").toString();
+      const B = (b.username || "").toString();
+
+      const AisNum = /^\d/.test(A);
+      const BisNum = /^\d/.test(B);
+
+      if (!AisNum && BisNum) return -1;      // letters first
+      if (AisNum && !BisNum) return 1;
+
+      return A.localeCompare(B, undefined, { sensitivity: "base" });
+    });
+  } else {
+    filteredUsers.sort((a, b) => {
+      const A = (a.username || "").toString();
+      const B = (b.username || "").toString();
+
+      const AisNum = /^\d/.test(A);
+      const BisNum = /^\d/.test(B);
+
+      if (!AisNum && BisNum) return -1;      // letters first
+      if (AisNum && !BisNum) return 1;
+
+      return B.localeCompare(A, undefined, { sensitivity: "base" });
+    });
+  }
+
+  // 3. DAY PRODUCTION SORTING
+  if (daySortOrder === "asc") {
+    // highest → lowest
+    filteredUsers.sort((a, b) => Number(b.day_power || 0) - Number(a.day_power || 0));
+  } else {
+    // lowest → highest
+    filteredUsers.sort((a, b) => Number(a.day_power || 0) - Number(b.day_power || 0));
+  }
+
+  // 4. TOTAL PRODUCTION SORTING
+  if (totalSortOrder === "asc") {
+    filteredUsers.sort((a, b) => Number(b.total_power || 0) - Number(a.total_power || 0));
+  } else {
+    filteredUsers.sort((a, b) => Number(a.total_power || 0) - Number(b.total_power || 0));
+  }
 
   const totalTablePages = Math.max(
     1,
@@ -998,17 +1054,31 @@ export default function AllUsers() {
                     <thead>
                       <tr>
                         <th className="sticky-col col-no">No.</th>
-                        <th
-                          className="sticky-col col-id sortable"
-                          onClick={() => setSortField("id_asc")}
+                        <th 
+                          className="sortable-header sticky-col col-id"
+                          onClick={() => setIdSortOrder(idSortOrder === "asc" ? "desc" : "asc")}
                         >
-                          ID ↑
+                          ID 
+                          <span style={{
+                              marginLeft: "6px",
+                              color: idSortOrder === "asc" ? "#1E90FF" : "#FF4500",
+                              fontWeight: "bold"
+                          }}>
+                            {idSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
                         </th>
-                        <th
-                          className="sticky-col col-username sortable"
-                          onClick={() => setSortField("username_asc")}
+                        <th 
+                          className="sortable-header sticky-col col-username"
+                          onClick={() => setUsernameSortOrder(usernameSortOrder === "asc" ? "desc" : "asc")}
                         >
-                          Username A→Z
+                          Username 
+                          <span style={{
+                              marginLeft: "6px",
+                              color: usernameSortOrder === "asc" ? "#1E90FF" : "#FF4500",
+                              fontWeight: "bold"
+                          }}>
+                            {usernameSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
                         </th>
                         {/*<th>Company Code</th> */}
                         <th>Password</th>
@@ -1064,17 +1134,31 @@ export default function AllUsers() {
                         <th>Iserial</th>
                         <th>Keep live power</th>
                         <th>Capacity(kw)</th>
-                        <th
-                          className="sortable"
-                          onClick={() => setSortField("day_power_desc")}
+                        <th 
+                          className="sortable-header"
+                          onClick={() => setDaySortOrder(daySortOrder === "asc" ? "desc" : "asc")}
                         >
-                          Day production(kWH) ↓
+                          Day Production (kWH)
+                          <span style={{
+                              marginLeft: "6px",
+                              color: daySortOrder === "asc" ? "#1E90FF" : "#FF4500",
+                              fontWeight: "bold"
+                          }}>
+                            {daySortOrder === "asc" ? "↑" : "↓"}
+                          </span>
                         </th>
-                        <th
-                          className="sortable"
-                          onClick={() => setSortField("total_power_desc")}
+                        <th 
+                          className="sortable-header"
+                          onClick={() => setTotalSortOrder(totalSortOrder === "asc" ? "desc" : "asc")}
                         >
-                          Total Production(kWH) ↓
+                          Total Production (kWH)
+                          <span style={{
+                              marginLeft: "6px",
+                              color: totalSortOrder === "asc" ? "#1E90FF" : "#FF4500",
+                              fontWeight: "bold"
+                          }}>
+                            {totalSortOrder === "asc" ? "↑" : "↓"}
+                          </span>
                         </th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
