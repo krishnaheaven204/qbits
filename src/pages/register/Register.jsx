@@ -706,44 +706,30 @@ export default function Register() {
                   <option value="1">Battery Storage</option>
                   <option value="2">Solar with Limitation</option>
                 </select>
-                <div className="form-group">
-                <label className="form-label">Location Mode</label>
-                <button
-                  type="button"
-                  className="form-input"
-                  style={{ background: "#e6e6e6", cursor: "pointer" }}
-                  onClick={() => setManualLocation(!manualLocation)}
-                >
-                  {manualLocation
-                    ? "Switch to Auto Location"
-                    : "Enter Manually"}
-                </button>
               </div>
-                <div className="form-group">
-                  <label className="form-label">Latitude</label>
-                  <input
-                    type="text"
-                    name="latitude"
-                    className="form-input"
-                    placeholder="Latitude"
-                    value={formData.latitude}
-                    onChange={manualLocation ? handleChange : undefined}
-                    readOnly={!manualLocation}
-                  />
-                </div>
 
-                <div className="form-group">
-                  <label className="form-label">Longitude</label>
-                  <input
-                    type="text"
-                    name="longitude"
-                    className="form-input"
-                    placeholder="Longitude"
-                    value={formData.longitude}
-                    onChange={manualLocation ? handleChange : undefined}
-                    readOnly={!manualLocation}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label">Latitude</label>
+                <input
+                  type="text"
+                  name="latitude"
+                  className="form-input"
+                  placeholder="Latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Longitude</label>
+                <input
+                  type="text"
+                  name="longitude"
+                  className="form-input"
+                  placeholder="Longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                />
               </div>
 
               <button className="register-button">Register</button>
