@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 import "./Register.css";
 import { ArrowPathIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
@@ -27,6 +28,8 @@ export default function Register() {
   const [emailCode, setEmailCode] = useState("");
   const [errors, setErrors] = useState({});
   const [manualLocation, setManualLocation] = useState(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Separate password visibility states for company form
   const [companyShowPassword, setCompanyShowPassword] = useState(false);
@@ -117,6 +120,177 @@ export default function Register() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: false }));
+    }
+  };
+
+  // Helper to get input className with validation styling
+  const getInputClassName = (fieldName, baseClass = "form-input") => {
+    if (validationAttempted && !formData[fieldName]?.trim()) {
+      return `${baseClass} validation-empty`;
+    }
+    return baseClass;
+  };
+
+  // Helper to get input className with field error styling
+  const getFieldErrorClass = (fieldName, baseClass = "form-input") => {
+    if (fieldErrors[fieldName]) {
+      return `${baseClass} input-error`;
+    }
+    return baseClass;
+  };
+
+  // Validate Company form fields - UI only
+  const validateCompanyFields = () => {
+    const requiredFields = {
+      companyName: true,
+      password: true,
+      confirmPassword: true,
+      companyCode: true,
+      email: true,
+    };
+
+    const newFieldErrors = {};
+    let hasErrors = false;
+
+    for (const field in requiredFields) {
+      if (!formData[field]?.trim()) {
+        newFieldErrors[field] = true;
+        hasErrors = true;
+      } else {
+        newFieldErrors[field] = false;
+      }
+    }
+
+    // Check password match
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      newFieldErrors.password = true;
+      newFieldErrors.confirmPassword = true;
+      hasErrors = true;
+    }
+
+    setFieldErrors(newFieldErrors);
+
+    if (hasErrors) {
+      if (formData.password.trim() !== formData.confirmPassword.trim()) {
+        toast.error("Passwords do not match");
+      } else {
+        toast.error("Please fill all required fields");
+      }
+      return false;
+    }
+
+    return true;
+  };
+
+  // Validate Individual form fields - UI only
+  const validateIndividualFields = () => {
+    const requiredFields = {
+      homeName: true,
+      inverterSerial: true,
+      userId: true,
+      password: true,
+      confirmPassword: true,
+      whatsapp: true,
+      wifiSerial: true,
+      city: true,
+      timezone: true,
+      stationType: true,
+    };
+
+    const newFieldErrors = {};
+    let hasErrors = false;
+
+    for (const field in requiredFields) {
+      if (!formData[field]?.trim()) {
+        newFieldErrors[field] = true;
+        hasErrors = true;
+      } else {
+        newFieldErrors[field] = false;
+      }
+    }
+
+    // Check password match
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      newFieldErrors.password = true;
+      newFieldErrors.confirmPassword = true;
+      hasErrors = true;
+    }
+
+    setFieldErrors(newFieldErrors);
+
+    if (hasErrors) {
+      if (formData.password.trim() !== formData.confirmPassword.trim()) {
+        toast.error("Passwords do not match");
+      } else {
+        toast.error("Please fill all required fields");
+      }
+      return false;
+    }
+
+    return true;
+  };
+
+  // UI-only validation for Company form
+  const validateCompanyFormUI = () => {
+    const requiredFields = {
+      companyName: "Company name",
+      password: "Password",
+      confirmPassword: "Confirm password",
+      companyCode: "Company code",
+      email: "Email",
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field]?.trim()) {
+        toast.error(`Please fill all required fields`);
+        setValidationAttempted(true);
+        return false;
+      }
+    }
+
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      toast.error("Passwords do not match");
+      setValidationAttempted(true);
+      return false;
+    }
+
+    return true;
+  };
+
+  // UI-only validation for Individual form
+  const validateIndividualFormUI = () => {
+    const requiredFields = {
+      homeName: "Home name",
+      inverterSerial: "Inverter model",
+      userId: "User ID",
+      password: "Password",
+      confirmPassword: "Confirm password",
+      whatsapp: "WhatsApp number",
+      wifiSerial: "WiFi serial",
+      city: "City",
+      timezone: "Timezone",
+      stationType: "Station type",
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field]?.trim()) {
+        toast.error(`Please fill all required fields`);
+        setValidationAttempted(true);
+        return false;
+      }
+    }
+
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      toast.error("Passwords do not match");
+      setValidationAttempted(true);
+      return false;
+    }
+
+    return true;
   };
 
   /* ----------------------------------------------------
@@ -229,6 +403,9 @@ export default function Register() {
   const handleCompanySubmit = async (e) => {
     e.preventDefault();
 
+    // UI field validation - highlight empty fields in red
+    if (!validateCompanyFields()) return;
+
     if (!otpStage) {
       if (!validateCompanyForm()) return;
       await sendCompanyOtp();
@@ -277,6 +454,9 @@ export default function Register() {
 
   const handleIndividualSubmit = async (e) => {
     e.preventDefault();
+
+    // UI field validation - highlight empty fields in red
+    if (!validateIndividualFields()) return;
 
     if (!validateIndividual()) return;
 
@@ -343,6 +523,7 @@ export default function Register() {
 
   return (
     <div className="register-page">
+      <Toaster position="top-center" reverseOrder={false} />
       <div className="register-container">
         <div className="register-header">
           <Image src="/Qbits.svg" alt="logo" width={220} height={120} />
@@ -383,7 +564,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="companyName"
-                  className="form-input"
+                  className={getFieldErrorClass("companyName", getInputClassName("companyName"))}
                   placeholder="Enter company name"
                   value={formData.companyName}
                   onChange={handleChange}
@@ -397,7 +578,7 @@ export default function Register() {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      className="form-input"
+                      className={getFieldErrorClass("password", getInputClassName("password"))}
                       placeholder="Password"
                       value={formData.password}
                       onChange={handleChange}
@@ -422,7 +603,7 @@ export default function Register() {
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
-                      className="form-input"
+                      className={getFieldErrorClass("confirmPassword", getInputClassName("confirmPassword"))}
                       placeholder="Confirm password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
@@ -447,7 +628,7 @@ export default function Register() {
                 <div className="company-code-row">
                   <input
                     type="text"
-                    className="form-input readonly"
+                    className={getFieldErrorClass("companyCode", getInputClassName("companyCode", "form-input readonly"))}
                     readOnly
                     value={formData.companyCode}
                   />
@@ -471,7 +652,7 @@ export default function Register() {
                 <input
                   type="email"
                   name="email"
-                  className="form-input"
+                  className={getFieldErrorClass("email", getInputClassName("email"))}
                   placeholder="Enter email"
                   value={formData.email}
                   onChange={handleChange}
@@ -514,7 +695,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="homeName"
-                  className="form-input"
+                  className={getFieldErrorClass("homeName", getInputClassName("homeName"))}
                   placeholder="Enter home name"
                   value={formData.homeName}
                   onChange={handleChange}
@@ -525,7 +706,7 @@ export default function Register() {
                 <label className="form-label">Inverter Serial *</label>
                 <select
                   name="inverterSerial"
-                  className="form-input"
+                  className={getFieldErrorClass("inverterSerial", getInputClassName("inverterSerial"))}
                   value={formData.inverterSerial}
                   onChange={handleChange}
                 >
@@ -557,7 +738,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="userId"
-                  className="form-input"
+                  className={getFieldErrorClass("userId", getInputClassName("userId"))}
                   placeholder="Enter User ID"
                   value={formData.userId}
                   onChange={handleChange}
@@ -571,7 +752,7 @@ export default function Register() {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      className="form-input"
+                      className={getFieldErrorClass("password", getInputClassName("password"))}
                       placeholder="Enter Password"
                       value={formData.password}
                       onChange={handleChange}
@@ -596,7 +777,7 @@ export default function Register() {
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
-                      className="form-input"
+                      className={getFieldErrorClass("confirmPassword", getInputClassName("confirmPassword"))}
                       placeholder="Enter Confirm Password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
@@ -622,7 +803,7 @@ export default function Register() {
                   type="text"
                   maxLength="10"
                   name="whatsapp"
-                  className="form-input"
+                  className={getFieldErrorClass("whatsapp", getInputClassName("whatsapp"))}
                   placeholder="10 digit number"
                   value={formData.whatsapp}
                   onChange={handleChange}
@@ -634,7 +815,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="wifiSerial"
-                  className="form-input"
+                  className={getFieldErrorClass("wifiSerial", getInputClassName("wifiSerial"))}
                   value={formData.wifiSerial}
                   onChange={handleChange}
                 />
@@ -645,7 +826,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="city"
-                  className="form-input"
+                  className={getFieldErrorClass("city", getInputClassName("city"))}
                   placeholder="Enter city"
                   value={formData.city}
                   onChange={handleChange}
@@ -658,7 +839,7 @@ export default function Register() {
                 <label className="form-label">Timezone *</label>
                 <select
                   name="timezone"
-                  className="form-input"
+                  className={getFieldErrorClass("timezone", getInputClassName("timezone"))}
                   value={formData.timezone}
                   onChange={handleChange}
                 >
@@ -696,8 +877,8 @@ export default function Register() {
                 <label className="form-label">Station Type *</label>
 
                 <select
+                  className={getFieldErrorClass("stationType", getInputClassName("stationType"))}
                   name="stationType"
-                  className="form-input"
                   value={formData.stationType}
                   onChange={handleChange}
                 >
