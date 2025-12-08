@@ -16,7 +16,7 @@
     "@mui/x-data-grid": "^8.17.0",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.2",
-    "next": "16.0.1",
+    "next": "^16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0"

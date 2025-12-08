@@ -441,22 +441,6 @@
   align-items: center;
 }
 
-.refresh-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: #00a36c;
-  border: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.refresh-btn:hover {
-  background: #008f5c;
-}
-
 .error-text {
   color: #ff4d4f;
   font-size: 13px;

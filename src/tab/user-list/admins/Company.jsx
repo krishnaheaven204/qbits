@@ -1,6 +1,6 @@
 'use client';
 
-import './Admins.css';
+import './Company.css';
 import { useState, useEffect } from "react";
 
 const API_BASE_URL =

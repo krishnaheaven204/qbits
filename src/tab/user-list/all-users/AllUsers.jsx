@@ -76,22 +76,6 @@ export default function AllUsers() {
   const [selectedQbitsUserId, setSelectedQbitsUserId] = useState(null);
   const [qbitsCodeInput, setQbitsCodeInput] = useState("");
   const [qbitsModalLoading, setQbitsModalLoading] = useState(false);
-  const initialCooldownState = useMemo(() => {
-    if (typeof window === "undefined") {
-      return { disabled: false, time: 0 };
-    }
-
-    const savedTimestamp = Number(localStorage.getItem("refreshCooldownUntil"));
-
-    if (savedTimestamp && savedTimestamp > Date.now()) {
-      return {
-        disabled: true,
-        time: Math.ceil((savedTimestamp - Date.now()) / 1000),
-      };
-    }
-
-    return { disabled: false, time: 0 };
-  }, []);
   // Status filter UI state (default to Total tab "standby"), persisted across reloads
   const [selectedStatus, setSelectedStatus] = useState(() => {
     if (typeof window !== "undefined") {
@@ -112,13 +96,7 @@ export default function AllUsers() {
   });
 
   // Refresh button states
-  const [refreshDisabled, setRefreshDisabled] = useState(
-    initialCooldownState.disabled
-  );
-  const [cooldownTime, setCooldownTime] = useState(initialCooldownState.time);
-  const COOLDOWN_DURATION_SECONDS = 900;
-  // Last refreshed time
-  const [lastRefreshedAt, setLastRefreshedAt] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [groupedClients, setGroupedClients] = useState({
     all_plant: [],
@@ -342,20 +320,10 @@ export default function AllUsers() {
   };
   
 
-  const startRefreshCooldown = (duration = COOLDOWN_DURATION_SECONDS) => {
-    setRefreshDisabled(true);
-    setCooldownTime(duration);
-    localStorage.setItem("refreshCooldownUntil", Date.now() + duration * 1000);
-  };
-
-  const clearRefreshCooldown = () => {
-    setRefreshDisabled(false);
-    setCooldownTime(0);
-    localStorage.removeItem("refreshCooldownUntil");
-  };
-
   // Call Refresh/Sync API
   const runInverterCommand = async () => {
+    if (isRefreshing) return;
+
     try {
       const token =
         typeof window !== "undefined"
@@ -367,8 +335,7 @@ export default function AllUsers() {
         return;
       }
 
-      // Immediately reflect cooldown state in UI
-      startRefreshCooldown();
+      setIsRefreshing(true);
 
       const response = await fetch(`${API_BASE_ROOT}/run-inverter-command`, {
         method: "GET",
@@ -389,8 +356,9 @@ export default function AllUsers() {
 
       console.info("Sync command triggered successfully.");
     } catch (err) {
-      clearRefreshCooldown();
       console.error("Refresh failed", err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -405,28 +373,6 @@ export default function AllUsers() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
-
-  // Refresh button countdown timer
-  useEffect(() => {
-    const syncCooldownState = () => {
-      const savedTimestamp = Number(
-        localStorage.getItem("refreshCooldownUntil")
-      );
-
-      if (savedTimestamp && savedTimestamp > Date.now()) {
-        setRefreshDisabled(true);
-        setCooldownTime(Math.ceil((savedTimestamp - Date.now()) / 1000));
-      } else {
-        setRefreshDisabled(false);
-        setCooldownTime(0);
-        localStorage.removeItem("refreshCooldownUntil");
-      }
-    };
-
-    syncCooldownState();
-    const interval = setInterval(syncCooldownState, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -938,6 +884,20 @@ export default function AllUsers() {
     }
   }, [selectedStatus]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedInverter = localStorage.getItem("userListSelectedInverter");
+    if (savedInverter !== null) {
+      setSelectedInverter(savedInverter);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userListSelectedInverter", selectedInverter);
+    }
+  }, [selectedInverter]);
+
   const filterMenu =
     isFilterOpen && typeof document !== "undefined"
       ? createPortal(
@@ -990,15 +950,9 @@ export default function AllUsers() {
             <button
               className="refresh-btn"
               onClick={runInverterCommand}
-              disabled={refreshDisabled}
+              disabled={isRefreshing}
             >
-              {refreshDisabled
-                ? `⟳ Refresh in ${Math.floor(cooldownTime / 60)}:${(
-                    cooldownTime % 60
-                  )
-                    .toString()
-                    .padStart(2, "0")}`
-                : "⟳ Refresh"}
+              {isRefreshing ? "Refreshing…" : "⟳ Refresh"}
             </button>
           </div>
 
@@ -1395,7 +1349,7 @@ export default function AllUsers() {
               <div className="ul-pagination">
                 <button
                   type="button"
-                  className="ul-btn"
+                  className="page-btn"
                   onClick={handleTablePrevious}
                   disabled={tablePage === 1}
                 >
@@ -1417,7 +1371,7 @@ export default function AllUsers() {
                 </div>
                 <button
                   type="button"
-                  className="ul-btn"
+                  className="page-btn"
                   onClick={() => handleTableNext(totalTablePages)}
                   disabled={tablePage === totalTablePages}
                 >
