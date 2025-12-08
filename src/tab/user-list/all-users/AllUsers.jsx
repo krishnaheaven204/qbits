@@ -311,6 +311,30 @@ export default function AllUsers() {
         return direction === "asc" ? da - db : db - da;
       }
 
+      // GMT: string comparison
+      if (field === "gmt") {
+        const va = (a.gmt || "").toLowerCase();
+        const vb = (b.gmt || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Plant Type: string comparison
+      if (field === "plant_type") {
+        const va = (a.plant_type || "").toLowerCase();
+        const vb = (b.plant_type || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Iserial: string comparison
+      if (field === "iserial") {
+        const va = (a.iserial || "").toLowerCase();
+        const vb = (b.iserial || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
       return 0;
     });
 
@@ -1252,9 +1276,15 @@ export default function AllUsers() {
                         <th>
                           <SortableHeader label="Latitude" field="latitude" />
                         </th>
-                        <th>GMT</th>
-                        <th>Plant Type</th>
-                        <th>Iserial</th>
+                        <th>
+                          <SortableHeader label="GMT" field="gmt" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Plant Type" field="plant_type" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Iserial" field="iserial" />
+                        </th>
                         <th>
                           <SortableHeader label="Keep live power" field="power" />
                         </th>

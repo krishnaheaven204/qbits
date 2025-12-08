@@ -209,6 +209,38 @@ export default function AllUsers() {
         return direction === "asc" ? cmp : -cmp;
       }
 
+      // CODE SORTING (string comparison)
+      if (field === "company_code") {
+        const va = (a.company_code || "").toLowerCase();
+        const vb = (b.company_code || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // PHONE SORTING (string comparison)
+      if (field === "phone") {
+        const va = (a.phone || "").toLowerCase();
+        const vb = (b.phone || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // EMAIL SORTING (string comparison)
+      if (field === "email") {
+        const va = (a.email || "").toLowerCase();
+        const vb = (b.email || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // PASSWORD SORTING (string comparison)
+      if (field === "password") {
+        const va = (a.password || "").toLowerCase();
+        const vb = (b.password || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
       // CREATED_AT DATE SORT
       if (field === "created_at") {
         const da = toDate(a.created_at);
@@ -462,13 +494,21 @@ const updateFlagsAPI = async (userId, values) => {
                           <th className="sticky-col col-id">
                             <SortableHeader label="ID" field="id" />
                           </th>
-                          <th>Code</th>
+                          <th>
+                            <SortableHeader label="Code" field="company_code" />
+                          </th>
                           <th className="sticky-col col-username">
                             <SortableHeader label="Username" field="username" />
                           </th>
-                          <th>Phone</th>
-                          <th>Email</th>
-                          <th>Password</th>
+                          <th>
+                            <SortableHeader label="Phone" field="phone" />
+                          </th>
+                          <th>
+                            <SortableHeader label="Email" field="email" />
+                          </th>
+                          <th>
+                            <SortableHeader label="Password" field="password" />
+                          </th>
                           <th>
                             <SortableHeader label="Created At" field="created_at" />
                           </th>
