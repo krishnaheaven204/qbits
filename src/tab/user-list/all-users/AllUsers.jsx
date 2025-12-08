@@ -85,7 +85,7 @@ export default function AllUsers() {
   });
   const [sortConfig, setSortConfig] = useState({
     field: "id",
-    direction: "asc",
+    direction: "desc",
   });
   // ADD THIS HERE
   const [inverterTotals, setInverterTotals] = useState({
@@ -167,16 +167,15 @@ export default function AllUsers() {
         return { field, direction: nextDirection };
       }
 
-      if (field === "id" || field === "username") {
-        return { field, direction: "asc" };
-      }
-
-      if (field === "day_power" || field === "total_power") {
-        return { field, direction: "desc" };
-      }
-
+      // Default to ascending for most fields
       return { field, direction: "asc" };
     });
+  };
+
+  // Helper: convert date string to timestamp
+  const toDate = (value) => {
+    if (!value) return 0;
+    return new Date(value).getTime();
   };
 
   // Sort data function: applies sorting based on sortConfig
@@ -208,6 +207,82 @@ export default function AllUsers() {
         return direction === "asc" ? cmp : -cmp;
       }
 
+      // Password: string comparison
+      if (field === "password") {
+        const va = (a.password || "").toLowerCase();
+        const vb = (b.password || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Company code: string comparison
+      if (field === "company_code") {
+        const va = (a.company_code || "").toLowerCase();
+        const vb = (b.company_code || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Email: string comparison
+      if (field === "email") {
+        const va = (a.email || "").toLowerCase();
+        const vb = (b.email || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Plant name: string comparison
+      if (field === "plant_name") {
+        const va = (a.plant_name || "").toLowerCase();
+        const vb = (b.plant_name || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // City name: string comparison
+      if (field === "city_name") {
+        const va = (a.city_name || "").toLowerCase();
+        const vb = (b.city_name || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Collector: string comparison
+      if (field === "collector") {
+        const va = (a.collector || "").toLowerCase();
+        const vb = (b.collector || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Longitude: numeric
+      if (field === "longitude") {
+        const va = parseFloat(a.longitude) || 0;
+        const vb = parseFloat(b.longitude) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Latitude: numeric
+      if (field === "latitude") {
+        const va = parseFloat(a.latitude) || 0;
+        const vb = parseFloat(b.latitude) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Power (Keep live power): numeric
+      if (field === "power") {
+        const va = parseFloat(a.power) || 0;
+        const vb = parseFloat(b.power) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Capacity: numeric
+      if (field === "capacity") {
+        const va = parseFloat(a.capacity) || 0;
+        const vb = parseFloat(b.capacity) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
       // Day production numeric
       if (field === "day_power") {
         const va = parseFloat(a.day_power) || 0;
@@ -220,6 +295,44 @@ export default function AllUsers() {
         const va = parseFloat(a.total_power) || 0;
         const vb = parseFloat(b.total_power) || 0;
         return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Created at: date comparison
+      if (field === "created_at") {
+        const da = toDate(a.created_at);
+        const db = toDate(b.created_at);
+        return direction === "asc" ? da - db : db - da;
+      }
+
+      // Updated at: date comparison
+      if (field === "updated_at") {
+        const da = toDate(a.updated_at);
+        const db = toDate(b.updated_at);
+        return direction === "asc" ? da - db : db - da;
+      }
+
+      // GMT: string comparison
+      if (field === "gmt") {
+        const va = (a.gmt || "").toLowerCase();
+        const vb = (b.gmt || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Plant Type: string comparison
+      if (field === "plant_type") {
+        const va = (a.plant_type || "").toLowerCase();
+        const vb = (b.plant_type || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Iserial: string comparison
+      if (field === "iserial") {
+        const va = (a.iserial || "").toLowerCase();
+        const vb = (b.iserial || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
       }
 
       return 0;
@@ -940,6 +1053,25 @@ export default function AllUsers() {
         )
       : null;
 
+  // Reusable sortable header component
+  function SortableHeader({ label, field }) {
+    const isActive = sortConfig.field === field;
+    const direction = isActive ? sortConfig.direction : null;
+
+    return (
+      <button
+        type="button"
+        className={`th-sortable ${isActive ? "th-sortable-active" : ""}`}
+        onClick={() => handleSort(field)}
+      >
+        <span className="th-label">{label}</span>
+        <span className={`th-icon ${direction === "asc" ? "asc" : direction === "desc" ? "desc" : ""}`}>
+          ▲
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div className="user-list-page-alluser">
       <div className="ul-card-allusers">
@@ -1071,42 +1203,28 @@ export default function AllUsers() {
                     <thead>
                       <tr>
                         <th className="sticky-col col-no">No.</th>
-                        <th
-                          className="sticky-col col-id sortable"
-                          onClick={() => handleSort("id")}
-                        >
-                          <span>User ID</span>
-                          <span
-                            className={
-                              "sort-arrow" +
-                              (sortConfig.field === "id" ? " sort-arrow-active" : "")
-                            }
-                          >
-                            {sortConfig.field === "id" && sortConfig.direction === "asc" ? "▲" : "▼"}
-                          </span>
+                        <th className="sticky-col col-id">
+                          <SortableHeader label="User ID" field="id" />
                         </th>
-                        <th
-                          className="sticky-col col-username sortable"
-                          onClick={() => handleSort("username")}
-                        >
-                          <span>Username</span>
-                          <span
-                            className={
-                              "sort-arrow" +
-                              (sortConfig.field === "username" ? " sort-arrow-active" : "")
-                            }
-                          >
-                            {sortConfig.field === "username" && sortConfig.direction === "asc"
-                              ? "▲"
-                              : "▼"}
-                          </span>
+                        <th className="sticky-col col-username">
+                          <SortableHeader label="Username" field="username" />
                         </th>
                         {/*<th>Company Code</th> */}
-                        <th>Password</th>
-                        <th>Company code</th>
-                        <th>Phone</th>
-                        <th>Email</th>
-                        <th>Plant Name</th>
+                        <th>
+                          <SortableHeader label="Password" field="password" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Company code" field="company_code" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Phone" field="phone" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Email" field="email" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Plant Name" field="plant_name" />
+                        </th>
                         <th className="relative">
                           <div className="inverter-header">
                             <span>Inverter Type</span>
@@ -1146,55 +1264,49 @@ export default function AllUsers() {
                           </div>
                         </th>
 
-                        <th>City</th>
-                        <th>Collector</th>
-                        <th>Longitude</th>
-                        <th>Latitude</th>
-                        <th>GMT</th>
-                        <th>Plant Type</th>
-                        <th>Iserial</th>
-                        <th>Keep live power</th>
-                        <th>Capacity(kw)</th>
-                        <th
-                          className="sortable"
-                          onClick={() => handleSort("day_power")}
-                        >
-                          <span>Day production(kWH)</span>
-                          <span
-                            className={
-                              "sort-arrow" +
-                              (sortConfig.field === "day_power" ? " sort-arrow-active" : "")
-                            }
-                          >
-                            {sortConfig.field === "day_power" && sortConfig.direction === "asc"
-                              ? "▼"
-                              : "▲"}
-                          </span>
+                        <th>
+                          <SortableHeader label="City" field="city_name" />
                         </th>
-                        <th
-                          className="sortable"
-                          onClick={() => handleSort("total_power")}
-                        >
-                          <span>Total Production(kWH)</span>
-                          <span
-                            className={
-                              "sort-arrow" +
-                              (sortConfig.field === "total_power" ? " sort-arrow-active" : "")
-                            }
-                          >
-                            {sortConfig.field === "total_power" && sortConfig.direction === "asc"
-                              ? "▼"
-                              : "▲"}
-                          </span>
+                        <th>
+                          <SortableHeader label="Collector" field="collector" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Longitude" field="longitude" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Latitude" field="latitude" />
+                        </th>
+                        <th>
+                          <SortableHeader label="GMT" field="gmt" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Plant Type" field="plant_type" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Iserial" field="iserial" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Keep live power" field="power" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Capacity(kw)" field="capacity" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Day production(kWH)" field="day_power" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Total Production(kWH)" field="total_power" />
                         </th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
                         <th>Daily Gen</th>
                         <th>Weekly Gen</th>
                         <th>Monthly Gen</th>
-                        <th>Created At</th>
+                        <th>
+                          <SortableHeader label="Created At" field="created_at" />
+                        </th>
                         <th className="sticky-col sticky-col-right col-updated">
-                          Updated At
+                          <SortableHeader label="Updated At" field="updated_at" />
                         </th>
                       </tr>
                     </thead>
