@@ -32,10 +32,6 @@ export default function AllUsers() {
   const [tablePage, setTablePage] = useState(1);
   const rowsPerPage = 25;
   const [search, setSearch] = useState("");
-  const [sortBy] = useState("username");
-  const [sortOrder] = useState("asc");
-  const [sortField, setSortField] = useState("id_asc");
-   
   const [searchInput, setSearchInput] = useState("");
 
   // Inverter type filter states
@@ -87,10 +83,10 @@ export default function AllUsers() {
     }
     return "standby";
   });
-  const [idSortOrder, setIdSortOrder] = useState("asc");
-  const [usernameSortOrder, setUsernameSortOrder] = useState("asc");
-  const [daySortOrder, setDaySortOrder] = useState("asc");
-  const [totalSortOrder, setTotalSortOrder] = useState("asc");
+  const [sortConfig, setSortConfig] = useState({
+    field: "id",
+    direction: "asc",
+  });
   // ADD THIS HERE
   const [inverterTotals, setInverterTotals] = useState({
     total_all_plant: 0,
@@ -137,6 +133,99 @@ export default function AllUsers() {
     setSelectedInverter(value);
     setTablePage(1);
     closeFilterMenu();
+  };
+
+  // Username sort key helper: groups letters, then digits, then others
+  const getUsernameSortKey = (rawName) => {
+    const name = (rawName || "").trim();
+    if (!name) {
+      return { group: 2, value: "" };
+    }
+
+    const first = name[0].toLowerCase();
+
+    // group 0: letters (a-z)
+    if (first >= "a" && first <= "z") {
+      return { group: 0, value: name.toLowerCase() };
+    }
+
+    // group 1: digits (0-9)
+    if (first >= "0" && first <= "9") {
+      return { group: 1, value: name.toLowerCase() };
+    }
+
+    // group 2: others (symbols, etc.)
+    return { group: 2, value: name.toLowerCase() };
+  };
+
+  // Sort handler: toggle direction if same column, else set new column with default direction
+  const handleSort = (field) => {
+    setTablePage(1);
+    setSortConfig((prev) => {
+      if (prev.field === field) {
+        const nextDirection = prev.direction === "asc" ? "desc" : "asc";
+        return { field, direction: nextDirection };
+      }
+
+      if (field === "id" || field === "username") {
+        return { field, direction: "asc" };
+      }
+
+      if (field === "day_power" || field === "total_power") {
+        return { field, direction: "desc" };
+      }
+
+      return { field, direction: "asc" };
+    });
+  };
+
+  // Sort data function: applies sorting based on sortConfig
+  const sortData = (data) => {
+    const sorted = [...data];
+
+    if (!sortConfig.field) return sorted;
+
+    const { field, direction } = sortConfig;
+
+    sorted.sort((a, b) => {
+      // ID: simple numeric
+      if (field === "id") {
+        const va = Number(a.id) || 0;
+        const vb = Number(b.id) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Username: A-Z then numbers ordering
+      if (field === "username") {
+        const ka = getUsernameSortKey(a.username);
+        const kb = getUsernameSortKey(b.username);
+
+        if (ka.group !== kb.group) {
+          return direction === "asc" ? ka.group - kb.group : kb.group - ka.group;
+        }
+
+        const cmp = ka.value.localeCompare(kb.value);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
+      // Day production numeric
+      if (field === "day_power") {
+        const va = parseFloat(a.day_power) || 0;
+        const vb = parseFloat(b.day_power) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      // Total production numeric
+      if (field === "total_power") {
+        const va = parseFloat(a.total_power) || 0;
+        const vb = parseFloat(b.total_power) || 0;
+        return direction === "asc" ? va - vb : vb - va;
+      }
+
+      return 0;
+    });
+
+    return sorted;
   };
 
   // Fetch users from API
@@ -748,47 +837,27 @@ export default function AllUsers() {
   }
 
   const normalizedSearchTerm = searchInput.trim().toLowerCase();
-  const sortData = (data) => {
-    const sorted = [...data];
-    switch (sortField) {
-      case "id_asc":
-        sorted.sort((a, b) => Number(a.id) - Number(b.id));
-        break;
-      case "username_asc":
-        sorted.sort((a, b) =>
-          (a.username || "").localeCompare(b.username || "")
-        );
-        break;
-      case "day_power_desc":
-        sorted.sort((a, b) => Number(b.day_power) - Number(a.day_power));
-        break;
-      case "total_power_desc":
-        sorted.sort((a, b) => Number(b.total_power) - Number(a.total_power));
-        break;
-    }
-    return sorted;
-  };
 
-  let filteredUsers = normalizedSearchTerm
-    ? sortData(
-        displayedUsers.filter((user) => {
-          const idValue = String(user.id ?? "").toLowerCase();
-          const usernameValue = (user.username ?? "").toLowerCase();
-          const phoneValue = (user.phone ?? "").toLowerCase();
-          const emailValue = (user.email ?? "").toLowerCase();
-          const companyCodeValue = (user.company_code ?? "").toLowerCase();
-          const collectorValue = (user.collector ?? "").toLowerCase();
-          return [
-            idValue,
-            usernameValue,
-            phoneValue,
-            emailValue,
-            companyCodeValue,
-            collectorValue,
-          ].some((field) => field.includes(normalizedSearchTerm));
-        })
-      )
-    : sortData(displayedUsers);
+  const filteredUsersRaw = normalizedSearchTerm
+    ? displayedUsers.filter((user) => {
+        const idValue = String(user.id ?? "").toLowerCase();
+        const usernameValue = (user.username ?? "").toLowerCase();
+        const phoneValue = (user.phone ?? "").toLowerCase();
+        const emailValue = (user.email ?? "").toLowerCase();
+        const companyCodeValue = (user.company_code ?? "").toLowerCase();
+        const collectorValue = (user.collector ?? "").toLowerCase();
+        return [
+          idValue,
+          usernameValue,
+          phoneValue,
+          emailValue,
+          companyCodeValue,
+          collectorValue,
+        ].some((field) => field.includes(normalizedSearchTerm));
+      })
+    : displayedUsers;
+
+  const filteredUsers = sortData(filteredUsersRaw);
 
   // 1. ID SORTING
   if (idSortOrder === "asc") {
@@ -1054,30 +1123,34 @@ export default function AllUsers() {
                     <thead>
                       <tr>
                         <th className="sticky-col col-no">No.</th>
-                        <th 
-                          className="sortable-header sticky-col col-id"
-                          onClick={() => setIdSortOrder(idSortOrder === "asc" ? "desc" : "asc")}
+                        <th
+                          className="sticky-col col-id sortable"
+                          onClick={() => handleSort("id")}
                         >
-                          ID 
-                          <span style={{
-                              marginLeft: "6px",
-                              color: idSortOrder === "asc" ? "#1E90FF" : "#FF4500",
-                              fontWeight: "bold"
-                          }}>
-                            {idSortOrder === "asc" ? "↑" : "↓"}
+                          <span>User ID</span>
+                          <span
+                            className={
+                              "sort-arrow" +
+                              (sortConfig.field === "id" ? " sort-arrow-active" : "")
+                            }
+                          >
+                            {sortConfig.field === "id" && sortConfig.direction === "asc" ? "▲" : "▼"}
                           </span>
                         </th>
-                        <th 
-                          className="sortable-header sticky-col col-username"
-                          onClick={() => setUsernameSortOrder(usernameSortOrder === "asc" ? "desc" : "asc")}
+                        <th
+                          className="sticky-col col-username sortable"
+                          onClick={() => handleSort("username")}
                         >
-                          Username 
-                          <span style={{
-                              marginLeft: "6px",
-                              color: usernameSortOrder === "asc" ? "#1E90FF" : "#FF4500",
-                              fontWeight: "bold"
-                          }}>
-                            {usernameSortOrder === "asc" ? "↑" : "↓"}
+                          <span>Username</span>
+                          <span
+                            className={
+                              "sort-arrow" +
+                              (sortConfig.field === "username" ? " sort-arrow-active" : "")
+                            }
+                          >
+                            {sortConfig.field === "username" && sortConfig.direction === "asc"
+                              ? "▲"
+                              : "▼"}
                           </span>
                         </th>
                         {/*<th>Company Code</th> */}
@@ -1134,30 +1207,36 @@ export default function AllUsers() {
                         <th>Iserial</th>
                         <th>Keep live power</th>
                         <th>Capacity(kw)</th>
-                        <th 
-                          className="sortable-header"
-                          onClick={() => setDaySortOrder(daySortOrder === "asc" ? "desc" : "asc")}
+                        <th
+                          className="sortable"
+                          onClick={() => handleSort("day_power")}
                         >
-                          Day Production (kWH)
-                          <span style={{
-                              marginLeft: "6px",
-                              color: daySortOrder === "asc" ? "#1E90FF" : "#FF4500",
-                              fontWeight: "bold"
-                          }}>
-                            {daySortOrder === "asc" ? "↑" : "↓"}
+                          <span>Day production(kWH)</span>
+                          <span
+                            className={
+                              "sort-arrow" +
+                              (sortConfig.field === "day_power" ? " sort-arrow-active" : "")
+                            }
+                          >
+                            {sortConfig.field === "day_power" && sortConfig.direction === "asc"
+                              ? "▼"
+                              : "▲"}
                           </span>
                         </th>
-                        <th 
-                          className="sortable-header"
-                          onClick={() => setTotalSortOrder(totalSortOrder === "asc" ? "desc" : "asc")}
+                        <th
+                          className="sortable"
+                          onClick={() => handleSort("total_power")}
                         >
-                          Total Production (kWH)
-                          <span style={{
-                              marginLeft: "6px",
-                              color: totalSortOrder === "asc" ? "#1E90FF" : "#FF4500",
-                              fontWeight: "bold"
-                          }}>
-                            {totalSortOrder === "asc" ? "↑" : "↓"}
+                          <span>Total Production(kWH)</span>
+                          <span
+                            className={
+                              "sort-arrow" +
+                              (sortConfig.field === "total_power" ? " sort-arrow-active" : "")
+                            }
+                          >
+                            {sortConfig.field === "total_power" && sortConfig.direction === "asc"
+                              ? "▼"
+                              : "▲"}
                           </span>
                         </th>
                         <th>WhatsApp Flag</th>

@@ -386,6 +386,20 @@
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
 }
 
+.sortable {
+  cursor: pointer;
+}
+
+.sort-arrow {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.sort-arrow-active {
+  color: #16a34a;
+}
+
 .custom-table th,
 .custom-table td {
   white-space: nowrap;

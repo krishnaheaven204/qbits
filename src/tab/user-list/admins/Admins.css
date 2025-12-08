@@ -478,3 +478,20 @@ input:checked + .toggle-slider:before {
   background: #cbd5e1;
 }
 
+/* Sortable columns styling */
+.sortable-col {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sort-arrow {
+  margin-left: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.sort-arrow-active {
+  color: #16a34a;
+}
+
