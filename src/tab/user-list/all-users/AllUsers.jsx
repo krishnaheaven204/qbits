@@ -4,8 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import "./AllUsers.css";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL_USER_LIST || process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL =process.env.NEXT_PUBLIC_API_URL;
 
 const normalizeApiBase = (input) => {
   if (!input) return "";
@@ -22,8 +21,10 @@ const normalizeApiBase = (input) => {
 
 const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
 const GROUPED_CLIENTS_PER_PAGE = 200;
+let inverterTotalsLock = false;
 
 export default function AllUsers() {
+  const fetchLock = useRef(false);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -346,6 +347,12 @@ export default function AllUsers() {
 
   // 👉 PASTE HERE
   const fetchInverterTotals = async () => {
+    if (inverterTotalsLock) {
+      return;
+    }
+    
+    inverterTotalsLock = true;
+    
     try {
       const token =
         typeof window !== "undefined"
@@ -384,10 +391,17 @@ export default function AllUsers() {
       }
     } catch (err) {
       console.log("Error fetching inverter totals", err);
+    } finally {
+      setTimeout(() => { inverterTotalsLock = false; }, 200);
     }
   };
 
   const fetchGroupedClients = async () => {
+    if (fetchLock.current) {
+      return;
+    }
+    
+    fetchLock.current = true;
     setLoading(true);
     setError(null);
   
@@ -429,6 +443,7 @@ export default function AllUsers() {
       setError("Failed to load user list");
     } finally {
       setLoading(false);
+      setTimeout(() => { fetchLock.current = false; }, 150);
     }
   };
   
@@ -546,6 +561,56 @@ export default function AllUsers() {
 
   const handleTableNext = (totalTablePages) => {
     setTablePage((prev) => Math.min(totalTablePages, prev + 1));
+  };
+
+  // Helper function to generate page numbers for pagination
+  const getPageNumbers = (currentPage, totalPages) => {
+    const maxVisible = 5;
+    const pages = [];
+
+    if (totalPages <= maxVisible) {
+      // Show all pages if total is less than max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      // Calculate range around current page
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      // Adjust if near the beginning
+      if (currentPage <= 2) {
+        endPage = Math.min(totalPages - 1, 4);
+      }
+
+      // Adjust if near the end
+      if (currentPage >= totalPages - 1) {
+        startPage = Math.max(2, totalPages - 3);
+      }
+
+      // Add ellipsis if needed
+      if (startPage > 2) {
+        pages.push('...');
+      }
+
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis if needed
+      if (endPage < totalPages - 1) {
+        pages.push('...');
+      }
+
+      // Always show last page
+      pages.push(totalPages);
+    }
+
+    return pages;
   };
 
   
@@ -1334,8 +1399,8 @@ export default function AllUsers() {
 
                               <td>{u.password ?? "N/A"}</td>
                               <td
-                                onClick={() => openQbitsCodeModal(u)}
-                                className="company-code-cell"
+                                onClick={() => u.user_flag !== 1 && openQbitsCodeModal(u)}
+                                className={`company-code-cell ${u.user_flag === 1 ? 'disabled' : ''}`}
                               >
                                 {u.qbits_company_code ?? "N/A"}
                               </td>
@@ -1461,33 +1526,41 @@ export default function AllUsers() {
               <div className="ul-pagination">
                 <button
                   type="button"
-                  className="page-btn"
+                  className="pagination-arrow-btn"
                   onClick={handleTablePrevious}
                   disabled={tablePage === 1}
+                  aria-label="Previous page"
                 >
-                  Previous
+                  ‹
                 </button>
-                <div className="ul-pagination-info">
-                  Showing
-                  <span className="ul-strong">
-                    {displayedUsers.length === 0
-                      ? 0
-                      : `${rowStartIndex + 1}–${Math.min(
-                          rowStartIndex + paginatedUsers.length,
-                          displayedUsers.length
-                        )}`}
-                  </span>{" "}
-                  of <span className="ul-strong">{displayedUsers.length}</span>{" "}
-                  users • Page <span className="ul-strong">{tablePage}</span> of{" "}
-                  <span className="ul-strong">{totalTablePages}</span>
+                <div className="pagination-numbers">
+                  {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
+                    pageNum === '...' ? (
+                      <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                        {pageNum}
+                      </span>
+                    ) : (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        className={`pagination-number ${
+                          tablePage === pageNum ? 'active' : ''
+                        }`}
+                        onClick={() => setTablePage(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  ))}
                 </div>
                 <button
                   type="button"
-                  className="page-btn"
+                  className="pagination-arrow-btn"
                   onClick={() => handleTableNext(totalTablePages)}
                   disabled={tablePage === totalTablePages}
+                  aria-label="Next page"
                 >
-                  Next
+                  ›
                 </button>
               </div>
             </>

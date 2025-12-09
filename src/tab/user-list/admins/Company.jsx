@@ -3,8 +3,7 @@
 import './Company.css';
 import { useState, useEffect } from "react";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL_USER_LIST || process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL =process.env.NEXT_PUBLIC_API_URL;
 
 const normalizeApiBase = (input) => {
   if (!input) return "";
@@ -20,8 +19,9 @@ const normalizeApiBase = (input) => {
 };
 
 const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
+let companyFetchLock = false;
 
-export default function AllUsers() {
+export default function Company() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,6 +42,11 @@ export default function AllUsers() {
 
   // Fetch users from API
   const fetchUsers = async () => {
+    if (companyFetchLock) {
+      return;
+    }
+    
+    companyFetchLock = true;
     setLoading(true);
     setError(null);
 
@@ -121,14 +126,15 @@ export default function AllUsers() {
       setUsers([]);
     } finally {
       setLoading(false);
+      setTimeout(() => { companyFetchLock = false; }, 200);
     }
   };
 
-  // Fetch users when page or search changes
+  // Fetch users when page changes
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, [page]);
   
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
