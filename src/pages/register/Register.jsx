@@ -556,7 +556,7 @@ export default function Register() {
 
   return (
     <div className="register-page">
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="register-container">
         <div className="register-header">
           <Image src="/Qbits.svg" alt="logo" width={220} height={120} />
