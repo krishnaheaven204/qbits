@@ -63,6 +63,21 @@ export default function AllUsers() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterMenuPos, setFilterMenuPos] = useState({ top: 0, left: 0 });
 
+  // City filter states
+  const [selectedCity, setSelectedCity] = useState("");
+  const [cityList, setCityList] = useState([]);
+  const [isCityFilterOpen, setIsCityFilterOpen] = useState(false);
+  const [cityFilterMenuPos, setCityFilterMenuPos] = useState({ top: 0, left: 0 });
+  const cityFilterButtonRef = useRef(null);
+  const cityFilterMenuRef = useRef(null);
+
+  // Plant type filter states
+  const [selectedPlantType, setSelectedPlantType] = useState("");
+  const [isPlantTypeFilterOpen, setIsPlantTypeFilterOpen] = useState(false);
+  const [plantTypeFilterMenuPos, setPlantTypeFilterMenuPos] = useState({ top: 0, left: 0 });
+  const plantTypeFilterButtonRef = useRef(null);
+  const plantTypeFilterMenuRef = useRef(null);
+
   // Popup states
   const [showCompanyPopup, setShowCompanyPopup] = useState(false);
   const [popupUserId, setPopupUserId] = useState("");
@@ -134,6 +149,72 @@ export default function AllUsers() {
     setSelectedInverter(value);
     setTablePage(1);
     closeFilterMenu();
+  };
+
+  // Plant type label helper
+  function getPlantTypeLabel(v) {
+    if (v == 0) return "Solar System";
+    if (v == 1) return "Battery Storage";
+    if (v == 2) return "Solar with Limitation";
+    return "N/A";
+  }
+
+  // City filter handlers
+  const updateCityFilterMenuPosition = useCallback(() => {
+    if (typeof window === "undefined" || !cityFilterButtonRef.current) return;
+    const rect = cityFilterButtonRef.current.getBoundingClientRect();
+    setCityFilterMenuPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+    });
+  }, []);
+
+  const closeCityFilterMenu = useCallback(() => {
+    setIsCityFilterOpen(false);
+  }, []);
+
+  const handleCityFilterIconClick = () => {
+    if (isCityFilterOpen) {
+      closeCityFilterMenu();
+    } else {
+      updateCityFilterMenuPosition();
+      setIsCityFilterOpen(true);
+    }
+  };
+
+  const handleCityFilterSelect = (value) => {
+    setSelectedCity(value);
+    setTablePage(1);
+    closeCityFilterMenu();
+  };
+
+  // Plant type filter handlers
+  const updatePlantTypeFilterMenuPosition = useCallback(() => {
+    if (typeof window === "undefined" || !plantTypeFilterButtonRef.current) return;
+    const rect = plantTypeFilterButtonRef.current.getBoundingClientRect();
+    setPlantTypeFilterMenuPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+    });
+  }, []);
+
+  const closePlantTypeFilterMenu = useCallback(() => {
+    setIsPlantTypeFilterOpen(false);
+  }, []);
+
+  const handlePlantTypeFilterIconClick = () => {
+    if (isPlantTypeFilterOpen) {
+      closePlantTypeFilterMenu();
+    } else {
+      updatePlantTypeFilterMenuPosition();
+      setIsPlantTypeFilterOpen(true);
+    }
+  };
+
+  const handlePlantTypeFilterSelect = (value) => {
+    setSelectedPlantType(value);
+    setTablePage(1);
+    closePlantTypeFilterMenu();
   };
 
   // Username sort key helper: groups letters, then digits, then others
@@ -1005,6 +1086,64 @@ export default function AllUsers() {
     };
   }, [isFilterOpen, closeFilterMenu, updateFilterMenuPosition]);
 
+  // City filter menu event listeners
+  useEffect(() => {
+    if (!isCityFilterOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        cityFilterButtonRef.current?.contains(event.target) ||
+        cityFilterMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      closeCityFilterMenu();
+    };
+
+    const handleViewportChange = () => {
+      updateCityFilterMenuPosition();
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleViewportChange, true);
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleViewportChange, true);
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [isCityFilterOpen, closeCityFilterMenu, updateCityFilterMenuPosition]);
+
+  // Plant type filter menu event listeners
+  useEffect(() => {
+    if (!isPlantTypeFilterOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        plantTypeFilterButtonRef.current?.contains(event.target) ||
+        plantTypeFilterMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      closePlantTypeFilterMenu();
+    };
+
+    const handleViewportChange = () => {
+      updatePlantTypeFilterMenuPosition();
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleViewportChange, true);
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleViewportChange, true);
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [isPlantTypeFilterOpen, closePlantTypeFilterMenu, updatePlantTypeFilterMenuPosition]);
+
   // Decide which grouped list to show in the table
   let displayedUsers = [];
 
@@ -1045,16 +1184,26 @@ export default function AllUsers() {
 
   const filteredUsers = sortData(filteredUsersRaw);
 
+  // Apply city filter
+  const cityFilteredUsers = selectedCity
+    ? filteredUsers.filter(u => u.city_name === selectedCity)
+    : filteredUsers;
+
+  // Apply plant type filter
+  const plantTypeFilteredUsers = selectedPlantType !== ""
+    ? cityFilteredUsers.filter(u => String(u.plant_type) === String(selectedPlantType))
+    : cityFilteredUsers;
+
   const totalTablePages = Math.max(
     1,
-    Math.ceil(filteredUsers.length / rowsPerPage)
+    Math.ceil(plantTypeFilteredUsers.length / rowsPerPage)
   );
   const rowStartIndex = (tablePage - 1) * rowsPerPage;
-  const paginatedUsers = filteredUsers.slice(
+  const paginatedUsers = plantTypeFilteredUsers.slice(
     rowStartIndex,
     rowStartIndex + rowsPerPage
   );
-  // Apply inverter filter also
+  // Apply inverter filter to paginated results
   const inverterFilteredUsers = selectedInverter
     ? paginatedUsers.filter((u) => u.inverter_type === selectedInverter)
     : paginatedUsers;
@@ -1083,6 +1232,13 @@ export default function AllUsers() {
       localStorage.setItem("userListSelectedInverter", selectedInverter);
     }
   }, [selectedInverter]);
+
+  // Generate unique city list from displayed users
+  useEffect(() => {
+    const all = displayedUsers.map(u => u.city_name).filter(Boolean);
+    const unique = [...new Set(all)].sort();
+    setCityList(unique);
+  }, [displayedUsers]);
 
   const filterMenu =
     isFilterOpen && typeof document !== "undefined"
@@ -1117,6 +1273,96 @@ export default function AllUsers() {
               >
                 {type}
                 {selectedInverter === type && (
+                  <span className="filter-menu-check">✓</span>
+                )}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )
+      : null;
+
+  // City filter menu
+  const cityFilterMenu =
+    isCityFilterOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={cityFilterMenuRef}
+            className="inverter-filter-menu"
+            style={{
+              top: cityFilterMenuPos.top,
+              left: cityFilterMenuPos.left,
+            }}
+          >
+            <div className="filter-menu-header">City</div>
+            <button
+              type="button"
+              className={`filter-menu-option ${
+                selectedCity === "" ? "active" : ""
+              }`}
+              onClick={() => handleCityFilterSelect("")}
+            >
+              Show All
+            </button>
+            <div className="filter-menu-divider" />
+            {cityList.map((city) => (
+              <button
+                key={city}
+                type="button"
+                className={`filter-menu-option ${
+                  selectedCity === city ? "active" : ""
+                }`}
+                onClick={() => handleCityFilterSelect(city)}
+              >
+                {city}
+                {selectedCity === city && (
+                  <span className="filter-menu-check">✓</span>
+                )}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )
+      : null;
+
+  // Plant type filter menu
+  const plantTypeFilterMenu =
+    isPlantTypeFilterOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={plantTypeFilterMenuRef}
+            className="inverter-filter-menu"
+            style={{
+              top: plantTypeFilterMenuPos.top,
+              left: plantTypeFilterMenuPos.left,
+            }}
+          >
+            <div className="filter-menu-header">Plant Type</div>
+            <button
+              type="button"
+              className={`filter-menu-option ${
+                selectedPlantType === "" ? "active" : ""
+              }`}
+              onClick={() => handlePlantTypeFilterSelect("")}
+            >
+              Show All
+            </button>
+            <div className="filter-menu-divider" />
+            {[
+              { label: "Solar System", value: "0" },
+              { label: "Battery Storage", value: "1" },
+              { label: "Solar with Limitation", value: "2" },
+            ].map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                className={`filter-menu-option ${
+                  selectedPlantType === type.value ? "active" : ""
+                }`}
+                onClick={() => handlePlantTypeFilterSelect(type.value)}
+              >
+                {type.label}
+                {selectedPlantType === type.value && (
                   <span className="filter-menu-check">✓</span>
                 )}
               </button>
@@ -1328,8 +1574,34 @@ export default function AllUsers() {
                           <SortableHeader label="Plant Name" field="plant_name" />
                         </th>
 
-                        <th>
-                          <SortableHeader label="City" field="city_name" />
+                        <th className="relative col-city">
+                          <div className="inverter-header">
+                            <SortableHeader label="City" field="city_name" />
+
+                            <button
+                              type="button"
+                              ref={cityFilterButtonRef}
+                              className={`inverter-filter-trigger ${
+                                isCityFilterOpen ? "active" : ""
+                              } ${selectedCity ? "has-selection" : ""}`}
+                              aria-label="Filter city"
+                              aria-expanded={isCityFilterOpen}
+                              onClick={handleCityFilterIconClick}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 5H20M7 12H17M10 19H14"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+
+                            {selectedCity && (
+                              <span className="inverter-filter-chip">{selectedCity}</span>
+                            )}
+                          </div>
                         </th>
                         <th>
                           <SortableHeader label="Collector" field="collector" />
@@ -1343,8 +1615,34 @@ export default function AllUsers() {
                         <th>
                           <SortableHeader label="GMT" field="gmt" />
                         </th>
-                        <th>
-                          <SortableHeader label="Plant Type" field="plant_type" />
+                        <th className="relative col-plant-type">
+                          <div className="inverter-header">
+                            <SortableHeader label="Plant Type" field="plant_type" />
+
+                            <button
+                              type="button"
+                              ref={plantTypeFilterButtonRef}
+                              className={`inverter-filter-trigger ${
+                                isPlantTypeFilterOpen ? "active" : ""
+                              } ${selectedPlantType ? "has-selection" : ""}`}
+                              aria-label="Filter plant type"
+                              aria-expanded={isPlantTypeFilterOpen}
+                              onClick={handlePlantTypeFilterIconClick}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 5H20M7 12H17M10 19H14"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+
+                            {selectedPlantType && (
+                              <span className="inverter-filter-chip">{getPlantTypeLabel(parseInt(selectedPlantType))}</span>
+                            )}
+                          </div>
                         </th>
                         <th>
                           <SortableHeader label="Iserial" field="iserial" />
@@ -1413,7 +1711,7 @@ export default function AllUsers() {
                               <td>{u.longitude ?? "N/A"}</td>
                               <td>{u.latitude ?? "N/A"}</td>
                               <td>{u.gmt ?? "N/A"}</td>
-                              <td>{u.plant_type ?? "N/A"}</td>
+                              <td>{getPlantTypeLabel(u.plant_type)}</td>
                               <td>{u.iserial ?? "N/A"}</td>
                               <td>{u.capacity ?? "N/A"}</td>
                               <td>{u.day_power ?? "N/A"}</td>
@@ -1613,6 +1911,8 @@ export default function AllUsers() {
         </div>
       )}
       {filterMenu}
+      {cityFilterMenu}
+      {plantTypeFilterMenu}
     </div>
   );
 }
