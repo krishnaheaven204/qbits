@@ -322,6 +322,7 @@ export default function Register() {
   // Step 1: Send OTP
   const sendCompanyOtp = async () => {
     setIsLoading(true);
+    const toastId = toast.loading("Sending OTP…");
 
     const payload = {
       user_id: formData.user_id.toLowerCase(),
@@ -343,15 +344,15 @@ export default function Register() {
       const data = JSON.parse(text);
 
       if (!res.ok) {
-        alert(data.message || "OTP sending failed");
+        toast.error(data.message || "Failed to send OTP", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("OTP sent to your email");
+      toast.success("OTP sent successfully", { id: toastId });
       setOtpStage(true);
     } catch (err) {
-      alert("Network error " + err.message);
+      toast.error("Failed to send OTP", { id: toastId });
     }
 
     setIsLoading(false);
@@ -360,11 +361,12 @@ export default function Register() {
   // Step 2: Verify OTP & Register
   const verifyCompanyOtp = async () => {
     if (!emailCode.trim()) {
-      alert("Enter OTP first");
+      toast.error("Enter OTP first");
       return;
     }
 
     setIsLoading(true);
+    const toastId = toast.loading("Verifying OTP…");
 
     const payload = {
       user_id: formData.user_id.toLowerCase(),
@@ -387,15 +389,25 @@ export default function Register() {
       const data = JSON.parse(text);
 
       if (!res.ok) {
-        alert(data.message || "OTP verification failed");
+        toast.error(data.message || "Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("Company registered successfully");
+      toast.success("Registration successful", { id: toastId });
+      setCompanyFormData({
+        user_id: "",
+        password: "",
+        confirmPassword: "",
+        companyName: "",
+        companyCode: generateCompanyCode(),
+        email: "",
+      });
+      setOtpStage(false);
+      setEmailCode("");
       router.push("/login");
     } catch (err) {
-      alert("Network error " + err.message);
+      toast.error("Registration failed, please check the inputs", { id: toastId });
     }
 
     setIsLoading(false);
@@ -485,6 +497,7 @@ export default function Register() {
     console.log("INDIVIDUAL PAYLOAD --->", payload);
 
     setIsLoading(true);
+    const toastId = toast.loading("Registering…");
     try {
       const res = await fetch(`${API_BASE}/individual`, {
         method: "POST",
@@ -498,21 +511,40 @@ export default function Register() {
       try {
         data = JSON.parse(text);
       } catch (err) {
-        alert("Invalid server response");
+        toast.error("Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
       if (!res.ok) {
-        alert(data.message || "Registration failed");
+        toast.error(data.message || "Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("Individual registration successful");
+      toast.success("Registration successful", { id: toastId });
+      setIndividualFormData({
+        homeName: "",
+        inverterSerial: "",
+        userId: "",
+        city: "",
+        wifiSerial: "",
+        timezone: "",
+        stationType: "",
+        whatsapp: "",
+        longitude: "",
+        latitude: "",
+        password: "",
+        confirmPassword: "",
+        iserial: "",
+        qq: "",
+        email: "",
+        parent: "",
+        company_code: "",
+      });
       router.push("/login?registered=true");
     } catch (err) {
-      alert("Network error: " + err.message);
+      toast.error("Registration failed, please check the inputs", { id: toastId });
     }
 
     setIsLoading(false);
