@@ -47,11 +47,12 @@ export default function Register() {
 
   // Separate form data for company registration
   const [companyFormData, setCompanyFormData] = useState({
-    companyName: "",
-    email: "",
+    user_id: "",
     password: "",
     confirmPassword: "",
+    companyName: "",
     companyCode: "",
+    email: "",
   });
 
   // Separate form data for individual registration
@@ -146,7 +147,7 @@ export default function Register() {
   // Validate Company form fields - UI only
   const validateCompanyFields = () => {
     const requiredFields = {
-      companyName: true,
+      user_id: true,
       password: true,
       confirmPassword: true,
       companyCode: true,
@@ -300,7 +301,7 @@ export default function Register() {
   const validateCompanyForm = () => {
     const err = {};
 
-    if (!formData.companyName.trim()) err.companyName = "Company name required";
+    if (!formData.user_id.trim()) err.user_id = "Account name required";
     if (!formData.email.trim()) err.email = "Email required";
     if (!/\S+@\S+\.\S+/.test(formData.email.trim()))
       err.email = "Invalid email format";
@@ -321,10 +322,11 @@ export default function Register() {
   // Step 1: Send OTP
   const sendCompanyOtp = async () => {
     setIsLoading(true);
+    const toastId = toast.loading("Sending OTP…");
 
     const payload = {
-      user_id: formData.companyCode.toLowerCase(), // FIXED
-      company_name: formData.companyName.trim(),
+      user_id: formData.user_id.toLowerCase(),
+      company_name: formData.companyName.trim() || "-",
       email: formData.email.trim(),
       password: formData.password.trim(),
       c_password: formData.confirmPassword.trim(),
@@ -342,15 +344,15 @@ export default function Register() {
       const data = JSON.parse(text);
 
       if (!res.ok) {
-        alert(data.message || "OTP sending failed");
+        toast.error(data.message || "Failed to send OTP", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("OTP sent to your email");
+      toast.success("OTP sent successfully", { id: toastId });
       setOtpStage(true);
     } catch (err) {
-      alert("Network error " + err.message);
+      toast.error("Failed to send OTP", { id: toastId });
     }
 
     setIsLoading(false);
@@ -359,15 +361,16 @@ export default function Register() {
   // Step 2: Verify OTP & Register
   const verifyCompanyOtp = async () => {
     if (!emailCode.trim()) {
-      alert("Enter OTP first");
+      toast.error("Enter OTP first");
       return;
     }
 
     setIsLoading(true);
+    const toastId = toast.loading("Verifying OTP…");
 
     const payload = {
-      user_id: formData.companyCode.toLowerCase(), // FIXED
-      company_name: formData.companyName.trim(),
+      user_id: formData.user_id.toLowerCase(),
+      company_name: formData.companyName.trim() || "-",
       email: formData.email.trim(),
       password: formData.password.trim(),
       c_password: formData.confirmPassword.trim(),
@@ -386,15 +389,25 @@ export default function Register() {
       const data = JSON.parse(text);
 
       if (!res.ok) {
-        alert(data.message || "OTP verification failed");
+        toast.error(data.message || "Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("Company registered successfully");
+      toast.success("Registration successful", { id: toastId });
+      setCompanyFormData({
+        user_id: "",
+        password: "",
+        confirmPassword: "",
+        companyName: "",
+        companyCode: generateCompanyCode(),
+        email: "",
+      });
+      setOtpStage(false);
+      setEmailCode("");
       router.push("/login");
     } catch (err) {
-      alert("Network error " + err.message);
+      toast.error("Registration failed, please check the inputs", { id: toastId });
     }
 
     setIsLoading(false);
@@ -484,6 +497,7 @@ export default function Register() {
     console.log("INDIVIDUAL PAYLOAD --->", payload);
 
     setIsLoading(true);
+    const toastId = toast.loading("Registering…");
     try {
       const res = await fetch(`${API_BASE}/individual`, {
         method: "POST",
@@ -497,21 +511,40 @@ export default function Register() {
       try {
         data = JSON.parse(text);
       } catch (err) {
-        alert("Invalid server response");
+        toast.error("Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
       if (!res.ok) {
-        alert(data.message || "Registration failed");
+        toast.error(data.message || "Registration failed, please check the inputs", { id: toastId });
         setIsLoading(false);
         return;
       }
 
-      alert("Individual registration successful");
+      toast.success("Registration successful", { id: toastId });
+      setIndividualFormData({
+        homeName: "",
+        inverterSerial: "",
+        userId: "",
+        city: "",
+        wifiSerial: "",
+        timezone: "",
+        stationType: "",
+        whatsapp: "",
+        longitude: "",
+        latitude: "",
+        password: "",
+        confirmPassword: "",
+        iserial: "",
+        qq: "",
+        email: "",
+        parent: "",
+        company_code: "",
+      });
       router.push("/login?registered=true");
     } catch (err) {
-      alert("Network error: " + err.message);
+      toast.error("Registration failed, please check the inputs", { id: toastId });
     }
 
     setIsLoading(false);
@@ -523,7 +556,7 @@ export default function Register() {
 
   return (
     <div className="register-page">
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="register-container">
         <div className="register-header">
           <Image src="/Qbits.svg" alt="logo" width={220} height={120} />
@@ -560,13 +593,13 @@ export default function Register() {
           {registrationType === "company" && (
             <form className="company-form" onSubmit={handleCompanySubmit}>
               <div className="form-group">
-                <label className="form-label">Company Name *</label>
+                <label className="form-label">Account *</label>
                 <input
                   type="text"
-                  name="companyName"
-                  className={getFieldErrorClass("companyName", getInputClassName("companyName"))}
-                  placeholder="Enter company name"
-                  value={formData.companyName}
+                  name="user_id"
+                  className={getFieldErrorClass("user_id", getInputClassName("user_id"))}
+                  placeholder="Account"
+                  value={formData.user_id}
                   onChange={handleChange}
                 />
               </div>
@@ -604,7 +637,7 @@ export default function Register() {
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       className={getFieldErrorClass("confirmPassword", getInputClassName("confirmPassword"))}
-                      placeholder="Confirm password"
+                      placeholder="Confirm Password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                     />
@@ -621,6 +654,18 @@ export default function Register() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Company Name</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  className={getFieldErrorClass("companyName", getInputClassName("companyName"))}
+                  placeholder="Company Name"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="form-group">
@@ -648,12 +693,12 @@ export default function Register() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Company Email *</label>
+                <label className="form-label">Mail *</label>
                 <input
                   type="email"
                   name="email"
                   className={getFieldErrorClass("email", getInputClassName("email"))}
-                  placeholder="Enter email"
+                  placeholder="Enter Mail Box"
                   value={formData.email}
                   onChange={handleChange}
                 />
@@ -678,7 +723,7 @@ export default function Register() {
                   ? "Processing..."
                   : otpStage
                   ? "Verify OTP"
-                  : "Register"}
+                  : "Send"}
               </button>
             </form>
           )}

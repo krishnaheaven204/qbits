@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { Toaster } from 'react-hot-toast';
 import Header from '@/components/header/Header';
 import Sidebar from '@/components/sidebar/Sidebar';
 
@@ -14,6 +15,7 @@ export default function LayoutWrapper({ children }) {
 
   return (
     <div className="app-layout">
+      <Toaster position="top-right" reverseOrder={false} />
       <Sidebar />
       <div className="main-content-wrapper">
         <Header />

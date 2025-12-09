@@ -527,3 +527,7 @@ input:checked + .toggle-slider:before {
   color: #f97316;
   transform: rotate(180deg);
 }
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #0a8b50;
+}
