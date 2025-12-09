@@ -336,6 +336,14 @@ export default function AllUsers() {
         return direction === "asc" ? cmp : -cmp;
       }
 
+      // Inverter Type: string comparison
+      if (field === "inverter_type") {
+        const va = (a.inverter_type || "").toLowerCase();
+        const vb = (b.inverter_type || "").toLowerCase();
+        const cmp = va.localeCompare(vb);
+        return direction === "asc" ? cmp : -cmp;
+      }
+
       return 0;
     });
 
@@ -1287,33 +1295,22 @@ export default function AllUsers() {
                         <th>
                           <SortableHeader label="Email" field="email" />
                         </th>
-                        <th>
-                          <SortableHeader label="Plant Name" field="plant_name" />
-                        </th>
-                        <th className="relative">
+                        <th className="relative col-inverter-type">
                           <div className="inverter-header">
-                            <span>Inverter Type</span>
+                            <SortableHeader label="Inverter Type" field="inverter_type" />
+
                             <button
                               type="button"
                               ref={filterButtonRef}
                               className={`inverter-filter-trigger ${
                                 isFilterOpen ? "active" : ""
-                              } ${
-                                selectedInverter ? "has-selection" : ""
-                              }`}
+                              } ${selectedInverter ? "has-selection" : ""}`}
                               aria-label="Filter inverter type"
                               aria-expanded={isFilterOpen}
                               onClick={handleFilterIconClick}
                             >
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 5H20M7 12H17M10 19H14"
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 5H20M7 12H17M10 19H14"
                                   stroke="currentColor"
                                   strokeWidth="2"
                                   strokeLinecap="round"
@@ -1321,12 +1318,14 @@ export default function AllUsers() {
                                 />
                               </svg>
                             </button>
+
                             {selectedInverter && (
-                              <span className="inverter-filter-chip">
-                                {selectedInverter}
-                              </span>
+                              <span className="inverter-filter-chip">{selectedInverter}</span>
                             )}
                           </div>
+                        </th>
+                        <th>
+                          <SortableHeader label="Plant Name" field="plant_name" />
                         </th>
 
                         <th>
@@ -1406,8 +1405,8 @@ export default function AllUsers() {
                               </td>
                               <td>{u.phone ?? "N/A"}</td>
                               <td>{u.email ?? "N/A"}</td>
-                              <td>{u.plant_name ?? "N/A"}</td>
                               <td>{u.inverter_type ?? "N/A"}</td>
+                              <td>{u.plant_name ?? "N/A"}</td>
 
                               <td>{u.city_name ?? "N/A"}</td>
                               <td>{u.collector ?? "N/A"}</td>
@@ -1524,44 +1523,49 @@ export default function AllUsers() {
 
                
               <div className="ul-pagination">
-                <button
-                  type="button"
-                  className="pagination-arrow-btn"
-                  onClick={handleTablePrevious}
-                  disabled={tablePage === 1}
-                  aria-label="Previous page"
-                >
-                  ‹
-                </button>
-                <div className="pagination-numbers">
-                  {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
-                    pageNum === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
-                        {pageNum}
-                      </span>
-                    ) : (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        className={`pagination-number ${
-                          tablePage === pageNum ? 'active' : ''
-                        }`}
-                        onClick={() => setTablePage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  ))}
+                <div className="pagination-info">
+                  Showing {Math.min(rowStartIndex + 1, filteredUsers.length)} to {Math.min(rowStartIndex + rowsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
                 </div>
-                <button
-                  type="button"
-                  className="pagination-arrow-btn"
-                  onClick={() => handleTableNext(totalTablePages)}
-                  disabled={tablePage === totalTablePages}
-                  aria-label="Next page"
-                >
-                  ›
-                </button>
+                <div className="pagination-controls">
+                  <button
+                    type="button"
+                    className="pagination-arrow-btn"
+                    onClick={handleTablePrevious}
+                    disabled={tablePage === 1}
+                    aria-label="Previous page"
+                  >
+                    ‹
+                  </button>
+                  <div className="pagination-numbers">
+                    {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
+                      pageNum === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                          {pageNum}
+                        </span>
+                      ) : (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          className={`pagination-number ${
+                            tablePage === pageNum ? 'active' : ''
+                          }`}
+                          onClick={() => setTablePage(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="pagination-arrow-btn"
+                    onClick={() => handleTableNext(totalTablePages)}
+                    disabled={tablePage === totalTablePages}
+                    aria-label="Next page"
+                  >
+                    ›
+                  </button>
+                </div>
               </div>
             </>
           )}
