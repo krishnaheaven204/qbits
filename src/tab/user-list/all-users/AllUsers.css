@@ -1154,9 +1154,9 @@ input:checked + .toggle-slider:before {
 }
 
 .pagination-number.active {
-  background: #2563eb;
+  background: #159f6c;
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: #ffffff;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
