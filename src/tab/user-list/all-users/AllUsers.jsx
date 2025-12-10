@@ -60,12 +60,14 @@ export default function AllUsers() {
   ];
 
   const [selectedInverter, setSelectedInverter] = useState("");
+  const [inverterSearch, setInverterSearch] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterMenuPos, setFilterMenuPos] = useState({ top: 0, left: 0 });
 
   // City filter states
   const [selectedCity, setSelectedCity] = useState("");
   const [cityList, setCityList] = useState([]);
+  const [citySearch, setCitySearch] = useState("");
   const [isCityFilterOpen, setIsCityFilterOpen] = useState(false);
   const [cityFilterMenuPos, setCityFilterMenuPos] = useState({ top: 0, left: 0 });
   const cityFilterButtonRef = useRef(null);
@@ -134,6 +136,7 @@ export default function AllUsers() {
 
   const closeFilterMenu = useCallback(() => {
     setIsFilterOpen(false);
+    setInverterSearch("");
   }, []);
 
   const handleFilterIconClick = () => {
@@ -171,6 +174,7 @@ export default function AllUsers() {
 
   const closeCityFilterMenu = useCallback(() => {
     setIsCityFilterOpen(false);
+    setCitySearch("");
   }, []);
 
   const handleCityFilterIconClick = () => {
@@ -1240,6 +1244,10 @@ export default function AllUsers() {
     setCityList(unique);
   }, [displayedUsers]);
 
+  const filteredInverterList = inverterTypes.filter(type =>
+    type.toLowerCase().includes(inverterSearch.toLowerCase())
+  );
+
   const filterMenu =
     isFilterOpen && typeof document !== "undefined"
       ? createPortal(
@@ -1252,6 +1260,16 @@ export default function AllUsers() {
             }}
           >
             <div className="filter-menu-header">Inverter Type</div>
+            <div className="city-search-input-wrapper">
+              <input
+                type="text"
+                className="city-search-input"
+                placeholder="Search inverters..."
+                value={inverterSearch}
+                onChange={(e) => setInverterSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
             <button
               type="button"
               className={`filter-menu-option ${
@@ -1262,7 +1280,7 @@ export default function AllUsers() {
               Show All
             </button>
             <div className="filter-menu-divider" />
-            {inverterTypes.map((type) => (
+            {filteredInverterList.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -1283,6 +1301,10 @@ export default function AllUsers() {
       : null;
 
   // City filter menu
+  const filteredCityList = cityList.filter(city =>
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
   const cityFilterMenu =
     isCityFilterOpen && typeof document !== "undefined"
       ? createPortal(
@@ -1295,6 +1317,16 @@ export default function AllUsers() {
             }}
           >
             <div className="filter-menu-header">City</div>
+            <div className="city-search-input-wrapper">
+              <input
+                type="text"
+                className="city-search-input"
+                placeholder="Search cities..."
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                autoFocus
+              />
+            </div>
             <button
               type="button"
               className={`filter-menu-option ${
@@ -1305,7 +1337,7 @@ export default function AllUsers() {
               Show All
             </button>
             <div className="filter-menu-divider" />
-            {cityList.map((city) => (
+            {filteredCityList.map((city) => (
               <button
                 key={city}
                 type="button"

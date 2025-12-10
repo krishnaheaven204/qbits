@@ -1166,3 +1166,28 @@ input:checked + .toggle-slider:before {
   font-weight: 500;
   padding: 0 4px;
 }
+
+/* City search input styling */
+.city-search-input-wrapper {
+  padding: 8px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.city-search-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.city-search-input:focus {
+  border-color: #0ea5e9;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
