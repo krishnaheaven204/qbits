@@ -1191,3 +1191,52 @@ input:checked + .toggle-slider:before {
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
+
+/* Action Column Styles - TEMPORARILY DISABLED */
+/*
+.action-col {
+  min-width: 140px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+}
+
+.edit-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #45a049;
+}
+
+.view-btn {
+  background-color: #2196f3;
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: #0b7dda;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #da190b;
+}
+*/
