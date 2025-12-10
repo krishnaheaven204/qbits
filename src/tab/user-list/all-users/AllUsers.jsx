@@ -1198,24 +1198,46 @@ export default function AllUsers() {
     ? cityFilteredUsers.filter(u => String(u.plant_type) === String(selectedPlantType))
     : cityFilteredUsers;
 
-  const totalTablePages = Math.max(
-    1,
-    Math.ceil(plantTypeFilteredUsers.length / rowsPerPage)
-  );
-  const rowStartIndex = (tablePage - 1) * rowsPerPage;
-  const paginatedUsers = plantTypeFilteredUsers.slice(
-    rowStartIndex,
-    rowStartIndex + rowsPerPage
-  );
   // Apply inverter filter to paginated results
   const inverterFilteredUsers = selectedInverter
-    ? paginatedUsers.filter((u) => u.inverter_type === selectedInverter)
-    : paginatedUsers;
+    ? plantTypeFilteredUsers.filter((u) => u.inverter_type === selectedInverter)
+    : plantTypeFilteredUsers;
+
+  // Check if any filter is active (only non-empty selections count as filters)
+  const hasFilter =
+    (selectedInverter && selectedInverter.trim() !== "") ||
+    (selectedCity && selectedCity.trim() !== "") ||
+    (selectedPlantType !== null &&
+     selectedPlantType !== undefined &&
+     selectedPlantType !== "");
+
+  // Debug logging
+  console.log("CHECK FILTER STATE", {
+    inverter: selectedInverter,
+    city: selectedCity,
+    plantType: selectedPlantType,
+    hasFilter
+  });
+
+  // Determine effective rows per page based on filter mode
+  const effectiveRowsPerPage = hasFilter ? inverterFilteredUsers.length : rowsPerPage;
+  const totalTablePages = Math.max(1, Math.ceil(inverterFilteredUsers.length / effectiveRowsPerPage));
+  const rowStartIndex = (tablePage - 1) * effectiveRowsPerPage;
+  const paginatedUsers = inverterFilteredUsers.slice(
+    rowStartIndex,
+    rowStartIndex + effectiveRowsPerPage
+  );
 
 
   useEffect(() => {
     setTablePage(1);
-  }, [selectedStatus, search, searchInput, groupedClients]);
+  }, [selectedStatus, search, searchInput, groupedClients, selectedInverter, selectedCity, selectedPlantType]);
+
+  useEffect(() => {
+    if (hasFilter && tablePage !== 1) {
+      setTablePage(1);
+    }
+  }, [hasFilter, tablePage]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && selectedStatus) {
@@ -1702,12 +1724,13 @@ export default function AllUsers() {
                         <th className="sticky-col sticky-col-right col-updated">
                           <SortableHeader label="Updated At" field="updated_at" />
                         </th>
+                        {/* <th className="action-col">Action</th> */}
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedUsers && paginatedUsers.length > 0
                          
-                          ? inverterFilteredUsers.map((u, index) => (
+                          ? paginatedUsers.map((u, index) => (
                             
                             <tr key={u.id ?? index}>
                               <td className="sticky-col col-no">
@@ -1843,6 +1866,11 @@ export default function AllUsers() {
                               <td className="sticky-col sticky-col-right col-updated">
                                 {formatDate(u.updated_at)}
                               </td>
+                              {/* <td className="action-col">
+                                <div className="action-buttons">
+                                  <button className="action-btn edit-btn">Edit</button>
+                                </div>
+                              </td> */}
                             </tr>
                           ))
                         : null}
@@ -1854,48 +1882,54 @@ export default function AllUsers() {
                
               <div className="ul-pagination">
                 <div className="pagination-info">
-                  Showing {Math.min(rowStartIndex + 1, filteredUsers.length)} to {Math.min(rowStartIndex + rowsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
+                  {hasFilter ? (
+                    <>Showing 1 to {inverterFilteredUsers.length} of {inverterFilteredUsers.length} entries</>
+                  ) : (
+                    <>Showing {Math.min(rowStartIndex + 1, filteredUsers.length)} to {Math.min(rowStartIndex + rowsPerPage, filteredUsers.length)} of {filteredUsers.length} entries</>
+                  )}
                 </div>
-                <div className="pagination-controls">
-                  <button
-                    type="button"
-                    className="pagination-arrow-btn"
-                    onClick={handleTablePrevious}
-                    disabled={tablePage === 1}
-                    aria-label="Previous page"
-                  >
-                    ‹
-                  </button>
-                  <div className="pagination-numbers">
-                    {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
-                      pageNum === '...' ? (
-                        <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
-                          {pageNum}
-                        </span>
-                      ) : (
-                        <button
-                          key={pageNum}
-                          type="button"
-                          className={`pagination-number ${
-                            tablePage === pageNum ? 'active' : ''
-                          }`}
-                          onClick={() => setTablePage(pageNum)}
-                        >
-                          {pageNum}
-                        </button>
-                      )
-                    ))}
+                {!hasFilter && (
+                  <div className="pagination-controls">
+                    <button
+                      type="button"
+                      className="pagination-arrow-btn"
+                      onClick={handleTablePrevious}
+                      disabled={tablePage === 1}
+                      aria-label="Previous page"
+                    >
+                      ‹
+                    </button>
+                    <div className="pagination-numbers">
+                      {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
+                        pageNum === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                            {pageNum}
+                          </span>
+                        ) : (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            className={`pagination-number ${
+                              tablePage === pageNum ? 'active' : ''
+                            }`}
+                            onClick={() => setTablePage(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="pagination-arrow-btn"
+                      onClick={() => handleTableNext(totalTablePages)}
+                      disabled={tablePage === totalTablePages}
+                      aria-label="Next page"
+                    >
+                      ›
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="pagination-arrow-btn"
-                    onClick={() => handleTableNext(totalTablePages)}
-                    disabled={tablePage === totalTablePages}
-                    aria-label="Next page"
-                  >
-                    ›
-                  </button>
-                </div>
+                )}
               </div>
             </>
           )}
