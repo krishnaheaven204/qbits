@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import "./AllUsers.css";
 
 const API_BASE_URL =process.env.NEXT_PUBLIC_API_URL;
@@ -24,6 +25,7 @@ const GROUPED_CLIENTS_PER_PAGE = 200;
 let inverterTotalsLock = false;
 
 export default function AllUsers() {
+  const router = useRouter();
   const fetchLock = useRef(false);
   
   const [loading, setLoading] = useState(true);
@@ -1445,6 +1447,16 @@ export default function AllUsers() {
     );
   }
 
+  // Auto-detect most likely ID field for the plant API
+  function getPlantApiId(user) {
+    if (user.user_id) return user.user_id;
+    if (user.plant_no) return user.plant_no;
+    if (user.qbits_user_id) return user.qbits_user_id;
+    if (user.client_id) return user.client_id;
+    if (user.uid) return user.uid;
+    return user.id;
+  }
+
   return (
     <div className="user-list-page-alluser">
       <div className="ul-card-allusers">
@@ -1724,6 +1736,7 @@ export default function AllUsers() {
                         <th className="sticky-col sticky-col-right col-updated">
                           <SortableHeader label="Updated At" field="updated_at" />
                         </th>
+                        <th className="sticky-col sticky-col-right col-view"></th>
                         {/* <th className="action-col">Action</th> */}
                       </tr>
                     </thead>
@@ -1733,6 +1746,7 @@ export default function AllUsers() {
                           ? paginatedUsers.map((u, index) => (
                             
                             <tr key={u.id ?? index}>
+                              {console.log("USER OBJECT", u)}
                               <td className="sticky-col col-no">
                                 {rowStartIndex + index + 1}
                               </td>
@@ -1865,6 +1879,22 @@ export default function AllUsers() {
                               <td>{formatDate(u.created_at)}</td>
                               <td className="sticky-col sticky-col-right col-updated">
                                 {formatDate(u.updated_at)}
+                              </td>
+                              <td className="sticky-col sticky-col-right col-view">
+                                <button
+                                  className="view-btn"
+                                  onClick={() => {
+                                    const pid = getPlantApiId(u);
+                                    const username = u.username || u.name || "User";
+                                    router.push(`/user-plants/${pid}?username=${encodeURIComponent(username)}`);
+                                  }}
+                                  title="View plants"
+                                >
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                  </svg>
+                                </button>
                               </td>
                               {/* <td className="action-col">
                                 <div className="action-buttons">

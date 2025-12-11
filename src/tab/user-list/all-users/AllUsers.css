@@ -390,6 +390,12 @@
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
 }
 
+.custom-table .col-view {
+  right: 0;
+  min-width: 80px;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
+}
+
 .th-sortable {
   width: 100%;
   display: flex;
@@ -1240,3 +1246,26 @@ input:checked + .toggle-slider:before {
   background-color: #da190b;
 }
 */
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #2563eb;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.view-btn svg {
+  width: 20px;
+  height: 20px;
+}
