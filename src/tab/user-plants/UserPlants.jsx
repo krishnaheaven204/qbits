@@ -208,7 +208,7 @@ export default function UserPlants() {
           </div>
           {userName && (
             <div className="up-user-info">
-              <p className="up-user-name">User name :- <strong>{userName}</strong></p>
+              <p className="up-user-name">Username :- <strong>{userName}</strong></p>
             </div>
           )}
         </div>
@@ -253,57 +253,57 @@ export default function UserPlants() {
                           {renderStatusIcon(p.plantstate)}
                         </td>
                         <td>
-                          <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                          <span style={{ fontWeight: 600, color: '#111827' }}>
                             {capitalizeText(String(p.plant_no))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 500 }}>
+                          <span style={{ fontWeight: 400, color: '#111827' }}>
                             {capitalizeText(p.plant_name)}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#0ea5e9', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatCapacity(p.capacity))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#8b5cf6', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.kpi))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#06b6d4', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.eday))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#10b981', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.etot))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#f59e0b', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.month_power))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#ec4899', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.year_power))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#64748b' }}>
+                          <span style={{ color: '#111827', fontWeight: 400 }}>
                             {capitalizeText(p.remark1)}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#64748b', fontSize: '12px' }}>
+                          <span style={{ color: '#111827', fontSize: '12px', fontWeight: 400 }}>
                             {capitalizeText(formatDate(p.date))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 500 }}>
+                          <span style={{ color: '#111827', fontSize: '12px', fontWeight: 400 }}>
                             {capitalizeText(formatTime(p.time))}
                           </span>
                         </td>
