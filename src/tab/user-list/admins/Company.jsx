@@ -501,7 +501,7 @@ const updateFlagsAPI = async (userId, values) => {
           <div className="ul-header">
             <div className="ul-header-text">
               <h5 className="ul-title">Company</h5>
-              <p className="ul-subtitle">All users management and listing.</p>
+               
             </div>
             <form onSubmit={handleSearchSubmit} className="ul-search">
               <div className="ul-search-input">

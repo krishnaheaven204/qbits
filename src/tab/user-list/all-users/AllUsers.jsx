@@ -1463,7 +1463,7 @@ export default function AllUsers() {
         <div className="ul-header">
           <div className="ul-header-text">
             <h5 className="ul-title">User List – All Users</h5>
-            <p className="ul-subtitle">All users management and listing.</p>
+             
             <button
               className="refresh-btn"
               onClick={runInverterCommand}
@@ -1714,16 +1714,16 @@ export default function AllUsers() {
                           <SortableHeader label="Iserial" field="iserial" />
                         </th>
                         <th>
-                          <SortableHeader label="Keep live power" field="power" />
+                          <SortableHeader label="Keep Live Power" field="power" />
                         </th>
                         <th>
-                          <SortableHeader label="Capacity(kw)" field="capacity" />
+                          <SortableHeader label="Capacity (Kw)" field="capacity" />
                         </th>
                         <th>
-                          <SortableHeader label="Day production(kWH)" field="day_power" />
+                          <SortableHeader label="Day Production (Kwh)" field="day_power" />
                         </th>
                         <th>
-                          <SortableHeader label="Total Production(kWH)" field="total_power" />
+                          <SortableHeader label="Total Production (Kwh)" field="total_power" />
                         </th>
                         <th>WhatsApp Flag</th>
                         <th>Inverter Fault</th>
