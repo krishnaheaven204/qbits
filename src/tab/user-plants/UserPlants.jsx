@@ -110,28 +110,59 @@ export default function UserPlants() {
         }
 
         const json = await response.json();
+        console.log("API Response structure:", {
+          isArray: Array.isArray(json),
+          hasData: !!json.data,
+          dataType: typeof json.data,
+          dataIsArray: Array.isArray(json.data),
+          dataKeys: json.data ? Object.keys(json.data).slice(0, 10) : null,
+        });
         
         // Handle different response structures
         let plantsData = [];
         
         if (Array.isArray(json)) {
           plantsData = json;
+          console.log("Using json as array");
         } else if (Array.isArray(json.data)) {
           plantsData = json.data;
+          console.log("Using json.data as array");
         } else if (json.data && typeof json.data === 'object') {
           // If data is an object with a data property that's an array
           if (Array.isArray(json.data.data)) {
             plantsData = json.data.data;
+            console.log("Using json.data.data as array");
           } else if (json.data.records && Array.isArray(json.data.records)) {
             plantsData = json.data.records;
+            console.log("Using json.data.records as array");
           } else if (json.data.plants && Array.isArray(json.data.plants)) {
             plantsData = json.data.plants;
+            console.log("Using json.data.plants as array");
+          } else if (json.data.plants && typeof json.data.plants === 'object' && !Array.isArray(json.data.plants)) {
+            // json.data.plants is a single plant object
+            plantsData = [json.data.plants];
+            console.log("json.data.plants is single plant, wrapping in array");
+          } else if (json.data.list && Array.isArray(json.data.list)) {
+            plantsData = json.data.list;
+            console.log("Using json.data.list as array");
+          } else if (json.data.plant_no || json.data.plant_name) {
+            // json.data is a single plant object
+            plantsData = [json.data];
+            console.log("json.data is single plant, wrapping in array");
+          } else {
+            console.log("Could not extract plants, json.data keys:", Object.keys(json.data));
           }
+        } else {
+          console.log("Unexpected response structure");
         }
         
-        console.log("API Response:", json);
-        console.log("Extracted plants:", plantsData);
+        // Ensure plantsData is always an array
+        if (!Array.isArray(plantsData)) {
+          console.log("plantsData is not array, converting:", plantsData);
+          plantsData = [];
+        }
         
+        console.log("Final plants count:", plantsData.length);
         setPlants(plantsData);
         setError(null);
       } catch (err) {

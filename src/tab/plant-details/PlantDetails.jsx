@@ -20,8 +20,9 @@ const formatValue = (value, decimals = 2) => {
 
 const mapPlantState = (state) => {
   const stateMap = {
-    0: "Normal",
-    7: "Offline",
+    0: "Solar System",
+    1: "Battery Storage",
+    2: "Solar With Limitation",
   };
   if (stateMap[state] !== undefined) return stateMap[state];
   return `Unknown (${state})`;
@@ -521,7 +522,7 @@ export default function PlantDetails() {
                   </div>
                   <div className="info-row">
                     <span className="info-label">Phone</span>
-                    <span className="info-value">{plant?.plant_user || "--"}</span>
+                    <span className="info-value">{plant?.plant_user || "none"}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Type of Plant</span>
