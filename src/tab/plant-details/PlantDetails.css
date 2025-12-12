@@ -69,14 +69,14 @@
 .card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(21, 159, 108, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  border: 1px solid rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(21, 159, 108, 0.1);
 }
 
 .card:hover {
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 24px rgba(21, 159, 108, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 
@@ -115,7 +115,7 @@
 .water-wave-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.25));
+  filter: drop-shadow(0 6px 16px rgba(21, 159, 108, 0.25));
 }
 
 .wave-animation {
@@ -145,7 +145,7 @@
 .percentage-value {
   font-size: 36px;
   font-weight: 700;
-  color: #1e40af;
+  color: #159f6c;
   display: block;
 }
 
@@ -174,22 +174,22 @@
   border-radius: 10px;
   padding: 12px 10px;
   text-align: center;
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(21, 159, 108, 0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.05);
+  box-shadow: 0 2px 4px rgba(21, 159, 108, 0.05);
 }
 
 .stat-box:hover {
   background: linear-gradient(135deg, #f0f4f8 0%, #e8f1ff 100%);
-  border-color: rgba(59, 130, 246, 0.3);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+  border-color: rgba(21, 159, 108, 0.3);
+  box-shadow: 0 4px 12px rgba(21, 159, 108, 0.12);
   transform: translateY(-1px);
 }
 
 .stat-value {
   font-size: 18px;
   font-weight: 800;
-  color: #1e40af;
+  color: #159f6c;
   margin-bottom: 3px;
   letter-spacing: -0.3px;
 }
@@ -212,25 +212,24 @@
 /* Card 2: Plant Information */
 .info-layout {
   display: flex;
+  flex-direction: column;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .info-image-box {
-  flex-shrink: 0;
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 200px;
   border-radius: 10px;
   overflow: hidden;
   background: linear-gradient(135deg, #f0f4f8 0%, #e8f1ff 100%);
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(21, 159, 108, 0.15);
+  box-shadow: 0 2px 6px rgba(21, 159, 108, 0.08);
   transition: all 0.3s ease;
 }
 
 .info-image-box:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 4px 10px rgba(21, 159, 108, 0.12);
 }
 
 .info-image-box img {
@@ -243,35 +242,34 @@
   width: 100%;
   height: 100%;
   display: block;
-  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.15));
+  filter: drop-shadow(0 2px 4px rgba(21, 159, 108, 0.15));
 }
 
 .info-text-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 0;
 }
 
 .info-row {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
 .info-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: #94a3b8;
+  color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .info-value {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color:  #94a3b8;
 }
 
 /* Error Log Card */
@@ -311,8 +309,8 @@
 
 .tab-button.active {
   background: white;
-  color: #10b981;
-  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.06);
+  color: #159f6c;
+  box-shadow: 0 1px 2px rgba(21, 159, 108, 0.06);
 }
 
 .error-log-content {

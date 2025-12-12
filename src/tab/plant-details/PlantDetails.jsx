@@ -91,8 +91,8 @@ function WaterWaveCircle({ percentage }) {
       <svg className="water-wave-svg" viewBox="0 0 200 200">
         <defs>
           <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#3b82f6", stopOpacity: 0.9 }} />
-            <stop offset="100%" style={{ stopColor: "#1e40af", stopOpacity: 0.7 }} />
+            <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.9 }} />
+            <stop offset="100%" style={{ stopColor: "#0d7a52", stopOpacity: 0.7 }} />
           </linearGradient>
           <clipPath id="circleClip">
             <circle cx="100" cy="100" r="85" />
@@ -114,12 +114,12 @@ function WaterWaveCircle({ percentage }) {
           <path
             className="wave-animation"
             d={`M0,${100 + (100 - (percentage / 100) * 100)} Q50,${95 + (100 - (percentage / 100) * 100)} 100,${100 + (100 - (percentage / 100) * 100)} T200,${100 + (100 - (percentage / 100) * 100)}`}
-            fill="rgba(59, 130, 246, 0.4)"
+            fill="rgba(21, 159, 108, 0.4)"
           />
         </g>
 
         {/* Border circle */}
-        <circle cx="100" cy="100" r="85" fill="none" stroke="#3b82f6" strokeWidth="2" />
+        <circle cx="100" cy="100" r="85" fill="none" stroke="#159f6c" strokeWidth="2" />
       </svg>
 
       {/* Percentage text */}
@@ -218,10 +218,7 @@ export default function PlantDetails() {
           <div className="card-content">
             <div className="circle-section">
               <WaterWaveCircle percentage={plantData.performance.percentage} />
-              <div className="power-info">
-                Keep-live power: <strong>{plantData.performance.keepLivePower} kW</strong> | Capacity:{" "}
-                <strong>{plantData.performance.capacity} kWp</strong>
-              </div>
+              
             </div>
             <div className="stats-grid">
               {plantData.production.map((stat, idx) => (
@@ -239,36 +236,14 @@ export default function PlantDetails() {
           <div className="card-content">
             <div className="info-layout">
               <div className="info-image-box">
-                <svg className="solar-panel-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="solarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: "#3b82f6", stopOpacity: 1 }} />
-                      <stop offset="100%" style={{ stopColor: "#1e40af", stopOpacity: 1 }} />
-                    </linearGradient>
-                  </defs>
-                  {/* Background */}
-                  <rect width="200" height="200" fill="#f0f4f8" />
-                  
-                  {/* Solar Panel Frame */}
-                  <rect x="30" y="40" width="140" height="120" fill="url(#solarGradient)" rx="8" />
-                  
-                  {/* Solar Cells Grid */}
-                  <g stroke="white" strokeWidth="2" opacity="0.3">
-                    <line x1="60" y1="40" x2="60" y2="160" />
-                    <line x1="90" y1="40" x2="90" y2="160" />
-                    <line x1="120" y1="40" x2="120" y2="160" />
-                    <line x1="150" y1="40" x2="150" y2="160" />
-                    <line x1="30" y1="70" x2="170" y2="70" />
-                    <line x1="30" y1="100" x2="170" y2="100" />
-                    <line x1="30" y1="130" x2="170" y2="130" />
-                  </g>
-                  
-                  {/* Sun rays */}
-                  <circle cx="100" cy="30" r="8" fill="#fbbf24" />
-                  <line x1="100" y1="15" x2="100" y2="5" stroke="#fbbf24" strokeWidth="2" />
-                  <line x1="120" y1="20" x2="127" y2="13" stroke="#fbbf24" strokeWidth="2" />
-                  <line x1="80" y1="20" x2="73" y2="13" stroke="#fbbf24" strokeWidth="2" />
-                </svg>
+                <img 
+                  src="https://images.pexels.com/photos/356036/pexels-photo-356036.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&fit=crop" 
+                  alt="Solar Panel Installation"
+                  className="solar-panel-image"
+                  onError={(e) => {
+                    e.target.src = "https://images.pexels.com/photos/3962286/pexels-photo-3962286.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&fit=crop";
+                  }}
+                />
               </div>
               <div className="info-text-section">
                 <div className="info-row">
