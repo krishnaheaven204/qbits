@@ -106,7 +106,7 @@ function WaterWaveCircle({ percentage }) {
     };
 
     setWave1Path(generateWave(offset1));
-    setWave2Path(generateWave(offset2));
+    //setWave2Path(generateWave(offset2));
   }, [percentage, offset1, offset2]);
 
   React.useEffect(() => {
@@ -127,7 +127,7 @@ function WaterWaveCircle({ percentage }) {
         </defs>
 
         {/* Background circle */}
-        <circle cx="100" cy="100" r="98" fill="white" stroke="#b7d9ff" strokeWidth="5" />
+        <circle cx="100" cy="100" r="98" fill="white" stroke="#159f6c" strokeWidth="2" />
 
         {/* Wave group with clipping */}
         <g clipPath="url(#circleClip)" id="waveGroup">
@@ -138,7 +138,7 @@ function WaterWaveCircle({ percentage }) {
 
           {/* Top (light) wave */}
           <g className="wave1">
-            <path d={wave1Path} fill="#22c55e" />
+            <path d={wave1Path} fill="#159f6c" />
           </g>
         </g>
       </svg>

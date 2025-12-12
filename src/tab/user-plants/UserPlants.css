@@ -66,20 +66,6 @@
   margin: 0 2px;
 }
 
-/* Page Header */
-.page-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 0;
-  margin: 0;
-  padding: 20px 24px 24px 24px;
-  background: transparent;
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .page-title {
   font-size: 24px;
   font-weight: 700;
