@@ -72,6 +72,7 @@
   background: transparent;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .header-left {
@@ -109,7 +110,9 @@
   font-size: 13px;
   font-weight: 500;
   color: #64748b;
-  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: calc(100% - 40px);
 }
 
 .breadcrumb-item-inline {
@@ -126,6 +129,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .breadcrumb-item-inline:hover {
@@ -239,19 +244,29 @@
   filter: drop-shadow(0 6px 16px rgba(21, 159, 108, 0.25));
 }
 
-.wave-animation {
-  animation: wave 3s ease-in-out infinite;
+.wave1 {
+  animation: waveMove1 4s linear infinite;
 }
 
-@keyframes wave {
+.wave2 {
+  animation: waveMove2 6s linear infinite;
+}
+
+@keyframes waveMove1 {
   0% {
     transform: translateX(0);
   }
-  50% {
-    transform: translateX(20px);
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes waveMove2 {
+  0% {
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(0);
+    transform: translateX(-100%);
   }
 }
 
@@ -266,7 +281,7 @@
 .percentage-value {
   font-size: 36px;
   font-weight: 700;
-  color: #159f6c;
+  color: #000;
   display: block;
 }
 
@@ -308,26 +323,26 @@
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
+  line-height: 22px;
   color: #159f6c;
   margin-bottom: 3px;
   letter-spacing: -0.3px;
 }
 
 .stat-label {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  text-transform: capitalize;
+  color: #1e293b;
   margin-bottom: 2px;
 }
 
 .stat-unit {
-  font-size: 9px;
+  font-size: 12px;
+  font-weight: 400;
   color: #94a3b8;
-  font-weight: 500;
 }
 
 /* Card 2: Plant Information */
@@ -380,16 +395,18 @@
 }
 
 .info-label {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  line-height: 22px;
 }
 
 .info-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 22px;
   color:  #94a3b8;
 }
 
@@ -469,12 +486,13 @@
 }
 
 .error-status {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: capitalize;
   padding: 3px 8px;
   border-radius: 3px;
-  letter-spacing: 0.2px;
+  line-height: 22px;
+   
 }
 
 .error-status.recovered {
@@ -493,7 +511,7 @@
 }
 
 .error-index {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   color: #94a3b8;
 }
@@ -510,7 +528,7 @@
 }
 
 .error-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #f59e0b;
   font-weight: 500;
 }
@@ -524,7 +542,7 @@
 }
 
 .error-time {
-  font-size: 11px;
+  font-size: 14px;
   color: #94a3b8;
   font-family: "Nunito", monospace;
   flex: 1;
@@ -577,10 +595,6 @@
     background: linear-gradient(135deg, #f0f4f8 0%, #e8f1ff 100%);
   }
 
-  .page-header {
-    gap: 10px;
-    margin-bottom: 14px;
-  }
 
   .page-title {
     font-size: 18px;
