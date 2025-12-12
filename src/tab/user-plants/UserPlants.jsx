@@ -204,12 +204,17 @@ export default function UserPlants() {
 
   return (
     <div className="user-plants-page">
-      <div className="page-header">
-        <button className="back-button" onClick={() => router.back()}>
-          <span className="back-arrow">‹</span>
-          <span className="back-text">Back</span>
+      <div className="breadcrumb-nav">
+        <button className="breadcrumb-item" onClick={() => router.back()}>
+          <span className="breadcrumb-icon">◀</span>
+          <span className="breadcrumb-text">Back</span>
         </button>
+        <span className="breadcrumb-separator">›</span>
+        <span className="breadcrumb-item active">Plant List</span>
       </div>
+
+      
+
       <div className="up-card">
         <div className="up-header">
           <div className="up-header-text">
@@ -242,14 +247,14 @@ export default function UserPlants() {
                   <thead>
                     <tr>
                       <th className="sticky-col left-col">Status</th>
-                      <th>Plant no</th>
-                      <th>Plant name</th>
-                      <th>Capacity (kw)</th>
+                      <th>Plant No</th>
+                      <th>Plant Name</th>
+                      <th>Capacity (Kw)</th>
                       <th>Kpi</th>
-                      <th>Day production</th>
-                      <th>Total production</th>
-                      <th>Month production</th>
-                      <th>Year production</th>
+                      <th>Day Production</th>
+                      <th>Total Production</th>
+                      <th>Month Production</th>
+                      <th>Year Production</th>
                       <th>City</th>
                       <th>Date</th>
                       <th>Time</th>
@@ -313,12 +318,12 @@ export default function UserPlants() {
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#646566ff', fontSize: '13px', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontSize: '14px', fontWeight: 400 }}>
                             {capitalizeText(formatDate(p.date))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#646566ff', fontSize: '13px', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontSize: '14px', fontWeight: 400 }}>
                             {capitalizeText(formatTime(p.time))}
                           </span>
                         </td>

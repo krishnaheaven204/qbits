@@ -187,6 +187,54 @@ export default function PlantDetails() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("all");
   const [errors, setErrors] = useState(plantData.errors.all);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Sample production data for chart - Y values extracted from polyline points
+  // Polyline: 0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0
+  const chartData = [
+    { time: "07:24:51", x: 0, y: 250 },
+    { time: "07:44:45", x: 50, y: 240 },
+    { time: "07:59:49", x: 100, y: 220 },
+    { time: "08:19:45", x: 150, y: 200 },
+    { time: "08:34:49", x: 200, y: 180 },
+    { time: "08:54:45", x: 250, y: 160 },
+    { time: "09:09:49", x: 300, y: 140 },
+    { time: "09:29:45", x: 350, y: 120 },
+    { time: "09:44:49", x: 400, y: 100 },
+    { time: "10:04:45", x: 450, y: 80 },
+    { time: "10:19:48", x: 500, y: 60 },
+    { time: "10:39:45", x: 550, y: 50 },
+    { time: "10:54:49", x: 600, y: 40 },
+    { time: "11:14:45", x: 650, y: 35 },
+    { time: "11:29:45", x: 700, y: 30 },
+    { time: "11:49:00", x: 750, y: 25 },
+    { time: "12:09:00", x: 800, y: 20 },
+    { time: "12:29:00", x: 850, y: 15 },
+    { time: "12:49:00", x: 900, y: 10 },
+    { time: "13:09:00", x: 950, y: 5 },
+    { time: "13:29:00", x: 1000, y: 0 },
+  ];
+
+  const handleChartHover = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Calculate which data point is closest to the mouse position
+    const chartWidth = rect.width;
+    const pointIndex = Math.round((x / chartWidth) * (chartData.length - 1));
+    
+    if (pointIndex >= 0 && pointIndex < chartData.length) {
+      setHoveredPoint(pointIndex);
+      setTooltipPos({ x, y });
+    }
+  };
+
+  const handleChartLeave = () => {
+    setHoveredPoint(null);
+  };
 
   useEffect(() => {
     if (activeTab === "all") {
@@ -201,11 +249,17 @@ export default function PlantDetails() {
   return (
     <div className="plant-details-page">
       <div className="page-header">
-        <button className="back-button" onClick={() => router.back()}>
-          <span className="back-arrow">‹</span>
-          <span className="back-text">Back</span>
-        </button>
         <h1 className="page-title">Plant Details</h1>
+        <div className="breadcrumb-inline">
+          <button className="breadcrumb-item-inline" onClick={() => router.back()}>
+            <span className="breadcrumb-icon">◀</span>
+            <span className="breadcrumb-text">Back</span>
+          </button>
+          <span className="breadcrumb-separator-inline">›</span>
+          <span className="breadcrumb-item-inline active">{plantData.plantInfo.plantName}</span>
+          <span className="breadcrumb-separator-inline">›</span>
+          <span className="breadcrumb-item-inline">2025-12-12 12:39:49</span>
+        </div>
       </div>
 
       {/* Top Layout: Two Cards */}
@@ -268,38 +322,129 @@ export default function PlantDetails() {
         </div>
       </div>
 
-      {/* Error Log Section */}
-      <div className="card error-log-card">
-        <div className="error-log-header">
-          <h3 className="card-title">Alarm</h3>
-          <div className="error-tabs">
-            <button
-              className={`tab-button ${activeTab === "all" ? "active" : ""}`}
-              onClick={() => setActiveTab("all")}
-            >
-              All
-            </button>
-            <button
-              className={`tab-button ${activeTab === "going" ? "active" : ""}`}
-              onClick={() => setActiveTab("going")}
-            >
-              Going
-            </button>
-            <button
-              className={`tab-button ${activeTab === "recovered" ? "active" : ""}`}
-              onClick={() => setActiveTab("recovered")}
-            >
-              Recovered
-            </button>
+      {/* Bottom Cards Layout: Alarm and Production Overview */}
+      <div className="bottom-cards-layout">
+        {/* Error Log Section */}
+        <div className="card error-log-card">
+          <div className="error-log-header">
+            <h3 className="card-title">Alarm</h3>
+            <div className="error-tabs">
+              <button
+                className={`tab-button ${activeTab === "all" ? "active" : ""}`}
+                onClick={() => setActiveTab("all")}
+              >
+                All
+              </button>
+              <button
+                className={`tab-button ${activeTab === "going" ? "active" : ""}`}
+                onClick={() => setActiveTab("going")}
+              >
+                Going
+              </button>
+              <button
+                className={`tab-button ${activeTab === "recovered" ? "active" : ""}`}
+                onClick={() => setActiveTab("recovered")}
+              >
+                Recovered
+              </button>
+            </div>
+          </div>
+
+          <div className="error-log-content">
+            {errors.length > 0 ? (
+              errors.map((error, idx) => <ErrorCard key={error.id} error={error} index={idx + 1} />)
+            ) : (
+              <div className="no-errors">No errors in this category</div>
+            )}
           </div>
         </div>
 
-        <div className="error-log-content">
-          {errors.length > 0 ? (
-            errors.map((error, idx) => <ErrorCard key={error.id} error={error} index={idx + 1} />)
-          ) : (
-            <div className="no-errors">No errors in this category</div>
-          )}
+        {/* Production Overview Card */}
+        <div className="card production-overview-card">
+          <div className="production-header">
+            <div className="production-title-section">
+              <h3 className="card-title">Production Overview</h3>
+              <span className="production-value">7.2 kWh</span>
+            </div>
+            <div className="production-controls">
+              <button className="time-filter-btn active">Day</button>
+              <button className="time-filter-btn">Month</button>
+              <button className="time-filter-btn">Year</button>
+              <button className="time-filter-btn">Total</button>
+              <span className="production-date">2025-12-12</span>
+            </div>
+          </div>
+          <div className="production-chart-container">
+            <div className="chart-wrapper" onMouseMove={handleChartHover} onMouseLeave={handleChartLeave}>
+              <svg className="production-chart" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.3 }} />
+                    <stop offset="100%" style={{ stopColor: "#159f6c", stopOpacity: 0.05 }} />
+                  </linearGradient>
+                </defs>
+                <polyline
+                  points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0"
+                  fill="none"
+                  stroke="#159f6c"
+                  strokeWidth="2"
+                />
+                <polygon
+                  points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0 1000,300 0,300"
+                  fill="url(#chartGradient)"
+                />
+                <line x1="0" y1="300" x2="1000" y2="300" stroke="#e5e7eb" strokeWidth="1" />
+                
+                {/* Hover line and point */}
+                {hoveredPoint !== null && (
+                  <>
+                    <line 
+                      x1={chartData[hoveredPoint].x} 
+                      y1="0" 
+                      x2={chartData[hoveredPoint].x} 
+                      y2="300" 
+                      stroke="#159f6c" 
+                      strokeWidth="2" 
+                      opacity="0.5"
+                      strokeDasharray="5,5"
+                    />
+                    <circle 
+                      cx={chartData[hoveredPoint].x} 
+                      cy={chartData[hoveredPoint].y} 
+                      r="5" 
+                      fill="#159f6c"
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  </>
+                )}
+              </svg>
+              
+              {/* Tooltip */}
+              {hoveredPoint !== null && (
+                <div 
+                  className="chart-tooltip" 
+                  style={{
+                    left: `calc(${(chartData[hoveredPoint].x / 1000) * 100}% - 60px)`,
+                    top: `${Math.max(10, chartData[hoveredPoint].y - 50)}px`
+                  }}
+                >
+                  <div className="tooltip-time">{chartData[hoveredPoint].time}</div>
+                  <div className="tooltip-value">
+                    <span className="tooltip-dot">●</span>
+                    Solar: {((250 - chartData[hoveredPoint].y) / 250 * 4.2).toFixed(2)} kW
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="chart-labels">
+              <span>07:08</span>
+              <span>08:19</span>
+              <span>09:29</span>
+              <span>10:39</span>
+              <span>11:49</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
