@@ -239,19 +239,29 @@
   filter: drop-shadow(0 6px 16px rgba(21, 159, 108, 0.25));
 }
 
-.wave-animation {
-  animation: wave 3s ease-in-out infinite;
+.wave1 {
+  animation: waveMove1 4s linear infinite;
 }
 
-@keyframes wave {
+.wave2 {
+  animation: waveMove2 6s linear infinite;
+}
+
+@keyframes waveMove1 {
   0% {
     transform: translateX(0);
   }
-  50% {
-    transform: translateX(20px);
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes waveMove2 {
+  0% {
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(0);
+    transform: translateX(-100%);
   }
 }
 
@@ -308,7 +318,7 @@
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
   color: #159f6c;
   margin-bottom: 3px;
@@ -316,8 +326,8 @@
 }
 
 .stat-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -325,9 +335,9 @@
 }
 
 .stat-unit {
-  font-size: 9px;
+  font-size: 12px;
+  font-weight: 400;
   color: #94a3b8;
-  font-weight: 500;
 }
 
 /* Card 2: Plant Information */
@@ -380,16 +390,18 @@
 }
 
 .info-label {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  line-height: 22px;
 }
 
 .info-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 22px;
   color:  #94a3b8;
 }
 

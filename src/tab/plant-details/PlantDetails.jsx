@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "./PlantDetails.css";
 
@@ -84,42 +84,63 @@ const plantData = {
   },
 };
 
-// Water wave circle component
+// Water wave circle component with real sine wave animation
 function WaterWaveCircle({ percentage }) {
+  const [wave1Path, setWave1Path] = React.useState("");
+  const [wave2Path, setWave2Path] = React.useState("");
+  const [offset1, setOffset1] = React.useState(0);
+  const [offset2, setOffset2] = React.useState(50);
+
+  React.useEffect(() => {
+    const generateWave = (offset = 0) => {
+      const width = 400;
+      const amplitude = 12;
+      const waveY = 200 - (percentage * 2);
+      let path = "";
+      for (let x = 0; x <= width; x++) {
+        let y = waveY + Math.sin((x + offset) * 0.03) * amplitude;
+        path += `${x === 0 ? 'M' : 'L'} ${x},${y} `;
+      }
+      path += `L ${width},200 L 0,200 Z`;
+      return path;
+    };
+
+    setWave1Path(generateWave(offset1));
+    setWave2Path(generateWave(offset2));
+  }, [percentage, offset1, offset2]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset1(prev => (prev + 2) % 400);
+      setOffset2(prev => (prev + 3) % 400);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="water-wave-container">
       <svg className="water-wave-svg" viewBox="0 0 200 200">
         <defs>
-          <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.9 }} />
-            <stop offset="100%" style={{ stopColor: "#0d7a52", stopOpacity: 0.7 }} />
-          </linearGradient>
           <clipPath id="circleClip">
-            <circle cx="100" cy="100" r="85" />
+            <circle cx="100" cy="100" r="98" />
           </clipPath>
         </defs>
 
         {/* Background circle */}
-        <circle cx="100" cy="100" r="85" fill="#f0f4f8" />
+        <circle cx="100" cy="100" r="98" fill="white" stroke="#b7d9ff" strokeWidth="5" />
 
-        {/* Water fill */}
-        <g clipPath="url(#circleClip)">
-          <rect
-            x="0"
-            y={200 - (percentage / 100) * 200}
-            width="200"
-            height={(percentage / 100) * 200}
-            fill="url(#waveGradient)"
-          />
-          <path
-            className="wave-animation"
-            d={`M0,${100 + (100 - (percentage / 100) * 100)} Q50,${95 + (100 - (percentage / 100) * 100)} 100,${100 + (100 - (percentage / 100) * 100)} T200,${100 + (100 - (percentage / 100) * 100)}`}
-            fill="rgba(21, 159, 108, 0.4)"
-          />
+        {/* Wave group with clipping */}
+        <g clipPath="url(#circleClip)" id="waveGroup">
+          {/* Bottom (dark) wave */}
+          <g className="wave2">
+            <path d={wave2Path} fill="#159f6c" />
+          </g>
+
+          {/* Top (light) wave */}
+          <g className="wave1">
+            <path d={wave1Path} fill="#22c55e" />
+          </g>
         </g>
-
-        {/* Border circle */}
-        <circle cx="100" cy="100" r="85" fill="none" stroke="#159f6c" strokeWidth="2" />
       </svg>
 
       {/* Percentage text */}
