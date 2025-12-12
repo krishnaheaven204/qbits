@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import "./UserPlants.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -62,6 +62,7 @@ function renderStatusIcon(code) {
 export default function UserPlants() {
   const { id } = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [plants, setPlants] = useState([]);
   const [userName, setUserName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,8 +73,10 @@ export default function UserPlants() {
     const usernameParam = searchParams.get("username");
     if (usernameParam) {
       setUserName(decodeURIComponent(usernameParam));
+      // Remove query parameter from URL
+      router.replace(`/user-plants/${id}`, { shallow: true });
     }
-  }, [searchParams]);
+  }, [searchParams, id, router]);
 
   useEffect(() => {
     const fetchPlants = async () => {
@@ -201,6 +204,12 @@ export default function UserPlants() {
 
   return (
     <div className="user-plants-page">
+      <div className="page-header">
+        <button className="back-button" onClick={() => router.back()}>
+          <span className="back-arrow">‹</span>
+          <span className="back-text">Back</span>
+        </button>
+      </div>
       <div className="up-card">
         <div className="up-header">
           <div className="up-header-text">
@@ -248,62 +257,68 @@ export default function UserPlants() {
                   </thead>
                   <tbody>
                     {Array.isArray(plants) && plants.map((p, idx) => (
-                      <tr key={idx}>
+                      <tr
+                        key={idx}
+                        onClick={() => router.push(`/plant-details/${p.plant_no}`)}
+                        style={{ cursor: "pointer", transition: "background-color 0.2s ease" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
                         <td className="sticky-col left-col">
                           {renderStatusIcon(p.plantstate)}
                         </td>
                         <td>
-                          <span style={{ fontWeight: 600, color: '#111827' }}>
+                          <span style={{ fontWeight: 600, color: '#646566ff' }}>
                             {capitalizeText(String(p.plant_no))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 400, color: '#111827' }}>
+                          <span style={{ fontWeight: 400, color: '#646566ff' }}>
                             {capitalizeText(p.plant_name)}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatCapacity(p.capacity))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.kpi))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.eday))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.etot))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.month_power))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(formatNumber(p.year_power))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontWeight: 400 }}>
                             {capitalizeText(p.remark1)}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontSize: '12px', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontSize: '13px', fontWeight: 400 }}>
                             {capitalizeText(formatDate(p.date))}
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#111827', fontSize: '12px', fontWeight: 400 }}>
+                          <span style={{ color: '#646566ff', fontSize: '13px', fontWeight: 400 }}>
                             {capitalizeText(formatTime(p.time))}
                           </span>
                         </td>
