@@ -28,6 +28,8 @@ const mapPlantState = (state) => {
   return `Unknown (${state})`;
 };
 
+const formatTime = (v) => v ? new Date(v).toLocaleString() : "--";
+
 // Placeholder data for errors (keeping as-is since API doesn't provide this)
 const plantDataErrors = {
   all: [
@@ -206,6 +208,48 @@ function ErrorCard({ error, index }) {
   );
 }
 
+// Alarm card component for API data
+function AlarmCard({ alarm, index, tabType }) {
+  const statusLabel = alarm.status === 1 ? "Recovered" : alarm.status === 0 ? "Fault" : "Unknown";
+  const statusClass = alarm.status === 1 ? "recovered" : alarm.status === 0 ? "fault" : "offline";
+  const message = Array.isArray(alarm.message_en) && alarm.message_en.length > 0 
+    ? alarm.message_en[0] 
+    : "No message";
+  
+  let leftTime, rightTime;
+  if (tabType === "all") {
+    leftTime = formatTime(alarm.created_at);
+    rightTime = formatTime(alarm.updated_at);
+  } else if (tabType === "going") {
+    leftTime = formatTime(alarm.created_at);
+    rightTime = "--";
+  } else if (tabType === "recovered") {
+    leftTime = formatTime(alarm.created_at);
+    rightTime = formatTime(alarm.updated_at);
+  }
+
+  return (
+    <div className={`error-card ${statusClass}`}>
+      <div className="error-header">
+        <span className={`error-status ${statusClass}`}>
+          {statusLabel}
+        </span>
+        <span className="error-index">#{index}</span>
+      </div>
+
+      <div className="error-body">
+        <div className="error-model">{alarm.inverter_id || "N/A"}</div>
+        <div className="error-text">{message}</div>
+      </div>
+
+      <div className="error-footer">
+        <span className="error-time">{leftTime}</span>
+        <span className="error-time">{rightTime}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function PlantDetails() {
   const router = useRouter();
   const params = useParams();
@@ -216,6 +260,8 @@ export default function PlantDetails() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [errors, setErrors] = useState(plantDataErrors.all);
+  const [alarms, setAlarms] = useState([]);
+  const [loadingAlarms, setLoadingAlarms] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
@@ -384,6 +430,60 @@ export default function PlantDetails() {
   const handleChartLeave = () => {
     setHoveredPoint(null);
   };
+
+  // Fetch alarms from API
+  useEffect(() => {
+    if (!plantNo) {
+      setAlarms([]);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchAlarms = async () => {
+      try {
+        setLoadingAlarms(true);
+
+        const token = typeof window !== "undefined" 
+          ? localStorage.getItem("authToken") 
+          : null;
+
+        const headers = {
+          Accept: "application/json",
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const statusParam = activeTab === "all" ? -1 : (activeTab === "going" ? 0 : 1);
+        const url = `https://qbits.quickestimate.co/api/v1/faults?plant_id=${plantNo}&inverter_id=&status=${statusParam}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers,
+          signal: abortController.signal,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const alarmData = data?.data?.faults?.data || [];
+          setAlarms(Array.isArray(alarmData) ? alarmData : []);
+        } else {
+          setAlarms([]);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setAlarms([]);
+        }
+      } finally {
+        setLoadingAlarms(false);
+      }
+    };
+
+    fetchAlarms();
+
+    return () => abortController.abort();
+  }, [plantNo, activeTab]);
 
   useEffect(() => {
     if (activeTab === "all") {
@@ -564,10 +664,14 @@ export default function PlantDetails() {
           </div>
 
           <div className="error-log-content">
-            {errors.length > 0 ? (
-              errors.map((error, idx) => <ErrorCard key={error.id} error={error} index={idx + 1} />)
+            {loadingAlarms ? (
+              <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
+                Loading...
+              </div>
+            ) : alarms.length > 0 ? (
+              alarms.map((alarm, idx) => <AlarmCard key={alarm.id} alarm={alarm} index={idx + 1} tabType={activeTab} />)
             ) : (
-              <div className="no-errors">No errors in this category</div>
+              <div className="no-errors">No alarm records</div>
             )}
           </div>
         </div>
