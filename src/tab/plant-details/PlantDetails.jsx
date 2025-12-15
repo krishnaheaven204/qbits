@@ -264,6 +264,9 @@ export default function PlantDetails() {
   const [loadingAlarms, setLoadingAlarms] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [productionTimeFilter, setProductionTimeFilter] = useState("day");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Get plant number from route params or query params
   const getPlantNo = () => {
@@ -429,6 +432,65 @@ export default function PlantDetails() {
 
   const handleChartLeave = () => {
     setHoveredPoint(null);
+  };
+
+  // Generate month data (days of month with production values)
+  const getMonthChartData = () => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const data = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const value = Math.random() * 300 + 50;
+      data.push({ label: day.toString(), value });
+    }
+    return data;
+  };
+
+  // Generate year data (months of year with production values)
+  const getYearChartData = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months.map(month => ({
+      label: month,
+      value: Math.random() * 2000 + 500
+    }));
+  };
+
+  // Generate total data (years with production values)
+  const getTotalChartData = () => {
+    const currentYear = new Date().getFullYear();
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      const year = currentYear - i;
+      data.push({
+        label: year.toString(),
+        value: Math.random() * 2500 + 1000
+      });
+    }
+    return data;
+  };
+
+  // Get production value based on time filter
+  const getProductionValue = () => {
+    if (productionTimeFilter === "day") return formatValue(plant?.eday, 2);
+    if (productionTimeFilter === "month") return formatValue(plant?.month_power, 2);
+    if (productionTimeFilter === "year") return formatValue(plant?.year_power, 2);
+    if (productionTimeFilter === "total") return formatValue(plant?.etot, 2);
+    return "--";
+  };
+
+  // Get chart data based on time filter
+  const getChartDataForFilter = () => {
+    if (productionTimeFilter === "month") return getMonthChartData();
+    if (productionTimeFilter === "year") return getYearChartData();
+    if (productionTimeFilter === "total") return getTotalChartData();
+    return chartData;
+  };
+
+  // Format date for display
+  const formatDateDisplay = () => {
+    return selectedDate.toISOString().split('T')[0];
   };
 
   // Fetch alarms from API
@@ -677,90 +739,172 @@ export default function PlantDetails() {
         </div>
 
         {/* Production Overview Card */}
-        <div className="card production-overview-card">
+        <div className={`card production-overview-card ${productionTimeFilter === 'year' ? 'production-time-filter-year' : ''} ${productionTimeFilter === 'total' ? 'production-time-filter-total' : ''}`}>
           <div className="production-header">
             <div className="production-title-section">
               <h3 className="card-title">Production Overview</h3>
-              <span className="production-value">7.2 kWh</span>
+              <span className="production-value">{getProductionValue()} kWh</span>
             </div>
             <div className="production-controls">
-              <button className="time-filter-btn active">Day</button>
-              <button className="time-filter-btn">Month</button>
-              <button className="time-filter-btn">Year</button>
-              <button className="time-filter-btn">Total</button>
-              <span className="production-date">2025-12-12</span>
+              <button 
+                className={`time-filter-btn ${productionTimeFilter === 'day' ? 'active' : ''}`}
+                onClick={() => setProductionTimeFilter('day')}
+              >
+                Day
+              </button>
+              <button 
+                className={`time-filter-btn ${productionTimeFilter === 'month' ? 'active' : ''}`}
+                onClick={() => setProductionTimeFilter('month')}
+              >
+                Month
+              </button>
+              <button 
+                className={`time-filter-btn ${productionTimeFilter === 'year' ? 'active' : ''}`}
+                onClick={() => setProductionTimeFilter('year')}
+              >
+                Year
+              </button>
+              <button 
+                className={`time-filter-btn ${productionTimeFilter === 'total' ? 'active' : ''}`}
+                onClick={() => setProductionTimeFilter('total')}
+              >
+                Total
+              </button>
+              <div className="calendar-wrapper">
+                <button 
+                  className="production-date-btn"
+                  onClick={() => setShowCalendar(!showCalendar)}
+                >
+                  {formatDateDisplay()}
+                </button>
+                {showCalendar && (
+                  <div className="calendar-popup">
+                    <div className="calendar-header">
+                      <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1))}>◀</button>
+                      <span>{selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                      <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1))}>▶</button>
+                    </div>
+                    <div className="calendar-grid">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="calendar-day-header">{day}</div>
+                      ))}
+                      {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay() }).map((_, i) => (
+                        <div key={`empty-${i}`} className="calendar-day empty"></div>
+                      ))}
+                      {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() }).map((_, i) => (
+                        <button
+                          key={i + 1}
+                          className={`calendar-day ${selectedDate.getDate() === i + 1 && selectedDate.getMonth() === new Date().getMonth() ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1));
+                            setShowCalendar(false);
+                          }}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="production-chart-container">
-            <div className="chart-wrapper" onMouseMove={handleChartHover} onMouseLeave={handleChartLeave}>
-              <svg className="production-chart" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.3 }} />
-                    <stop offset="100%" style={{ stopColor: "#159f6c", stopOpacity: 0.05 }} />
-                  </linearGradient>
-                </defs>
-                <polyline
-                  points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0"
-                  fill="none"
-                  stroke="#159f6c"
-                  strokeWidth="2"
-                />
-                <polygon
-                  points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0 1000,300 0,300"
-                  fill="url(#chartGradient)"
-                />
-                <line x1="0" y1="300" x2="1000" y2="300" stroke="#e5e7eb" strokeWidth="1" />
+            {productionTimeFilter === 'day' ? (
+              <div className="chart-wrapper" onMouseMove={handleChartHover} onMouseLeave={handleChartLeave}>
+                <svg className="production-chart" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.3 }} />
+                      <stop offset="100%" style={{ stopColor: "#159f6c", stopOpacity: 0.05 }} />
+                    </linearGradient>
+                  </defs>
+                  <polyline
+                    points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0"
+                    fill="none"
+                    stroke="#159f6c"
+                    strokeWidth="2"
+                  />
+                  <polygon
+                    points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0 1000,300 0,300"
+                    fill="url(#chartGradient)"
+                  />
+                  <line x1="0" y1="300" x2="1000" y2="300" stroke="#e5e7eb" strokeWidth="1" />
+                  
+                  {hoveredPoint !== null && (
+                    <>
+                      <line 
+                        x1={chartData[hoveredPoint].x} 
+                        y1="0" 
+                        x2={chartData[hoveredPoint].x} 
+                        y2="300" 
+                        stroke="#159f6c" 
+                        strokeWidth="2" 
+                        opacity="0.5"
+                        strokeDasharray="5,5"
+                      />
+                      <circle 
+                        cx={chartData[hoveredPoint].x} 
+                        cy={chartData[hoveredPoint].y} 
+                        r="5" 
+                        fill="#159f6c"
+                        stroke="white"
+                        strokeWidth="2"
+                      />
+                    </>
+                  )}
+                </svg>
                 
-                {/* Hover line and point */}
                 {hoveredPoint !== null && (
-                  <>
-                    <line 
-                      x1={chartData[hoveredPoint].x} 
-                      y1="0" 
-                      x2={chartData[hoveredPoint].x} 
-                      y2="300" 
-                      stroke="#159f6c" 
-                      strokeWidth="2" 
-                      opacity="0.5"
-                      strokeDasharray="5,5"
-                    />
-                    <circle 
-                      cx={chartData[hoveredPoint].x} 
-                      cy={chartData[hoveredPoint].y} 
-                      r="5" 
-                      fill="#159f6c"
-                      stroke="white"
-                      strokeWidth="2"
-                    />
-                  </>
-                )}
-              </svg>
-              
-              {/* Tooltip */}
-              {hoveredPoint !== null && (
-                <div 
-                  className="chart-tooltip" 
-                  style={{
-                    left: `calc(${(chartData[hoveredPoint].x / 1000) * 100}% - 60px)`,
-                    top: `${Math.max(10, chartData[hoveredPoint].y - 50)}px`
-                  }}
-                >
-                  <div className="tooltip-time">{chartData[hoveredPoint].time}</div>
-                  <div className="tooltip-value">
-                    <span className="tooltip-dot">●</span>
-                    Solar: {((250 - chartData[hoveredPoint].y) / 250 * 4.2).toFixed(2)} kW
+                  <div 
+                    className="chart-tooltip" 
+                    style={{
+                      left: `calc(${(chartData[hoveredPoint].x / 1000) * 100}% - 60px)`,
+                      top: `${Math.max(10, chartData[hoveredPoint].y - 50)}px`
+                    }}
+                  >
+                    <div className="tooltip-time">{chartData[hoveredPoint].time}</div>
+                    <div className="tooltip-value">
+                      <span className="tooltip-dot">●</span>
+                      Solar: {((250 - chartData[hoveredPoint].y) / 250 * 4.2).toFixed(2)} kW
+                    </div>
                   </div>
+                )}
+              </div>
+            ) : (
+              <div className="bar-chart-wrapper">
+                <div className="bar-chart-container">
+                  {getChartDataForFilter().map((data, idx) => {
+                    const maxValue = Math.max(...getChartDataForFilter().map(d => d.value));
+                    const barHeightPercent = (data.value / maxValue) * 100;
+                    
+                    return (
+                      <div 
+                        key={idx}
+                        className="bar-item"
+                      >
+                        <div className="bar-column">
+                          <div 
+                            className="bar"
+                            style={{ height: `${barHeightPercent}%` }}
+                          />
+                        </div>
+                        <div className="bar-label">{data.label}</div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-            <div className="chart-labels">
-              <span>07:08</span>
-              <span>08:19</span>
-              <span>09:29</span>
-              <span>10:39</span>
-              <span>11:49</span>
-            </div>
+              </div>
+            )}
+            {productionTimeFilter === 'day' && (
+              <div className="chart-labels">
+                <span>07:08</span>
+                <span>08:19</span>
+                <span>09:29</span>
+                <span>10:39</span>
+                <span>11:49</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
