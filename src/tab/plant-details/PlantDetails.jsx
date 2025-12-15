@@ -508,12 +508,12 @@ export default function PlantDetails() {
   const getProductionData = () => {
     if (!plant) return [];
     return [
+      { title: "Keep-live power", value: formatValue(plant.acpower, 2), unit: "kW" },
+      { title: "Capacity", value: formatValue(plant.capacity, 2), unit: "kWp" },
       { title: "Day Production", value: formatValue(plant.eday, 2), unit: "kWh" },
       { title: "Month Production", value: formatValue(plant.month_power, 2), unit: "kWh" },
       { title: "Year Production", value: formatValue(plant.year_power, 2), unit: "kWh" },
       { title: "Total Production", value: formatValue(plant.etot, 2), unit: "kWh" },
-      { title: "Keep-live power", value: formatValue(plant.acpower, 2), unit: "kW" },
-      { title: "Capacity", value: formatValue(plant.capacity, 2), unit: "kWp" },
     ];
   };
 
@@ -621,12 +621,12 @@ export default function PlantDetails() {
                     <span className="info-value">{plant?.remark1 || "--"}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Phone</span>
+                    <span className="info-label">Phone/Email</span>
                     <span className="info-value">{plant?.plant_user || "none"}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Type of Plant</span>
-                    <span className="info-value">{mapPlantState(plant?.plantstate)}</span>
+                    <span className="info-value">{mapPlantState(plant?.planttype)}</span>
                   </div>
                 </div>
               </div>
