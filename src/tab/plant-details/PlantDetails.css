@@ -544,7 +544,19 @@
   font-family: "Nunito", monospace;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 32px;
+}
+
+.datetime-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.datetime-label {
+  font-weight: 600;
+  color: #64748b;
+  min-width: 35px;
 }
 
 .error-footer {
