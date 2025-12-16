@@ -212,9 +212,9 @@ function ErrorCard({ error, index }) {
 function AlarmCard({ alarm, index, tabType }) {
   const statusLabel = alarm.status === 1 ? "Recovered" : alarm.status === 0 ? "Fault" : "Unknown";
   const statusClass = alarm.status === 1 ? "recovered" : alarm.status === 0 ? "fault" : "offline";
-  const message = Array.isArray(alarm.message_en) && alarm.message_en.length > 0 
-    ? alarm.message_en[0] 
-    : "No message";
+  const messages = Array.isArray(alarm.message_en) && alarm.message_en.length > 0 
+    ? alarm.message_en 
+    : ["No message"];
   
   let leftTime, rightTime;
   if (tabType === "all") {
@@ -239,7 +239,11 @@ function AlarmCard({ alarm, index, tabType }) {
 
       <div className="error-body">
         <div className="error-model">{alarm.inverter_id || "N/A"}</div>
-        <div className="error-text">{message}</div>
+        <div className="error-text">
+          {messages.map((msg, idx) => (
+            <div key={idx}>{msg}</div>
+          ))}
+        </div>
       </div>
 
       <div className="error-footer">
@@ -276,6 +280,21 @@ export default function PlantDetails() {
   };
 
   const plantNo = getPlantNo();
+
+  // Handle calendar close on outside click
+  useEffect(() => {
+    if (!showCalendar) return;
+
+    const handleClickOutside = (event) => {
+      const calendarWrapper = document.querySelector('.calendar-wrapper');
+      if (calendarWrapper && !calendarWrapper.contains(event.target)) {
+        setShowCalendar(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCalendar]);
 
   // Fetch plant data from API
   useEffect(() => {

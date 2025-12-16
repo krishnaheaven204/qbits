@@ -19,14 +19,6 @@ const normalizeApiBase = (input) => {
   return base;
 };
 
-const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
-
-function getPlantStateName(code) {
-  if (code === 1) return "Normal";
-  if (code === 4 || code === 5) return "Fault";
-  if (code === 0 || code === 2 || code === 7) return "Offline";
-  return "Unknown";
-}
 
 function renderStatusIcon(code) {
   if (code === 1) {
@@ -110,59 +102,37 @@ export default function UserPlants() {
         }
 
         const json = await response.json();
-        console.log("API Response structure:", {
-          isArray: Array.isArray(json),
-          hasData: !!json.data,
-          dataType: typeof json.data,
-          dataIsArray: Array.isArray(json.data),
-          dataKeys: json.data ? Object.keys(json.data).slice(0, 10) : null,
-        });
         
         // Handle different response structures
         let plantsData = [];
         
         if (Array.isArray(json)) {
           plantsData = json;
-          console.log("Using json as array");
         } else if (Array.isArray(json.data)) {
           plantsData = json.data;
-          console.log("Using json.data as array");
         } else if (json.data && typeof json.data === 'object') {
           // If data is an object with a data property that's an array
           if (Array.isArray(json.data.data)) {
             plantsData = json.data.data;
-            console.log("Using json.data.data as array");
           } else if (json.data.records && Array.isArray(json.data.records)) {
             plantsData = json.data.records;
-            console.log("Using json.data.records as array");
           } else if (json.data.plants && Array.isArray(json.data.plants)) {
             plantsData = json.data.plants;
-            console.log("Using json.data.plants as array");
           } else if (json.data.plants && typeof json.data.plants === 'object' && !Array.isArray(json.data.plants)) {
             // json.data.plants is a single plant object
             plantsData = [json.data.plants];
-            console.log("json.data.plants is single plant, wrapping in array");
           } else if (json.data.list && Array.isArray(json.data.list)) {
             plantsData = json.data.list;
-            console.log("Using json.data.list as array");
           } else if (json.data.plant_no || json.data.plant_name) {
             // json.data is a single plant object
             plantsData = [json.data];
-            console.log("json.data is single plant, wrapping in array");
-          } else {
-            console.log("Could not extract plants, json.data keys:", Object.keys(json.data));
           }
-        } else {
-          console.log("Unexpected response structure");
         }
         
         // Ensure plantsData is always an array
         if (!Array.isArray(plantsData)) {
-          console.log("plantsData is not array, converting:", plantsData);
           plantsData = [];
         }
-        
-        console.log("Final plants count:", plantsData.length);
         setPlants(plantsData);
         setError(null);
       } catch (err) {
@@ -190,10 +160,51 @@ export default function UserPlants() {
     return `${day} ${month} ${year}`;
   };
 
-  const formatTime = (timeString) => {
-    if (!timeString) return "N/A";
+  const getLatestInverterTime = (plant) => {
+    if (!plant) return null;
+    
+    // Check if plant has inverters array
+    if (Array.isArray(plant.inverters) && plant.inverters.length > 0) {
+      // Get the inverter with the latest stime
+      const latestInverter = plant.inverters.reduce((latest, current) => {
+        if (!latest) return current;
+        const latestTime = new Date(latest.stime || 0).getTime();
+        const currentTime = new Date(current.stime || 0).getTime();
+        return currentTime > latestTime ? current : latest;
+      });
+      return latestInverter.stime;
+    }
+    
+    // Check if plant has stime directly
+    if (plant.stime) return plant.stime;
+    
+    // Fallback to other timestamp fields
+    return plant.created_at || plant.updated_at || plant.date || null;
+  };
 
-    const date = new Date(timeString);
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+    if (isNaN(date)) return "Invalid Date";
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    hours = String(hours).padStart(2, "0");
+
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+  };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
     if (isNaN(date)) return "Invalid Time";
 
     let hours = date.getHours();
@@ -350,12 +361,12 @@ export default function UserPlants() {
                         </td>
                         <td>
                           <span style={{ color: '#646566ff', fontSize: '14px', fontWeight: 400 }}>
-                            {capitalizeText(formatDate(p.date))}
+                            {formatDateTime(getLatestInverterTime(p))}
                           </span>
                         </td>
                         <td>
                           <span style={{ color: '#646566ff', fontSize: '14px', fontWeight: 400 }}>
-                            {capitalizeText(formatTime(p.time))}
+                            {formatTime(getLatestInverterTime(p))}
                           </span>
                         </td>
                       </tr>
