@@ -215,18 +215,19 @@ function AlarmCard({ alarm, index, tabType }) {
   const messages = Array.isArray(alarm.message_en) && alarm.message_en.length > 0 
     ? alarm.message_en 
     : ["No message"];
-  
-  let leftTime, rightTime;
-  if (tabType === "all") {
-    leftTime = formatTime(alarm.created_at);
-    rightTime = formatTime(alarm.updated_at);
-  } else if (tabType === "going") {
-    leftTime = formatTime(alarm.created_at);
-    rightTime = "--";
-  } else if (tabType === "recovered") {
-    leftTime = formatTime(alarm.created_at);
-    rightTime = formatTime(alarm.updated_at);
-  }
+
+  const formatAlarmDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date)) return "Invalid Date";
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+  };
 
   return (
     <div className={`error-card ${statusClass}`}>
@@ -244,11 +245,11 @@ function AlarmCard({ alarm, index, tabType }) {
             <div key={idx}>{msg}</div>
           ))}
         </div>
-      </div>
-
-      <div className="error-footer">
-        <span className="error-time">{leftTime}</span>
-        <span className="error-time">{rightTime}</span>
+        <div className="error-datetime">
+          <span>{formatAlarmDateTime(alarm.stime)}</span>
+          <span> -- </span>
+          <span>{formatAlarmDateTime(alarm.etime)}</span>
+        </div>
       </div>
     </div>
   );
@@ -271,6 +272,8 @@ export default function PlantDetails() {
   const [productionTimeFilter, setProductionTimeFilter] = useState("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [alarmCurrentPage, setAlarmCurrentPage] = useState(1);
+  const alarmsPerPage = 3;
 
   // Get plant number from route params or query params
   const getPlantNo = () => {
@@ -548,6 +551,10 @@ export default function PlantDetails() {
         if (response.ok) {
           const data = await response.json();
           const alarmData = data?.data?.faults?.data || [];
+          if (alarmData.length > 0) {
+            console.log("First alarm object:", alarmData[0]);
+            console.log("Alarm keys:", Object.keys(alarmData[0]));
+          }
           setAlarms(Array.isArray(alarmData) ? alarmData : []);
         } else {
           setAlarms([]);
@@ -574,6 +581,8 @@ export default function PlantDetails() {
     } else if (activeTab === "recovered") {
       setErrors(plantDataErrors.recovered);
     }
+    // Reset pagination when tab changes
+    setAlarmCurrentPage(1);
   }, [activeTab]);
 
   // Calculate performance percentage based on acpower and capacity
@@ -603,6 +612,24 @@ export default function PlantDetails() {
     setError(null);
     // Trigger re-fetch by updating plantNo dependency
     window.location.reload();
+  };
+
+  // Pagination logic for alarms
+  const getPaginatedAlarms = () => {
+    const startIndex = (alarmCurrentPage - 1) * alarmsPerPage;
+    const endIndex = startIndex + alarmsPerPage;
+    return alarms.slice(startIndex, endIndex);
+  };
+
+  const getTotalAlarmPages = () => {
+    return Math.ceil(alarms.length / alarmsPerPage);
+  };
+
+  const handleAlarmPageChange = (newPage) => {
+    const totalPages = getTotalAlarmPages();
+    if (newPage >= 1 && newPage <= totalPages) {
+      setAlarmCurrentPage(newPage);
+    }
   };
 
   return (
@@ -750,7 +777,43 @@ export default function PlantDetails() {
                 Loading...
               </div>
             ) : alarms.length > 0 ? (
-              alarms.map((alarm, idx) => <AlarmCard key={alarm.id} alarm={alarm} index={idx + 1} tabType={activeTab} />)
+              <>
+                {getPaginatedAlarms().map((alarm, idx) => (
+                  <AlarmCard 
+                    key={alarm.id} 
+                    alarm={alarm} 
+                    index={(alarmCurrentPage - 1) * alarmsPerPage + idx + 1} 
+                    tabType={activeTab} 
+                  />
+                ))}
+                {getTotalAlarmPages() > 1 && (
+                  <div className="alarm-pagination-container">
+                    <button 
+                      className="alarm-pagination-arrow"
+                      onClick={() => handleAlarmPageChange(alarmCurrentPage - 1)}
+                      disabled={alarmCurrentPage === 1}
+                    >
+                      ◀
+                    </button>
+                    {Array.from({ length: getTotalAlarmPages() }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        className={`alarm-pagination-number ${alarmCurrentPage === page ? 'active' : ''}`}
+                        onClick={() => handleAlarmPageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button 
+                      className="alarm-pagination-arrow"
+                      onClick={() => handleAlarmPageChange(alarmCurrentPage + 1)}
+                      disabled={alarmCurrentPage === getTotalAlarmPages()}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="no-errors">No alarm records</div>
             )}
