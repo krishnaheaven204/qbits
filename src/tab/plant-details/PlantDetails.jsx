@@ -226,7 +226,7 @@ function AlarmCard({ alarm, index, tabType }) {
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
     const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   };
 
   return (
@@ -246,9 +246,14 @@ function AlarmCard({ alarm, index, tabType }) {
           ))}
         </div>
         <div className="error-datetime">
-          <span>{formatAlarmDateTime(alarm.stime)}</span>
-          <span> -- </span>
-          <span>{formatAlarmDateTime(alarm.etime)}</span>
+          <div className="datetime-item">
+            <span className="datetime-label">Start</span>
+            <span>{formatAlarmDateTime(alarm.stime)}</span>
+          </div>
+          <div className="datetime-item">
+            <span className="datetime-label">End</span>
+            <span>{formatAlarmDateTime(alarm.etime)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -263,7 +268,12 @@ export default function PlantDetails() {
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("alarmActiveTab") || "all";
+    }
+    return "all";
+  });
   const [errors, setErrors] = useState(plantDataErrors.all);
   const [alarms, setAlarms] = useState([]);
   const [loadingAlarms, setLoadingAlarms] = useState(false);
@@ -586,6 +596,10 @@ export default function PlantDetails() {
     }
     // Reset pagination when tab changes
     setAlarmCurrentPage(1);
+    // Save active tab to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("alarmActiveTab", activeTab);
+    }
   }, [activeTab]);
 
   // Calculate performance percentage based on acpower and capacity
