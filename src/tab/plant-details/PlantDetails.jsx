@@ -458,8 +458,9 @@ export default function PlantDetails() {
 
   // Generate month data (days of month with production values)
   const getMonthChartData = () => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const data = [];
     
@@ -507,6 +508,8 @@ export default function PlantDetails() {
     if (productionTimeFilter === "month") return getMonthChartData();
     if (productionTimeFilter === "year") return getYearChartData();
     if (productionTimeFilter === "total") return getTotalChartData();
+    // For day filter, use chartData (which is independent of calendar selection)
+    // Calendar selection is only for display purposes in the date button
     return chartData;
   };
 
@@ -852,43 +855,45 @@ export default function PlantDetails() {
               >
                 Total
               </button>
-              <div className="calendar-wrapper">
-                <button 
-                  className="production-date-btn"
-                  onClick={() => setShowCalendar(!showCalendar)}
-                >
-                  {formatDateDisplay()}
-                </button>
-                {showCalendar && (
-                  <div className="calendar-popup">
-                    <div className="calendar-header">
-                      <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1))}>◀</button>
-                      <span>{selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                      <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1))}>▶</button>
+              {productionTimeFilter === 'day' && (
+                <div className="calendar-wrapper">
+                  <button 
+                    className="production-date-btn"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                  >
+                    {formatDateDisplay()}
+                  </button>
+                  {showCalendar && (
+                    <div className="calendar-popup">
+                      <div className="calendar-header">
+                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1))}>◀</button>
+                        <span>{selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1))}>▶</button>
+                      </div>
+                      <div className="calendar-grid">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                          <div key={day} className="calendar-day-header">{day}</div>
+                        ))}
+                        {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay() }).map((_, i) => (
+                          <div key={`empty-${i}`} className="calendar-day empty"></div>
+                        ))}
+                        {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() }).map((_, i) => (
+                          <button
+                            key={i + 1}
+                            className={`calendar-day ${selectedDate.getDate() === i + 1 && selectedDate.getMonth() === new Date().getMonth() ? 'selected' : ''}`}
+                            onClick={() => {
+                              setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1));
+                              setShowCalendar(false);
+                            }}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="calendar-grid">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="calendar-day-header">{day}</div>
-                      ))}
-                      {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay() }).map((_, i) => (
-                        <div key={`empty-${i}`} className="calendar-day empty"></div>
-                      ))}
-                      {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() }).map((_, i) => (
-                        <button
-                          key={i + 1}
-                          className={`calendar-day ${selectedDate.getDate() === i + 1 && selectedDate.getMonth() === new Date().getMonth() ? 'selected' : ''}`}
-                          onClick={() => {
-                            setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1));
-                            setShowCalendar(false);
-                          }}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="production-chart-container">
