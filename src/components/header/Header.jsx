@@ -48,7 +48,7 @@ export default function Header() {
           <ul className="list-unstyled">
             <li className="pc-h-item pc-sidebar-collapse">
               <a href="#" className="pc-head-link ms-0" id="sidebar-hide">      
-                <Bars3Icon className="h-5 w-5" />
+                <Bars3Icon style={{width: '20px', height: '20px'}} />
               </a>
             </li>
           </ul>
@@ -71,7 +71,7 @@ export default function Header() {
                   role="button"
                   onClick={(e) => { e.preventDefault(); setShowSearch(!showSearch); }}
                 >
-                  <MagnifyingGlassIcon className="h-5 w-5" />
+                  <MagnifyingGlassIcon style={{width: '20px', height: '20px'}} />
                 </a>
                 {showSearch && (
                   <div className="dropdown-menu dropdown-menu-end pc-h-dropdown drp-search show">
@@ -98,7 +98,7 @@ export default function Header() {
                   role="button"
                   onClick={(e) => { e.preventDefault(); setShowNotifications(!showNotifications); }}
                 >
-                  <BellIcon className="h-5 w-5" />
+                  <BellIcon style={{width: '20px', height: '20px'}} />
                   <span className="badge bg-danger pc-h-badge">3</span>
                 </a>
                 {showNotifications && (
@@ -116,7 +116,7 @@ export default function Header() {
                           <div className="d-flex align-items-start">
                             <div className="flex-shrink-0 position-relative">
                               <div className="avtar avtar-s bg-light-warning">
-                                <ExclamationTriangleIcon className="h-5 w-5" />
+                                <ExclamationTriangleIcon style={{width: '20px', height: '20px'}} />
                               </div>
                             </div>
                             <div className="flex-grow-1 ms-3">
@@ -134,7 +134,7 @@ export default function Header() {
                           <div className="d-flex align-items-start">
                             <div className="flex-shrink-0 position-relative">
                               <div className="avtar avtar-s bg-light-success">
-                                <CheckCircleIcon className="h-5 w-5" />
+                                <CheckCircleIcon style={{width: '20px', height: '20px'}} />
                               </div>
                             </div>
                             <div className="flex-grow-1 ms-3">
@@ -174,7 +174,7 @@ export default function Header() {
                       <div className="profile-user-info">
                         <div className="profile-avatar-container">
                           <div className="profile-avatar">
-                            <UserCircleIcon className="h-5 w-5" />
+                            <UserCircleIcon style={{width: '20px', height: '20px'}} />
                           </div>
                         </div>
                         <div className="profile-user-details">
@@ -188,11 +188,11 @@ export default function Header() {
                           <span>Edit profile</span>
                         </a>
                         <a href="#" className="profile-action-item" onClick={() => setShowProfile(false)}>
-                          <Cog6ToothIcon className="profile-action-icon" />
+                          <Cog6ToothIcon className="profile-action-icon" style={{width: '20px', height: '20px'}} />
                           <span>Settings</span>
                         </a>
                         <a href="#" className="profile-action-item" onClick={handleLogout}>
-                          <PowerIcon className="profile-action-icon" />
+                          <PowerIcon className="profile-action-icon" style={{width: '20px', height: '20px'}} />
                           <span>Logout</span>
                         </a>
                       </div>

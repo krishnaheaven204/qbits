@@ -1,4 +1,5 @@
 import { Nunito } from "next/font/google";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
 

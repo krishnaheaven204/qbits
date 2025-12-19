@@ -61,7 +61,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/dashboard" className={`pc-link qbits-nav-item ${isActive('dashboard') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <ChartBarIcon className="h-5 w-5" />
+                  <ChartBarIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Dashboard</span>
               </Link>
@@ -71,7 +71,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/station-list" className={`pc-link qbits-nav-item ${isActive('station-list') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <ListBulletIcon className="h-5 w-5" />
+                  <ListBulletIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Station List</span>
               </Link>
@@ -81,7 +81,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/fault-info" className={`pc-link qbits-nav-item ${isActive('fault-info') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <ExclamationTriangleIcon className="h-5 w-5" />
+                  <ExclamationTriangleIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Fault Info</span>
               </Link>
@@ -91,7 +91,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/create-station" className={`pc-link qbits-nav-item ${isActive('create-station') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <PlusCircleIcon className="h-5 w-5" />
+                  <PlusCircleIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Create Station</span>
               </Link>
@@ -108,11 +108,11 @@ export default function Sidebar() {
                 }}
               >
                 <span className="pc-micon">
-                  <CpuChipIcon className="h-5 w-5" />
+                  <CpuChipIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Device Library</span>
                 <span className="pc-arrow">
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon style={{width: '16px', height: '16px'}} />
                 </span>
               </a>
               <ul className="pc-submenu" style={{maxHeight: expandedMenus.deviceLibrary || isMenuActive(['device-library/inverters', 'device-library/sensors', 'device-library/controllers']) ? '500px' : '0'}}>
@@ -139,11 +139,11 @@ export default function Sidebar() {
                 }}
               >
                 <span className="pc-micon">
-                  <UserGroupIcon className="h-5 w-5" />
+                  <UserGroupIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">User List</span>
                 <span className="pc-arrow">
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon style={{width: '16px', height: '16px'}} />
                 </span>
               </a>
               <ul className="pc-submenu" style={{maxHeight: expandedMenus.userList || isMenuActive(['user-list/all-users', 'user-list/admins', 'user-list/operators']) ? '500px' : '0'}}>
@@ -163,7 +163,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/data-excel" className={`pc-link qbits-nav-item ${isActive('data-excel') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <DocumentArrowDownIcon className="h-5 w-5" />
+                  <DocumentArrowDownIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Data Excel</span>
               </Link>
@@ -180,11 +180,11 @@ export default function Sidebar() {
                 }}
               >
                 <span className="pc-micon">
-                  <ArrowDownTrayIcon className="h-5 w-5" />
+                  <ArrowDownTrayIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Fault Export</span>
                 <span className="pc-arrow">
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon style={{width: '16px', height: '16px'}} />
                 </span>
               </a>
               <ul className="pc-submenu" style={{maxHeight: expandedMenus.faultExport || isMenuActive(['fault-export/export-all', 'fault-export/export-date', 'fault-export/export-station']) ? '500px' : '0'}}>
@@ -204,7 +204,7 @@ export default function Sidebar() {
             <li className="pc-item">
               <Link href="/toolbox" className={`pc-link qbits-nav-item ${isActive('toolbox') ? 'active' : ''}`}>
                 <span className="pc-micon">
-                  <WrenchScrewdriverIcon className="h-5 w-5" />
+                  <WrenchScrewdriverIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Toolbox</span>
               </Link>

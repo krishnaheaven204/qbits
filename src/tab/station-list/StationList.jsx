@@ -14,7 +14,7 @@ export default function StationList() {
           <div className="card-header d-flex justify-content-between align-items-center">
             <h5>Station List</h5>
             <button className="btn btn-primary qbits-btn qbits-btn-primary" onClick={() => router.push('/create-station')}>
-              <PlusIcon className="h-4 w-4" />
+              <PlusIcon style={{width: '16px', height: '16px'}} />
               Create Station
             </button>
           </div>
@@ -57,13 +57,13 @@ export default function StationList() {
                     <td>
                       <div className="qbits-actions">
                         <button className="qbits-icon-btn qbits-icon-primary" title="View">
-                          <EyeIcon className="h-4 w-4" />
+                          <EyeIcon style={{width: '16px', height: '16px'}} />
                         </button>
                         <button className="qbits-icon-btn qbits-icon-secondary" title="Edit">
-                          <PencilIcon className="h-4 w-4" />
+                          <PencilIcon style={{width: '16px', height: '16px'}} />
                         </button>
                         <button className="qbits-icon-btn qbits-icon-danger" title="Delete">
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon style={{width: '16px', height: '16px'}} />
                         </button>
                       </div>
                     </td>
