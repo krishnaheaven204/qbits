@@ -849,30 +849,60 @@ export default function PlantDetails() {
                 Loading...
               </div>
             ) : (
-              <div className="inverter-table-wrapper">
-                <table className="inverter-table">
+              <div className="inverter-table-wrapper-modern">
+                <table className="inverter-table-modern">
                   <thead>
                     <tr>
-                      <th>Inverter Model</th>
                       <th>Status</th>
-                      <th>Power (kW)</th>
+                      <th>Keep-live power(kW)</th>
+                      <th>Day Production(kWh)</th>
+                      <th>Total Production(kWh)</th>
+                      <th>Data Time</th>
+                      <th>Record Time</th>
+                      <th>Model</th>
+                      <th>Serial</th>
+                      <th>Collector</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
+                      <td>
+                        <span className="status-indicator status-active"></span>
+                      </td>
+                      <td>2.21</td>
+                      <td>3.27</td>
+                      <td>2081</td>
+                      <td>2025-12-19 11:08</td>
+                      <td>2025-08-12</td>
                       <td>QB-5KTLD</td>
-                      <td><span className="status-badge status-normal">Normal</span></td>
-                      <td>4.8</td>
+                      <td>250508024</td>
+                      <td>—</td>
                     </tr>
                     <tr>
+                      <td>
+                        <span className="status-indicator status-active"></span>
+                      </td>
+                      <td>1.85</td>
+                      <td>2.94</td>
+                      <td>1856</td>
+                      <td>2025-12-19 11:08</td>
+                      <td>2025-08-12</td>
                       <td>QB-3.6KTLS</td>
-                      <td><span className="status-badge status-normal">Normal</span></td>
-                      <td>3.2</td>
+                      <td>250508025</td>
+                      <td>—</td>
                     </tr>
                     <tr>
+                      <td>
+                        <span className="status-indicator status-active"></span>
+                      </td>
+                      <td>1.92</td>
+                      <td>3.01</td>
+                      <td>1923</td>
+                      <td>2025-12-19 11:08</td>
+                      <td>2025-08-12</td>
                       <td>QB-4KTLD</td>
-                      <td><span className="status-badge status-normal">Normal</span></td>
-                      <td>3.6</td>
+                      <td>250508026</td>
+                      <td>—</td>
                     </tr>
                   </tbody>
                 </table>

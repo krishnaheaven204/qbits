@@ -246,18 +246,17 @@ export default function UserPlants() {
 
   return (
     <div className="user-plants-page">
-      <div className="breadcrumb-nav">
-        <button className="breadcrumb-item" onClick={() => router.back()}>
-          <span className="breadcrumb-icon">◀</span>
-          <span className="breadcrumb-text">Back</span>
-        </button>
-        <span className="breadcrumb-separator">›</span>
-        <span className="breadcrumb-item active">Plant List</span>
-      </div>
+      <div className="user-plants-container">
+        <div className="breadcrumb-nav">
+          <button className="breadcrumb-item" onClick={() => router.back()}>
+            <span className="breadcrumb-icon">◀</span>
+            <span className="breadcrumb-text">Back</span>
+          </button>
+          <span className="breadcrumb-separator">›</span>
+          <span className="breadcrumb-item active">Plant List</span>
+        </div>
 
-      
-
-      <div className="up-card">
+        <div className="up-card">
         <div className="up-header">
           <div className="up-header-text">
             <h5 className="up-title">Plant List</h5>
@@ -377,6 +376,7 @@ export default function UserPlants() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
