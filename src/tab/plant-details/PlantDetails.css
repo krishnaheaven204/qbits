@@ -179,6 +179,22 @@
   align-items: stretch;
 }
 
+/* Middle Cards Layout - Alarm and Inverter List */
+.middle-cards-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 0 24px;
+  align-items: stretch;
+}
+
+/* Production Overview Section - Full Width */
+.production-overview-section {
+  padding: 0 24px;
+  margin-bottom: 24px;
+}
+
 /* Card 2: Plant Information */
 .card-2 {
   display: flex;
@@ -672,9 +688,101 @@
   text-align: center;
 }
 
+/* Inverter List Card */
+.inverter-list-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.inverter-list-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.inverter-list-content {
+  padding: 18px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.inverter-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.inverter-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+.inverter-table thead {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.inverter-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 13px;
+}
+
+.inverter-table tbody tr {
+  border-bottom: 1px solid #f0f4f8;
+  transition: background-color 0.2s ease;
+}
+
+.inverter-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.inverter-table td {
+  padding: 12px 14px;
+  color: #1e293b;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.status-normal {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.status-fault {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.status-offline {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Production Overview Card - Full Width */
+.production-overview-card {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(21, 159, 108, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(21, 159, 108, 0.1);
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .top-cards-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .middle-cards-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1394,7 +1502,7 @@
 
 /* Responsive Design for Bottom Cards */
 @media (max-width: 1024px) {
-  .bottom-cards-layout {
+  .middle-cards-layout {
     grid-template-columns: 1fr;
     gap: 20px;
   }
@@ -1420,9 +1528,20 @@
 }
 
 @media (max-width: 768px) {
-  .bottom-cards-layout {
+  .top-cards-layout {
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .middle-cards-layout {
     grid-template-columns: 1fr;
     gap: 14px;
+    margin-bottom: 14px;
+    padding: 0 16px;
+  }
+
+  .production-overview-section {
+    padding: 0 16px;
     margin-bottom: 14px;
   }
 
@@ -1479,5 +1598,14 @@
 
   .calendar-day {
     font-size: 11px;
+  }
+
+  .inverter-table {
+    font-size: 12px;
+  }
+
+  .inverter-table th,
+  .inverter-table td {
+    padding: 10px 12px;
   }
 }

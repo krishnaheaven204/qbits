@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
 import Header from '@/components/header/Header';
@@ -8,6 +9,10 @@ import Sidebar from '@/components/sidebar/Sidebar';
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   const isAuthPage = pathname === '/register' || pathname === '/login' || pathname === '/auth/login' || pathname === '/auth/register';
+
+  useEffect(() => {
+    import('bootstrap/dist/js/bootstrap.bundle.min.js');
+  }, []);
 
   if (isAuthPage) {
     return <>{children}</>;

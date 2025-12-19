@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import ProductionOverview from "@/components/production-overview/ProductionOverview";
 import "./PlantDetails.css";
 
 // Helper functions
@@ -760,8 +761,8 @@ export default function PlantDetails() {
         </div>
       </div>
 
-      {/* Bottom Cards Layout: Alarm and Production Overview */}
-      <div className="bottom-cards-layout">
+      {/* Middle Cards Layout: Alarm and Inverter List */}
+      <div className="middle-cards-layout">
         {/* Error Log Section */}
         <div className="card error-log-card">
           <div className="error-log-header">
@@ -837,177 +838,53 @@ export default function PlantDetails() {
           </div>
         </div>
 
-        {/* Production Overview Card */}
-        <div className={`card production-overview-card ${productionTimeFilter === 'year' ? 'production-time-filter-year' : ''} ${productionTimeFilter === 'total' ? 'production-time-filter-total' : ''}`}>
-          <div className="production-header">
-            <div className="production-title-section">
-              <h3 className="card-title">Production Overview</h3>
-              <span className="production-value">{getProductionValue()} kWh</span>
-            </div>
-            <div className="production-controls">
-              <button 
-                className={`time-filter-btn ${productionTimeFilter === 'day' ? 'active' : ''}`}
-                onClick={() => setProductionTimeFilter('day')}
-              >
-                Day
-              </button>
-              <button 
-                className={`time-filter-btn ${productionTimeFilter === 'month' ? 'active' : ''}`}
-                onClick={() => setProductionTimeFilter('month')}
-              >
-                Month
-              </button>
-              <button 
-                className={`time-filter-btn ${productionTimeFilter === 'year' ? 'active' : ''}`}
-                onClick={() => setProductionTimeFilter('year')}
-              >
-                Year
-              </button>
-              <button 
-                className={`time-filter-btn ${productionTimeFilter === 'total' ? 'active' : ''}`}
-                onClick={() => setProductionTimeFilter('total')}
-              >
-                Total
-              </button>
-              {productionTimeFilter === 'day' && (
-                <div className="calendar-wrapper">
-                  <button 
-                    className="production-date-btn"
-                    onClick={() => setShowCalendar(!showCalendar)}
-                  >
-                    {formatDateDisplay()}
-                  </button>
-                  {showCalendar && (
-                    <div className="calendar-popup">
-                      <div className="calendar-header">
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1))}>◀</button>
-                        <span>{selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1))}>▶</button>
-                      </div>
-                      <div className="calendar-grid">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                          <div key={day} className="calendar-day-header">{day}</div>
-                        ))}
-                        {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay() }).map((_, i) => (
-                          <div key={`empty-${i}`} className="calendar-day empty"></div>
-                        ))}
-                        {Array.from({ length: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() }).map((_, i) => (
-                          <button
-                            key={i + 1}
-                            className={`calendar-day ${selectedDate.getDate() === i + 1 && selectedDate.getMonth() === new Date().getMonth() ? 'selected' : ''}`}
-                            onClick={() => {
-                              setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1));
-                              setShowCalendar(false);
-                            }}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+        {/* Inverter List Card */}
+        <div className="card inverter-list-card">
+          <div className="inverter-list-header">
+            <h3 className="card-title">Inverter List</h3>
           </div>
-          <div className="production-chart-container">
-            {productionTimeFilter === 'day' ? (
-              <div className="chart-wrapper" onMouseMove={handleChartHover} onMouseLeave={handleChartLeave}>
-                <svg className="production-chart" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: "#159f6c", stopOpacity: 0.3 }} />
-                      <stop offset="100%" style={{ stopColor: "#159f6c", stopOpacity: 0.05 }} />
-                    </linearGradient>
-                  </defs>
-                  <polyline
-                    points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0"
-                    fill="none"
-                    stroke="#159f6c"
-                    strokeWidth="2"
-                  />
-                  <polygon
-                    points="0,250 50,240 100,220 150,200 200,180 250,160 300,140 350,120 400,100 450,80 500,60 550,50 600,40 650,35 700,30 750,25 800,20 850,15 900,10 950,5 1000,0 1000,300 0,300"
-                    fill="url(#chartGradient)"
-                  />
-                  <line x1="0" y1="300" x2="1000" y2="300" stroke="#e5e7eb" strokeWidth="1" />
-                  
-                  {hoveredPoint !== null && (
-                    <>
-                      <line 
-                        x1={chartData[hoveredPoint].x} 
-                        y1="0" 
-                        x2={chartData[hoveredPoint].x} 
-                        y2="300" 
-                        stroke="#159f6c" 
-                        strokeWidth="2" 
-                        opacity="0.5"
-                        strokeDasharray="5,5"
-                      />
-                      <circle 
-                        cx={chartData[hoveredPoint].x} 
-                        cy={chartData[hoveredPoint].y} 
-                        r="5" 
-                        fill="#159f6c"
-                        stroke="white"
-                        strokeWidth="2"
-                      />
-                    </>
-                  )}
-                </svg>
-                
-                {hoveredPoint !== null && (
-                  <div 
-                    className="chart-tooltip" 
-                    style={{
-                      left: `calc(${(chartData[hoveredPoint].x / 1000) * 100}% - 60px)`,
-                      top: `${Math.max(10, chartData[hoveredPoint].y - 50)}px`
-                    }}
-                  >
-                    <div className="tooltip-time">{chartData[hoveredPoint].time}</div>
-                    <div className="tooltip-value">
-                      <span className="tooltip-dot">●</span>
-                      Solar: {((250 - chartData[hoveredPoint].y) / 250 * 4.2).toFixed(2)} kW
-                    </div>
-                  </div>
-                )}
+          <div className="inverter-list-content">
+            {loading ? (
+              <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
+                Loading...
               </div>
             ) : (
-              <div className="bar-chart-wrapper">
-                <div className="bar-chart-container">
-                  {getChartDataForFilter().map((data, idx) => {
-                    const maxValue = Math.max(...getChartDataForFilter().map(d => d.value));
-                    const barHeightPercent = (data.value / maxValue) * 100;
-                    
-                    return (
-                      <div 
-                        key={idx}
-                        className="bar-item"
-                      >
-                        <div className="bar-column">
-                          <div 
-                            className="bar"
-                            style={{ height: `${barHeightPercent}%` }}
-                          />
-                        </div>
-                        <div className="bar-label">{data.label}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {productionTimeFilter === 'day' && (
-              <div className="chart-labels">
-                <span>07:08</span>
-                <span>08:19</span>
-                <span>09:29</span>
-                <span>10:39</span>
-                <span>11:49</span>
+              <div className="inverter-table-wrapper">
+                <table className="inverter-table">
+                  <thead>
+                    <tr>
+                      <th>Inverter Model</th>
+                      <th>Status</th>
+                      <th>Power (kW)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>QB-5KTLD</td>
+                      <td><span className="status-badge status-normal">Normal</span></td>
+                      <td>4.8</td>
+                    </tr>
+                    <tr>
+                      <td>QB-3.6KTLS</td>
+                      <td><span className="status-badge status-normal">Normal</span></td>
+                      <td>3.2</td>
+                    </tr>
+                    <tr>
+                      <td>QB-4KTLD</td>
+                      <td><span className="status-badge status-normal">Normal</span></td>
+                      <td>3.6</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Production Overview Card - Full Width */}
+      <div className="production-overview-section">
+        <ProductionOverview selectedPlant={plant} />
       </div>
     </div>
   );
