@@ -28,7 +28,8 @@ ChartJS.register(
 
 export default function ProductionOverview({ selectedPlant }) {
   const [activeTab, setActiveTab] = useState('day');
-  const [selectedDate, setSelectedDate] = useState(new Date('2025-12-17'));
+  // Default to the latest known date (falls back to today)
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [totalChartData, setTotalChartData] = useState(null);
   const [totalLoading, setTotalLoading] = useState(false);
   const [totalError, setTotalError] = useState(null);
@@ -711,6 +712,48 @@ export default function ProductionOverview({ selectedPlant }) {
     }
   }, [activeTab, selectedPlant, selectedDate]);
 
+  // When plant data arrives, prefer its latest timestamp to initialize the day view
+  useEffect(() => {
+    if (selectedPlant?.stime) {
+      const parsed = new Date(selectedPlant.stime);
+      if (!isNaN(parsed)) {
+        setSelectedDate(parsed);
+      }
+    }
+  }, [selectedPlant]);
+
+  const renderTotalValue = () => {
+    // Prefer eday from API for daily total if available
+    if (activeTab === 'day' && selectedPlant) {
+      const eday =
+        selectedPlant.eday ??
+        selectedPlant.day_power ??
+        selectedPlant.dayProduction ??
+        selectedPlant.day_power ??
+        null;
+      if (eday !== null && eday !== undefined && !isNaN(Number(eday))) {
+        return `${Number(eday).toFixed(2)} kWh`;
+      }
+    }
+
+    const sumDataset = (data) =>
+      data?.datasets?.[0]?.data?.reduce((sum, val) => sum + val, 0);
+
+    if (activeTab === 'total' && totalChartData) {
+      return `${(sumDataset(totalChartData) ?? 0).toFixed(1)} kWh`;
+    }
+    if (activeTab === 'year' && yearChartData) {
+      return `${(sumDataset(yearChartData) ?? 0).toFixed(1)} kWh`;
+    }
+    if (activeTab === 'month' && monthChartData) {
+      return `${(sumDataset(monthChartData) ?? 0).toFixed(1)} kWh`;
+    }
+    if (activeTab === 'day' && dayChartData) {
+      return `${(sumDataset(dayChartData) ?? 0).toFixed(2)} kWh`;
+    }
+    return '0.00 kWh';
+  };
+
   return (
     <div className="card" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', border: '1px solid #e8eef7', overflow: 'hidden' }}>
       {/* Header with Title, Value, and Controls */}
@@ -721,16 +764,7 @@ export default function ProductionOverview({ selectedPlant }) {
           </div>
           <div className="col-auto ms-auto" style={{ paddingRight: 0 }}>
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#159f6c' }}>
-              {activeTab === 'total' && totalChartData ? 
-                `${totalChartData.datasets[0].data.reduce((sum, val) => sum + val, 0).toFixed(1)} kWh` : 
-                activeTab === 'year' && yearChartData ?
-                `${yearChartData.datasets[0].data.reduce((sum, val) => sum + val, 0).toFixed(1)} kWh` :
-                activeTab === 'month' && monthChartData ?
-                `${monthChartData.datasets[0].data.reduce((sum, val) => sum + val, 0).toFixed(1)} kWh` :
-                activeTab === 'day' && dayChartData ?
-                `${dayChartData.datasets[0].data.reduce((sum, val) => sum + val, 0).toFixed(2)} kWh` :
-                '276.5 kWh'
-              }
+              {renderTotalValue()}
             </span>
           </div>
         </div>
