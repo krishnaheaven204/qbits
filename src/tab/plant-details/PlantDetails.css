@@ -692,6 +692,8 @@
 .inverter-list-card {
   display: flex;
   flex-direction: column;
+  height: fit-content;
+  min-height: auto;
 }
 
 .inverter-list-header {
@@ -701,8 +703,9 @@
 
 .inverter-list-content {
   padding: 0;
-  flex: 1;
+  flex: none;
   overflow-y: auto;
+  max-height: 400px;
 }
 
 .inverter-table-wrapper {
