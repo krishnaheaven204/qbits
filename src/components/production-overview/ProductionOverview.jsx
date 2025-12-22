@@ -42,6 +42,7 @@ export default function ProductionOverview({ selectedPlant }) {
   const [dayChartData, setDayChartData] = useState(null);
   const [dayLoading, setDayLoading] = useState(false);
   const [dayError, setDayError] = useState(null);
+  const [dayTotalEday, setDayTotalEday] = useState(null);
 
 
 
@@ -610,6 +611,7 @@ export default function ProductionOverview({ selectedPlant }) {
     try {
       setDayLoading(true);
       setDayError(null);
+      setDayTotalEday(null);
 
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -663,6 +665,12 @@ export default function ProductionOverview({ selectedPlant }) {
         
         const labels = hourlyList.map(item => item.recordTime);
         const dataValues = hourlyList.map(item => Number(item.acMomentaryPower));
+
+        // Capture API-provided day total (eday) if present
+        const apiEday = result.data.byday.eday ?? result.data.byday.day_power ?? null;
+        if (apiEday !== null && apiEday !== undefined && !isNaN(Number(apiEday))) {
+          setDayTotalEday(Number(apiEday));
+        }
         
         setDayChartData({
           labels,
@@ -723,21 +731,32 @@ export default function ProductionOverview({ selectedPlant }) {
   }, [selectedPlant]);
 
   const renderTotalValue = () => {
-    // Prefer eday from API for daily total if available
-    if (activeTab === 'day' && selectedPlant) {
-      const eday =
-        selectedPlant.eday ??
-        selectedPlant.day_power ??
-        selectedPlant.dayProduction ??
-        selectedPlant.day_power ??
-        null;
-      if (eday !== null && eday !== undefined && !isNaN(Number(eday))) {
-        return `${Number(eday).toFixed(2)} kWh`;
-      }
-    }
-
     const sumDataset = (data) =>
       data?.datasets?.[0]?.data?.reduce((sum, val) => sum + val, 0);
+
+    // For day view, always prefer the currently loaded chart data (selected date)
+    if (activeTab === 'day') {
+      if (dayTotalEday !== null && dayTotalEday !== undefined) {
+        return `${Number(dayTotalEday).toFixed(2)} kWh`;
+      }
+
+      if (dayChartData) {
+        return `${(sumDataset(dayChartData) ?? 0).toFixed(2)} kWh`;
+      }
+
+      // Fallback to plant snapshot only if no chart data yet
+      if (selectedPlant) {
+        const eday =
+          selectedPlant.eday ??
+          selectedPlant.day_power ??
+          selectedPlant.dayProduction ??
+          selectedPlant.day_power ??
+          null;
+        if (eday !== null && eday !== undefined && !isNaN(Number(eday))) {
+          return `${Number(eday).toFixed(2)} kWh`;
+        }
+      }
+    }
 
     if (activeTab === 'total' && totalChartData) {
       return `${(sumDataset(totalChartData) ?? 0).toFixed(1)} kWh`;
