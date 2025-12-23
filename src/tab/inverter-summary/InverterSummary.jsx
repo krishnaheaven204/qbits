@@ -27,10 +27,60 @@ ChartJS.register(
   Legend
 );
 
+// Wave animation lifted from PlantDetails (SVG sine paths)
 function WaterWaveCircle({ percentage = 25 }) {
+  const [wave1Path, setWave1Path] = React.useState('');
+  const [wave2Path, setWave2Path] = React.useState('');
+  const [offset1, setOffset1] = React.useState(0);
+  const [offset2, setOffset2] = React.useState(50);
+
+  React.useEffect(() => {
+    const generateWave = (offset = 0) => {
+      const width = 400;
+      const amplitude = 12;
+      const waveY = 200 - percentage * 2;
+      let path = '';
+      for (let x = 0; x <= width; x++) {
+        const y = waveY + Math.sin((x + offset) * 0.03) * amplitude;
+        path += `${x === 0 ? 'M' : 'L'} ${x},${y} `;
+      }
+      path += `L ${width},200 L 0,200 Z`;
+      return path;
+    };
+
+    setWave1Path(generateWave(offset1));
+    setWave2Path(generateWave(offset2));
+  }, [percentage, offset1, offset2]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset1((prev) => (prev + 2) % 400);
+      setOffset2((prev) => (prev + 3) % 400);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="wave-circle">
-      <div className="wave-fill" style={{ '--percent': `${percentage}%` }} />
+    <div className="water-wave-container">
+      <svg className="water-wave-svg" viewBox="0 0 200 200">
+        <defs>
+          <clipPath id="summaryCircleClip">
+            <circle cx="100" cy="100" r="98" />
+          </clipPath>
+        </defs>
+
+        <circle cx="100" cy="100" r="98" fill="white" stroke="#159f6c" strokeWidth="1.6" />
+
+        <g clipPath="url(#summaryCircleClip)" id="waveGroup">
+          <g className="wave2">
+            <path d={wave2Path} fill="#159f6c" />
+          </g>
+          <g className="wave1">
+            <path d={wave1Path} fill="#159f6c" />
+          </g>
+        </g>
+      </svg>
+
       <div className="wave-text">
         <span className="wave-value">{percentage}%</span>
       </div>
@@ -39,14 +89,28 @@ function WaterWaveCircle({ percentage = 25 }) {
 }
 
 function BasicInfo({ items }) {
+  const rows = [];
+  for (let i = 0; i < items.length; i += 3) {
+    rows.push(items.slice(i, i + 3));
+  }
+
   return (
-    <div className="info-card">
+    <div className="info-card basic-card">
       <div className="info-title">Basic Info</div>
-      <div className="info-grid">
-        {items.map((item) => (
-          <div key={item.label} className="info-cell">
-            <span className="info-label">{item.label}</span>
-            <span className="info-value">{item.value}</span>
+      <div className="basic-table">
+        <div className="basic-header-spacer" />
+        {rows.map((row, idx) => (
+          <div key={idx} className="basic-row">
+            {row.map((item) => (
+              <div key={item.label} className="basic-cell">
+                <span className="basic-label">{item.label}</span>
+                <span className="basic-value">{item.value}</span>
+              </div>
+            ))}
+            {row.length < 3 &&
+              Array.from({ length: 3 - row.length }).map((_, i) => (
+                <div key={`empty-${i}`} className="basic-cell empty" />
+              ))}
           </div>
         ))}
       </div>
@@ -55,32 +119,17 @@ function BasicInfo({ items }) {
 }
 
 function ProductionSummary({ stats, percentage = 25 }) {
-  const primary = stats.slice(0, 2);
-  const tiles = stats.slice(2);
-
   return (
     <div className="prod-card">
-      <div className="prod-header">
-        <div className="status-dot" />
+      <div className="prod-wave-center">
+        <WaterWaveCircle percentage={percentage} />
       </div>
-      <div className="prod-body">
-        <div className="prod-wave">
-          <WaterWaveCircle percentage={percentage} />
-        </div>
-        <div className="prod-primary">
-          {primary.map((item) => (
-            <div key={item.label} className="primary-stat">
-              <div className="primary-label">{item.label}</div>
-              <div className="primary-value">{item.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="prod-tiles">
-        {tiles.map((tile) => (
+      <div className="prod-tile-grid">
+        {stats.map((tile) => (
           <div key={tile.label} className="tile">
-            <div className="tile-label">{tile.label}</div>
-            <div className="tile-value">{tile.value}</div>
+            <div className="tile-value main">{tile.value}</div>
+            <div className="tile-label main">{tile.label}</div>
+            {tile.unit && <div className="tile-unit">{tile.unit}</div>}
           </div>
         ))}
       </div>
@@ -137,13 +186,18 @@ export default function InverterSummary({ inverterId, plantNo }) {
     { label: 'Temperature(IGBT)', value: '38.2°C' },
   ];
 
-  const dcInfo = [
-    { label: 'PV1 Voltage', value: '250.1V' },
-    { label: 'PV1 Current', value: '2.86A' },
-    { label: 'PV1 Power', value: '715W' },
-    { label: 'PV2 Voltage', value: '298.6V' },
-    { label: 'PV2 Current', value: '2.36A' },
-    { label: 'PV2 Power', value: '705W' },
+  const dcRows = [
+    { label: 'PV1', voltage: '241.7V', current: '4.42A', power: '1068W' },
+    { label: 'PV2', voltage: '288V', current: '3.77A', power: '1086W' },
+  ];
+
+  const acRows = [
+    [
+      { label: 'Aphase', value: '240.3V / 5.54A' },
+      { label: 'Frequency', value: '49.96Hz' },
+    ],
+    [{ label: 'Power', value: '1.4kW' }],
+    [{ label: 'Temperature(IGBT)', value: '38.2°C' }],
   ];
 
   // Alarm card component (same design as plant details)
@@ -368,11 +422,16 @@ export default function InverterSummary({ inverterId, plantNo }) {
         <div className="stacked-cards">
           <div className="info-card slim">
             <div className="info-title">AC Info</div>
-            <div className="info-grid vertical">
-              {acInfo.map((item) => (
-                <div key={item.label} className="info-cell">
-                  <span className="info-label">{item.label}</span>
-                  <span className="info-value">{item.value}</span>
+            <div className="ac-table">
+              {acRows.map((row, idx) => (
+                <div key={idx} className="ac-row">
+                  {row.map((item, i) => (
+                    <div key={i} className="ac-cell">
+                      <span className="ac-label">{item.label}</span>
+                      <span className="ac-value">{item.value}</span>
+                    </div>
+                  ))}
+                  {row.length === 1 && <div className="ac-cell empty" />}
                 </div>
               ))}
             </div>
@@ -380,11 +439,19 @@ export default function InverterSummary({ inverterId, plantNo }) {
 
           <div className="info-card slim">
             <div className="info-title">DC Info</div>
-            <div className="info-grid vertical">
-              {dcInfo.map((item) => (
-                <div key={item.label} className="info-cell">
-                  <span className="info-label">{item.label}</span>
-                  <span className="info-value">{item.value}</span>
+            <div className="dc-table">
+              <div className="dc-header">
+                <span></span>
+                <span>Voltage</span>
+                <span>Current</span>
+                <span>Power</span>
+              </div>
+              {dcRows.map((row) => (
+                <div key={row.label} className="dc-row">
+                  <span className="dc-label">{row.label}</span>
+                  <span className="dc-value">{row.voltage}</span>
+                  <span className="dc-value">{row.current}</span>
+                  <span className="dc-value">{row.power}</span>
                 </div>
               ))}
             </div>
