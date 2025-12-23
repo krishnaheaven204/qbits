@@ -285,6 +285,44 @@ export default function PlantDetails() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [alarmCurrentPage, setAlarmCurrentPage] = useState(1);
   const alarmsPerPage = 3;
+  const inverterRows = [
+    {
+      id: "inv-1",
+      status: "active",
+      keepLivePower: "2.21",
+      dayProduction: "3.27",
+      totalProduction: "2081",
+      dataTime: "2025-12-19 11:08",
+      recordTime: "2025-08-12",
+      model: "QB-5KTLD",
+      serial: "250508024",
+      collector: "—",
+    },
+    {
+      id: "inv-2",
+      status: "active",
+      keepLivePower: "1.85",
+      dayProduction: "2.94",
+      totalProduction: "1856",
+      dataTime: "2025-12-19 11:08",
+      recordTime: "2025-08-12",
+      model: "QB-3.6KTLS",
+      serial: "250508025",
+      collector: "—",
+    },
+    {
+      id: "inv-3",
+      status: "active",
+      keepLivePower: "1.92",
+      dayProduction: "3.01",
+      totalProduction: "1923",
+      dataTime: "2025-12-19 11:08",
+      recordTime: "2025-08-12",
+      model: "QB-4KTLD",
+      serial: "250508026",
+      collector: "—",
+    },
+  ];
 
   // Get plant number from route params or query params
   const getPlantNo = () => {
@@ -643,11 +681,14 @@ export default function PlantDetails() {
     return Math.ceil(alarms.length / alarmsPerPage);
   };
 
-  const handleAlarmPageChange = (newPage) => {
-    const totalPages = getTotalAlarmPages();
-    if (newPage >= 1 && newPage <= totalPages) {
-      setAlarmCurrentPage(newPage);
-    }
+  const handleAlarmPageChange = (page) => {
+    if (page < 1 || page > getTotalAlarmPages()) return;
+    setAlarmCurrentPage(page);
+  };
+
+  const handleOpenInverter = (row) => {
+    const query = plantNo ? `?plant_no=${plantNo}` : "";
+    router.push(`/inverters/${row.id}/summary${query}`);
   };
 
   return (
@@ -862,48 +903,36 @@ export default function PlantDetails() {
                       <th>Model</th>
                       <th>Serial</th>
                       <th>Collector</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>
-                        <span className="status-indicator status-active"></span>
-                      </td>
-                      <td>2.21</td>
-                      <td>3.27</td>
-                      <td>2081</td>
-                      <td>2025-12-19 11:08</td>
-                      <td>2025-08-12</td>
-                      <td>QB-5KTLD</td>
-                      <td>250508024</td>
-                      <td>—</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span className="status-indicator status-active"></span>
-                      </td>
-                      <td>1.85</td>
-                      <td>2.94</td>
-                      <td>1856</td>
-                      <td>2025-12-19 11:08</td>
-                      <td>2025-08-12</td>
-                      <td>QB-3.6KTLS</td>
-                      <td>250508025</td>
-                      <td>—</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span className="status-indicator status-active"></span>
-                      </td>
-                      <td>1.92</td>
-                      <td>3.01</td>
-                      <td>1923</td>
-                      <td>2025-12-19 11:08</td>
-                      <td>2025-08-12</td>
-                      <td>QB-4KTLD</td>
-                      <td>250508026</td>
-                      <td>—</td>
-                    </tr>
+                    {inverterRows.map((row) => (
+                      <tr key={row.id} className="inverter-row" onClick={() => handleOpenInverter(row)}>
+                        <td>
+                          <span className={`status-indicator status-${row.status}`}></span>
+                        </td>
+                        <td>{row.keepLivePower}</td>
+                        <td>{row.dayProduction}</td>
+                        <td>{row.totalProduction}</td>
+                        <td>{row.dataTime}</td>
+                        <td>{row.recordTime}</td>
+                        <td>{row.model}</td>
+                        <td>{row.serial}</td>
+                        <td>{row.collector}</td>
+                        <td>
+                          <button
+                            className="inverter-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenInverter(row);
+                            }}
+                          >
+                            Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
