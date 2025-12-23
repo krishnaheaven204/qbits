@@ -328,6 +328,7 @@ export default function ProductionOverview({ selectedPlant }) {
     }
 
     try {
+      setTotalChartData(null);
       setTotalLoading(true);
       setTotalError(null);
 
@@ -416,6 +417,7 @@ export default function ProductionOverview({ selectedPlant }) {
     }
 
     try {
+      setYearChartData(null);
       setYearLoading(true);
       setYearError(null);
 
@@ -511,6 +513,7 @@ export default function ProductionOverview({ selectedPlant }) {
     }
 
     try {
+      setMonthChartData(null);
       setMonthLoading(true);
       setMonthError(null);
 
@@ -736,6 +739,9 @@ export default function ProductionOverview({ selectedPlant }) {
 
     // For day view, always prefer the currently loaded chart data (selected date)
     if (activeTab === 'day') {
+      if (dayLoading) {
+        return '0.00 kWh';
+      }
       if (dayTotalEday !== null && dayTotalEday !== undefined) {
         return `${Number(dayTotalEday).toFixed(2)} kWh`;
       }
@@ -761,11 +767,17 @@ export default function ProductionOverview({ selectedPlant }) {
     if (activeTab === 'total' && totalChartData) {
       return `${(sumDataset(totalChartData) ?? 0).toFixed(1)} kWh`;
     }
-    if (activeTab === 'year' && yearChartData) {
-      return `${(sumDataset(yearChartData) ?? 0).toFixed(1)} kWh`;
+    if (activeTab === 'year') {
+      if (yearLoading) return '0.0 kWh';
+      if (yearChartData) {
+        return `${(sumDataset(yearChartData) ?? 0).toFixed(1)} kWh`;
+      }
     }
-    if (activeTab === 'month' && monthChartData) {
-      return `${(sumDataset(monthChartData) ?? 0).toFixed(1)} kWh`;
+    if (activeTab === 'month') {
+      if (monthLoading) return '0.0 kWh';
+      if (monthChartData) {
+        return `${(sumDataset(monthChartData) ?? 0).toFixed(1)} kWh`;
+      }
     }
     if (activeTab === 'day' && dayChartData) {
       return `${(sumDataset(dayChartData) ?? 0).toFixed(2)} kWh`;
