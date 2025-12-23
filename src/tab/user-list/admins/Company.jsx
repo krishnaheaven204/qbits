@@ -495,7 +495,6 @@ const updateFlagsAPI = async (userId, values) => {
   }
 
   return (
-    <div className="user-list-page-company">
       <div className="ul-container">
         <div className="ul-card">
           <div className="ul-header">
@@ -668,7 +667,6 @@ const updateFlagsAPI = async (userId, values) => {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
