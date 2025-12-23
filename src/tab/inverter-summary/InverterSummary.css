@@ -1,10 +1,12 @@
 .summary-page {
-  width: min(1100px, 100%);
   margin: 18px auto;
   padding: 12px;
   box-sizing: border-box;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   color: #0f172a;
+  width: 100%;
+  min-width: 100%;
+  max-width: 80vw;
 }
 
 .summary-header {
@@ -247,16 +249,19 @@
   0% {
     background-position: 0 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
 
 @keyframes waveBob {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(2px);
   }
@@ -625,7 +630,7 @@
   transition: all 0.2s ease;
 }
 
-.chart-tab + .chart-tab {
+.chart-tab+.chart-tab {
   border-left: 1px solid #e2e8f0;
 }
 
