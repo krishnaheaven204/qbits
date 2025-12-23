@@ -1,5 +1,5 @@
 .user-plants-page {
-  padding: 0;
+  padding: clamp(8px, 1.5vw, 24px);
   min-height: 100vh;
   width: 100%;
   background: #f5f7fa;
@@ -11,12 +11,11 @@
 }
 
 .user-plants-container {
-  width: 100%;
-  max-width: 1244px;
   margin: 0 auto;
-  padding: 0 16px;
   box-sizing: border-box;
 }
+
+
 
 /* Breadcrumb Navigation */
 .breadcrumb-nav {
@@ -121,8 +120,6 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 100%;
   height: auto;
   box-sizing: border-box;
   margin: 0 auto 16px;
@@ -243,45 +240,96 @@
   flex-shrink: 0;
 }
 
-/* Table Scroll Container - UserPlants */
-.user-plants-page .table-scroll-container {
+/* Table styling - UserPlants (Bootstrap base) */
+.user-plants-table {
   width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: 600px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  background: #ffffff;
-  position: relative;
-  box-sizing: border-box;
-  -webkit-overflow-scrolling: touch;
 }
 
-.user-plants-page .table-inner-force {
+.user-plants-table .table {
   width: 100%;
-  min-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Table styling - UserPlants */
-.user-plants-page .custom-table {
-  width: 100%;
-  min-width: 1100px;
+  min-width: 1040px;
   border-collapse: collapse;
   white-space: nowrap;
-  font-size: 0.875rem;
-  table-layout: auto;
-  box-sizing: border-box;
-  margin-bottom: 0;
 }
 
-.user-plants-page .custom-table thead {
+.user-plants-table .table thead {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: #ffffff;
+  z-index: 5;
+}
+
+.user-plants-table th,
+.user-plants-table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+.user-plants-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-plants-table td {
+  color: #475569;
+  font-weight: 400;
+}
+
+.user-plants-table .sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 6;
+}
+
+.user-plants-table .left-col {
+  min-width: 110px;
+}
+
+@media (max-width: 1200px) {
+  .user-plants-table .table {
+    min-width: 980px;
+  }
+}
+
+@media (max-width: 992px) {
+  .user-plants-container {
+    padding: 0 16px;
+  }
+
+  .user-plants-table .table {
+    min-width: 920px;
+    font-size: 0.86rem;
+  }
+
+  .user-plants-table th,
+  .user-plants-table td {
+    padding: 8px 10px;
+  }
+
+  .user-plants-table .left-col {
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-plants-container {
+    padding: 0 12px;
+  }
+
+  .user-plants-table .table {
+    min-width: 780px;
+    font-size: 0.82rem;
+  }
+
+  .user-plants-table th,
+  .user-plants-table td {
+    padding: 8px;
+  }
+
+  .user-plants-table .left-col {
+    min-width: 90px;
+  }
 }
 
 .user-plants-page .custom-table th {
