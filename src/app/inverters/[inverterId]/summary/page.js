@@ -4,8 +4,7 @@ import { use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import InverterSummary from '@/tab/inverter-summary/InverterSummary';
 
-export default function InverterSummaryEntryPage(props) {
-  // Next.js 16: params/searchParams are Promises in client components
+export default function InverterSummaryPage(props) {
   const params = use(props.params);
   const searchParams = use(props.searchParams);
 

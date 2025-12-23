@@ -688,7 +688,7 @@ export default function PlantDetails() {
 
   const handleOpenInverter = (row) => {
     const query = plantNo ? `?plant_no=${plantNo}` : "";
-    router.push(`/inverters/${row.id}${query}`);
+    router.push(`/inverters/${row.id}/summary${query}`);
   };
 
   return (
