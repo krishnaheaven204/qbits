@@ -791,7 +791,7 @@ export default function ProductionOverview({ selectedPlant }) {
       <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f4f8' }}>
         <div className="row align-items-center" style={{ margin: 0 }}>
           <div className="col-auto" style={{ paddingLeft: 0, paddingRight: '8px' }}>
-            <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#475569', margin: 0 }}>Production Overview</h5>
+            <h5 style={{ fontSize: '16px', fontWeight: '600', color: '#475569', margin: 0 }}>Production Overview</h5>
           </div>
           <div className="col-auto ms-auto" style={{ paddingRight: 0 }}>
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#159f6c' }}>
