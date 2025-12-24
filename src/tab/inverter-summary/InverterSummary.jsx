@@ -390,11 +390,11 @@ export default function InverterSummary({ inverterId, plantNo }) {
   return (
     <div className="summary-page">
       <div className="summary-header">
-        <div className="breadcrumb-inline">
+        <div className="inverter-breadcrumb-inline">
           {breadcrumbs.map((item, idx) => (
             <React.Fragment key={idx}>
               {idx === 0 ? (
-                <button className="breadcrumb-item" onClick={item.action}>
+                <button className="inverter-breadcrumb-item" onClick={item.action}>
                   ◀ {item.label}
                 </button>
               ) : (
