@@ -695,7 +695,7 @@ export default function PlantDetails() {
     <div className="plant-details-page">
       <div className="page-header">
         <h1 className="page-title">Plant Details</h1>
-        <div className="breadcrumb-inline">
+        <div className="plant-breadcrumb-inline">
           <button className="breadcrumb-item-inline" onClick={() => router.back()}>
             <span className="breadcrumb-icon">◀</span>
             <span className="breadcrumb-text">Back</span>
