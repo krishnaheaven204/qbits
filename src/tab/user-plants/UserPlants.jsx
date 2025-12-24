@@ -282,95 +282,97 @@ export default function UserPlants() {
               <p className="up-muted">No plants found for this user.</p>
             </div>
           ) : (
-            <div className="table-responsive user-plants-table">
-              <table className="table table-hover table-bordered align-middle mb-0 custom-table text-nowrap">
-                <thead className="table-light">
-                  <tr>
-                    <th className="sticky-col left-col">Status</th>
-                    <th>Plant No</th>
-                    <th>Plant Name</th>
-                    <th>Capacity (Kw)</th>
-                    <th>Kpi</th>
-                    <th>Day Production</th>
-                    <th>Total Production</th>
-                    <th>Month Production</th>
-                    <th>Year Production</th>
-                    <th>City</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.isArray(plants) && plants.map((p, idx) => (
-                    <tr
-                      key={idx}
-                      onClick={() => router.push(`/plant-details/${p.plant_no}`)}
-                      style={{ cursor: "pointer", transition: "background-color 0.2s ease" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      <td className="sticky-col left-col">
-                        {renderStatusIcon(p.plantstate)}
-                      </td>
-                      <td>
-                        <span className="fw-semibold text-secondary">
-                          {capitalizeText(String(p.plant_no))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(p.plant_name)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatCapacity(p.capacity))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatNumber(p.kpi))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatNumber(p.eday))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatNumber(p.etot))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatNumber(p.month_power))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(formatNumber(p.year_power))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary">
-                          {capitalizeText(p.remark1)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary" style={{ fontSize: "14px" }}>
-                          {formatDateTime(getLatestInverterTime(p))}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-secondary" style={{ fontSize: "14px" }}>
-                          {formatTime(getLatestInverterTime(p))}
-                        </span>
-                      </td>
+            <div className="table-scroll-container user-plants-table">
+              <div className="table-inner-force-allusers">
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th className="sticky-col left-col">Status</th>
+                      <th>Plant No</th>
+                      <th>Plant Name</th>
+                      <th>Capacity (Kw)</th>
+                      <th>Kpi</th>
+                      <th>Day Production</th>
+                      <th>Total Production</th>
+                      <th>Month Production</th>
+                      <th>Year Production</th>
+                      <th>City</th>
+                      <th>Date</th>
+                      <th>Time</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(plants) && plants.map((p, idx) => (
+                      <tr
+                        key={idx}
+                        onClick={() => router.push(`/plant-details/${p.plant_no}`)}
+                        style={{ cursor: "pointer", transition: "background-color 0.2s ease" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
+                        <td className="sticky-col left-col">
+                          {renderStatusIcon(p.plantstate)}
+                        </td>
+                        <td>
+                          <span className="fw-semibold text-secondary">
+                            {capitalizeText(String(p.plant_no))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(p.plant_name)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatCapacity(p.capacity))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatNumber(p.kpi))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatNumber(p.eday))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatNumber(p.etot))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatNumber(p.month_power))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(formatNumber(p.year_power))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {capitalizeText(p.remark1)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary" style={{ fontSize: "14px" }}>
+                            {formatDateTime(getLatestInverterTime(p))}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-secondary" style={{ fontSize: "14px" }}>
+                            {formatTime(getLatestInverterTime(p))}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
