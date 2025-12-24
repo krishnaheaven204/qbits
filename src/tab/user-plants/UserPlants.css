@@ -243,50 +243,69 @@
 }
 
 /* Table styling - UserPlants (Bootstrap base) */
-.user-plants-table {
+/* Scroll container to match Company table */
+.table-scroll-container {
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 
-.table-responsive.user-plants-table {
-  scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.table-responsive.user-plants-table::-webkit-scrollbar {
+.table-scroll-container::-webkit-scrollbar {
   height: 10px;
 }
 
-.table-responsive.user-plants-table::-webkit-scrollbar-track {
+.table-scroll-container::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 999px;
 }
 
-.table-responsive.user-plants-table::-webkit-scrollbar-thumb {
+.table-scroll-container::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 999px;
 }
 
-.table-responsive.user-plants-table::-webkit-scrollbar-thumb:hover {
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-.user-plants-table .table {
+.table-inner-force-allusers {
+  width: max-content;
+  min-width: 100%;
+}
+
+/* Table styling to mirror Company list */
+.user-plants-table {
   width: 100%;
-  min-width: 1040px;
+}
+
+.user-plants-table .custom-table {
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   white-space: nowrap;
   font-size: 14px;
   line-height: 1.35;
+  table-layout: auto;
 }
 
-.user-plants-table .table thead {
+.user-plants-table .custom-table thead {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 10;
+  background: #f8f9fa;
 }
 
 .user-plants-table th,
 .user-plants-table td {
-  padding: 10px 12px;
+  padding: 10px 8px;
   vertical-align: middle;
   font-size: 14px;
   line-height: 1.35;
@@ -296,11 +315,22 @@
   background: #f8f9fa;
   font-weight: 600;
   color: #111827;
+  border-bottom: 2px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  text-align: left;
 }
 
 .user-plants-table td {
-  color: #475569;
-  font-weight: 400;
+  color: #79808b;
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #edf0f4;
+  text-align: left;
+}
+
+.user-plants-table th:last-child,
+.user-plants-table td:last-child {
+  border-right: none;
 }
 
 .user-plants-table .sticky-col {
@@ -312,6 +342,18 @@
 
 .user-plants-table .left-col {
   min-width: 110px;
+}
+
+.user-plants-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.user-plants-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.user-plants-table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
 @media (max-width: 1200px) {
