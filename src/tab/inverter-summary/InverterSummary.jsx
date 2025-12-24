@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Chart as ChartJS,
@@ -138,6 +138,66 @@ export default function InverterSummary({ inverterId, plantNo }) {
   const [alarmCurrentPage, setAlarmCurrentPage] = useState(1);
   const alarmsPerPage = 3;
   const [chartTab, setChartTab] = useState('day');
+  const metricOptions = useMemo(
+    () => [
+      'Power',
+      'AphaseVoltage',
+      'BphaseVoltage',
+      'CphaseVoltage',
+      'AphaseCurrent',
+      'BphaseCurrent',
+      'CphaseCurrent',
+      'Temperature',
+      'Frequency',
+      'DC Current',
+      'DC Current2',
+      'DC Voltage',
+      'DC Voltage2',
+      'DC Voltage3',
+      'DC Current3',
+      'DC Voltage4',
+      'DC Current4',
+      'DC Voltage5',
+      'DC Current5',
+      'DC Voltage6',
+      'DC Current6',
+      'DC Voltage7',
+      'DC Current7',
+      'DC Voltage8',
+      'DC Current8',
+      'DC Voltage9',
+      'DC Current9',
+      'DC Voltage10',
+      'DC Current10',
+    ],
+    []
+  );
+  const [selectedMetrics, setSelectedMetrics] = useState(() => ['Power']);
+  const [isMetricMenuOpen, setIsMetricMenuOpen] = useState(false);
+  const metricDropdownRef = useRef(null);
+
+  const colorPalette = [
+    '#e74c3c',
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#8b5cf6',
+    '#ef4444',
+    '#0ea5e9',
+    '#22c55e',
+    '#f97316',
+    '#a855f7',
+    '#6366f1',
+    '#14b8a6',
+    '#fbbf24',
+    '#f472b6',
+    '#65a30d',
+    '#0891b2',
+    '#d946ef',
+    '#ea580c',
+    '#84cc16',
+    '#dc2626',
+  ];
 
   const basicInfo = useMemo(
     () => [
@@ -307,59 +367,93 @@ export default function InverterSummary({ inverterId, plantNo }) {
   };
 
   const chartData = useMemo(() => {
-    if (chartTab === 'day') {
-      const labels = ['07:05', '07:35', '08:05', '08:35', '09:05', '09:35', '10:05', '10:35', '11:05'];
-      const values = [0, 0.2, 0.4, 0.8, 1.1, 1.4, 1.7, 1.9, 2.2];
+    const dayLabels = ['07:05', '07:35', '08:05', '08:35', '09:05', '09:35', '10:05', '10:35', '11:05'];
+    const monthLabels = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
+    const yearLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const totalLabels = ['2021', '2022', '2023', '2024', '2025'];
+
+    const getBaseSeries = (tab) => {
+      if (tab === 'day') return [0, 0.2, 0.4, 0.8, 1.1, 1.4, 1.7, 1.9, 2.2];
+      if (tab === 'month')
+        return [
+          16.2, 15.8, 15.6, 16.5, 15.9, 16.8, 17.2, 17.5, 16.9, 17.1, 16.4, 16.0, 15.7, 15.4, 15.2, 15.9, 16.3, 16.0,
+          15.5, 15.7, 16.2, 14.1, 15.0, 10.5, 0, 0, 0, 0, 0, 0, 0,
+        ];
+      if (tab === 'year') return [120, 140, 132, 155, 162, 170, 168, 174, 165, 150, 142, 138];
+      return [820, 930, 980, 1050, 1120];
+    };
+
+    const labels =
+      chartTab === 'day'
+        ? dayLabels
+        : chartTab === 'month'
+          ? monthLabels
+          : chartTab === 'year'
+            ? yearLabels
+            : totalLabels;
+
+    // Month tab: single Power bar chart, styled like reference
+    if (chartTab === 'month') {
+      const powerData = getBaseSeries('month');
+      const powerColor = '#e74c3c';
       return {
-        labels,
+        labels: monthLabels,
         datasets: [
           {
             label: 'Power',
-            data: values,
-            fill: true,
-            tension: 0.35,
-            borderColor: '#e74c3c',
-            backgroundColor: (ctx) => {
-              const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
-              gradient.addColorStop(0, 'rgba(231, 76, 60, 0.18)');
-              gradient.addColorStop(1, 'rgba(231, 76, 60, 0.02)');
-              return gradient;
-            },
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            borderWidth: 2,
+            data: powerData,
+            backgroundColor: `${powerColor}d9`,
+            borderColor: powerColor,
+            borderWidth: 1,
+            borderRadius: 4,
+            hoverBackgroundColor: powerColor,
+            barThickness: 14,
           },
         ],
       };
     }
 
-    const base = chartTab === 'month'
-      ? { labels: ['W1', 'W2', 'W3', 'W4'], data: [18, 22, 26, 24] }
-      : chartTab === 'year'
-        ? { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], data: [120, 140, 132, 155, 162, 170, 168, 174, 165, 150, 142, 138] }
-        : { labels: ['2021', '2022', '2023', '2024', '2025'], data: [820, 930, 980, 1050, 1120] };
+    const datasets = selectedMetrics.map((metric, idx) => {
+      const base = getBaseSeries(chartTab);
+      // Slightly vary each metric for visual separation
+      const variation = base.map((val, i) => val + (idx % 3 === 0 ? i * 0.05 : idx % 3 === 1 ? Math.sin(i * 0.5) * 0.3 : i * 0.02));
+      const color = colorPalette[idx % colorPalette.length];
+      const isLine = chartTab === 'day';
+      return {
+        label: metric,
+        data: variation,
+        borderColor: color,
+        backgroundColor: isLine
+          ? (ctx) => {
+              const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+              gradient.addColorStop(0, `${color}22`);
+              gradient.addColorStop(1, `${color}05`);
+              return gradient;
+            }
+          : `${color}33`,
+        fill: isLine,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
+      };
+    });
 
-    return {
-      labels: base.labels,
-      datasets: [
-        {
-          label: 'Energy',
-          data: base.data,
-          backgroundColor: 'rgba(231, 76, 60, 0.15)',
-          borderColor: '#e74c3c',
-          borderWidth: 1.5,
-          borderRadius: 6,
-        },
-      ],
-    };
-  }, [chartTab]);
+    return { labels, datasets };
+  }, [chartTab, selectedMetrics, colorPalette]);
 
   const chartOptions = useMemo(() => {
     const common = {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      hover: { mode: 'index', intersect: false },
+      animation: {
+        duration: 450,
+        easing: 'easeOutQuart',
+      },
       plugins: {
-        legend: { display: false },
+        legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 10 } },
         tooltip: {
           backgroundColor: 'rgba(0,0,0,0.82)',
           borderColor: '#e74c3c',
@@ -386,6 +480,56 @@ export default function InverterSummary({ inverterId, plantNo }) {
       plugins: { ...common.plugins },
     };
   }, [chartTab]);
+
+  const hoverLinePlugin = useMemo(
+    () => ({
+      id: 'hoverLine',
+      afterDatasetsDraw(chart) {
+        const {
+          ctx,
+          tooltip,
+          chartArea: { top, bottom },
+          scales: { x },
+        } = chart;
+        if (!tooltip || !tooltip.getActiveElements().length) return;
+        const activePoint = tooltip.getActiveElements()[0];
+        const xPos = x.getPixelForValue(activePoint.index);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(xPos, top);
+        ctx.lineTo(xPos, bottom);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.restore();
+      },
+    }),
+    []
+  );
+
+  const toggleMetric = (metric) => {
+    setSelectedMetrics((prev) => {
+      const exists = prev.includes(metric);
+      if (exists) {
+        if (prev.length === 1) return prev; // keep at least one metric
+        return prev.filter((m) => m !== metric);
+      }
+      return [...prev, metric];
+    });
+  };
+
+  // Close metric menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!isMetricMenuOpen) return;
+      if (metricDropdownRef.current && !metricDropdownRef.current.contains(e.target)) {
+        setIsMetricMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMetricMenuOpen]);
 
   return (
     <div className="summary-page">
@@ -527,6 +671,30 @@ export default function InverterSummary({ inverterId, plantNo }) {
         <div className="chart-head">
           <div className="chart-title">String information (current / A)</div>
           <div className="chart-controls">
+            <div className="metric-dropdown" ref={metricDropdownRef}>
+              <button
+                type="button"
+                className="metric-trigger"
+                onClick={() => setIsMetricMenuOpen((s) => !s)}
+              >
+                Metrics ({selectedMetrics.length})
+                <span className="chevron">{isMetricMenuOpen ? '▲' : '▼'}</span>
+              </button>
+              {isMetricMenuOpen && (
+                <div className="metric-menu">
+                  {metricOptions.map((metric) => (
+                    <label key={metric} className="metric-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedMetrics.includes(metric)}
+                        onChange={() => toggleMetric(metric)}
+                      />
+                      <span>{metric}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="chart-tabs">
               {['day', 'month', 'year', 'total'].map((tab) => (
                 <button
@@ -543,9 +711,9 @@ export default function InverterSummary({ inverterId, plantNo }) {
         </div>
         <div className="chart-body">
           {chartTab === 'day' ? (
-            <Line data={chartData} options={chartOptions} />
+            <Line data={chartData} options={chartOptions} plugins={[hoverLinePlugin]} />
           ) : (
-            <Bar data={chartData} options={chartOptions} />
+            <Bar data={chartData} options={chartOptions} plugins={[hoverLinePlugin]} />
           )}
         </div>
       </div>

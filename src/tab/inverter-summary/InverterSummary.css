@@ -629,7 +629,71 @@
 .chart-controls {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.metric-dropdown {
+  position: relative;
+}
+
+.metric-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.metric-trigger:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.metric-trigger .chevron {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.metric-menu {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  padding: 8px 10px;
+  width: 240px;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.metric-option {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.metric-option input {
+  accent-color: #159f6c;
+  cursor: pointer;
+}
+
+.metric-option:hover {
+  background: #f8fafc;
 }
 
 .chart-tabs {
@@ -670,7 +734,7 @@
 }
 
 .chart-body {
-  height: 260px;
+  height: 347px;
   padding: 12px 14px 14px;
 }
 
