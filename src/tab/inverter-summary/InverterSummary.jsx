@@ -29,10 +29,8 @@ ChartJS.register(
 
 // Wave animation lifted from PlantDetails (SVG sine paths)
 function WaterWaveCircle({ percentage = 25 }) {
-  const [wave1Path, setWave1Path] = React.useState('');
-  const [wave2Path, setWave2Path] = React.useState('');
-  const [offset1, setOffset1] = React.useState(0);
-  const [offset2, setOffset2] = React.useState(50);
+  const [wavePath, setWavePath] = React.useState('');
+  const [offset, setOffset] = React.useState(0);
 
   React.useEffect(() => {
     const generateWave = (offset = 0) => {
@@ -48,14 +46,12 @@ function WaterWaveCircle({ percentage = 25 }) {
       return path;
     };
 
-    setWave1Path(generateWave(offset1));
-    setWave2Path(generateWave(offset2));
-  }, [percentage, offset1, offset2]);
+    setWavePath(generateWave(offset));
+  }, [percentage, offset]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setOffset1((prev) => (prev + 2) % 400);
-      setOffset2((prev) => (prev + 3) % 400);
+      setOffset((prev) => (prev + 2) % 400);
     }, 50);
     return () => clearInterval(interval);
   }, []);
@@ -72,11 +68,8 @@ function WaterWaveCircle({ percentage = 25 }) {
         <circle cx="100" cy="100" r="98" fill="white" stroke="#159f6c" strokeWidth="1.6" />
 
         <g clipPath="url(#summaryCircleClip)" id="waveGroup">
-          <g className="wave2">
-            <path d={wave2Path} fill="#159f6c" />
-          </g>
           <g className="wave1">
-            <path d={wave1Path} fill="#159f6c" />
+            <path d={wavePath} fill="#159f6c" />
           </g>
         </g>
       </svg>
@@ -460,7 +453,7 @@ export default function InverterSummary({ inverterId, plantNo }) {
 
         <div className="card error-log-card compact">
           <div className="error-log-header">
-            <h3 className="card-title">Alarm</h3>
+            <h3 className="inverter-card-title">Alarm</h3>
             <div className="error-tabs">
               <button
                 className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
