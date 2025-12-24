@@ -278,6 +278,8 @@ export default function PlantDetails() {
   const [errors, setErrors] = useState(plantDataErrors.all);
   const [alarms, setAlarms] = useState([]);
   const [loadingAlarms, setLoadingAlarms] = useState(false);
+  const [inverters, setInverters] = useState([]);
+  const [loadingInverters, setLoadingInverters] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [productionTimeFilter, setProductionTimeFilter] = useState("day");
@@ -285,45 +287,6 @@ export default function PlantDetails() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [alarmCurrentPage, setAlarmCurrentPage] = useState(1);
   const alarmsPerPage = 3;
-  const inverterRows = [
-    {
-      id: "inv-1",
-      status: "active",
-      keepLivePower: "2.21",
-      dayProduction: "3.27",
-      totalProduction: "2081",
-      dataTime: "2025-12-19 11:08",
-      recordTime: "2025-08-12",
-      model: "QB-5KTLD",
-      serial: "250508024",
-      collector: "—",
-    },
-    {
-      id: "inv-2",
-      status: "active",
-      keepLivePower: "1.85",
-      dayProduction: "2.94",
-      totalProduction: "1856",
-      dataTime: "2025-12-19 11:08",
-      recordTime: "2025-08-12",
-      model: "QB-3.6KTLS",
-      serial: "250508025",
-      collector: "—",
-    },
-    {
-      id: "inv-3",
-      status: "active",
-      keepLivePower: "1.92",
-      dayProduction: "3.01",
-      totalProduction: "1923",
-      dataTime: "2025-12-19 11:08",
-      recordTime: "2025-08-12",
-      model: "QB-4KTLD",
-      serial: "250508026",
-      collector: "—",
-    },
-  ];
-
   // Get plant number from route params or query params
   const getPlantNo = () => {
     if (params?.plantNo) return params.plantNo;
@@ -571,6 +534,7 @@ export default function PlantDetails() {
   useEffect(() => {
     if (!plantNo) {
       setAlarms([]);
+      setInverters([]);
       return;
     }
 
@@ -624,6 +588,59 @@ export default function PlantDetails() {
 
     return () => abortController.abort();
   }, [plantNo, activeTab]);
+
+  // Fetch inverters for selected plant
+  useEffect(() => {
+    if (!plantNo) {
+      setInverters([]);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchInverters = async () => {
+      try {
+        setLoadingInverters(true);
+
+        const token = typeof window !== "undefined" 
+          ? localStorage.getItem("authToken") 
+          : null;
+
+        const headers = {
+          Accept: "application/json",
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const url = `https://qbits.quickestimate.co/api/v1/inverter?plantId=${plantNo}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers,
+          signal: abortController.signal,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const inverterData = data?.data?.inverters || [];
+          setInverters(Array.isArray(inverterData) ? inverterData : []);
+        } else {
+          setInverters([]);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setInverters([]);
+        }
+      } finally {
+        setLoadingInverters(false);
+      }
+    };
+
+    fetchInverters();
+
+    return () => abortController.abort();
+  }, [plantNo]);
 
   useEffect(() => {
     if (activeTab === "all") {
@@ -885,52 +902,37 @@ export default function PlantDetails() {
             <h3 className="card-title">Inverter List</h3>
           </div>
           <div className="inverter-list-content">
-            {loading ? (
+            {loadingInverters ? (
               <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
                 Loading...
+              </div>
+            ) : inverters.length === 0 ? (
+              <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
+                No inverter records
               </div>
             ) : (
               <div className="inverter-table-wrapper-modern">
                 <table className="inverter-table-modern">
                   <thead>
                     <tr>
-                      <th>Status</th>
-                      <th>Keep-live power(kW)</th>
-                      <th>Day Production(kWh)</th>
-                      <th>Total Production(kWh)</th>
-                      <th>Data Time</th>
+                      <th>Inverter ID</th>
+                      <th>Collector Address</th>
+                      <th>Plant Id</th>
                       <th>Record Time</th>
-                      <th>Model</th>
-                      <th>Serial</th>
-                      <th>Collector</th>
-                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {inverterRows.map((row) => (
-                      <tr key={row.id} className="inverter-row" onClick={() => handleOpenInverter(row)}>
-                        <td>
-                          <span className={`status-indicator status-${row.status}`}></span>
-                        </td>
-                        <td>{row.keepLivePower}</td>
-                        <td>{row.dayProduction}</td>
-                        <td>{row.totalProduction}</td>
-                        <td>{row.dataTime}</td>
-                        <td>{row.recordTime}</td>
-                        <td>{row.model}</td>
-                        <td>{row.serial}</td>
-                        <td>{row.collector}</td>
-                        <td>
-                          <button
-                            className="inverter-action-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenInverter(row);
-                            }}
-                          >
-                            Details
-                          </button>
-                        </td>
+                    {inverters.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="inverter-row"
+                        onClick={() => handleOpenInverter(row)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{row.id ?? "--"}</td>
+                        <td>{row.collector_address ?? "--"}</td>
+                        <td>{row.plant_id ?? "--"}</td>
+                        <td>{row.record_time ?? "--"}</td>
                       </tr>
                     ))}
                   </tbody>
