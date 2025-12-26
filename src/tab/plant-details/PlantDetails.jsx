@@ -327,6 +327,7 @@ export default function PlantDetails() {
         setError(null);
 
         const token = typeof window !== "undefined" 
+        
           ? localStorage.getItem("authToken") 
           : null;
 
@@ -613,7 +614,7 @@ export default function PlantDetails() {
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const url = `https://qbits.quickestimate.co/api/v1/inverter?plantId=${plantNo}`;
+        const url = `https://qbits.quickestimate.co/api/v1/inverter/latest_data?plantId=${plantNo}`;
 
         const response = await fetch(url, {
           method: "GET",

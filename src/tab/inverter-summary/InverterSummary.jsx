@@ -81,7 +81,7 @@ function WaterWaveCircle({ percentage = 25 }) {
   );
 }
 
-function BasicInfo({ items }) {
+function BasicInfo({ items, loading }) {
   const rows = [];
   for (let i = 0; i < items.length; i += 3) {
     rows.push(items.slice(i, i + 3));
@@ -90,23 +90,27 @@ function BasicInfo({ items }) {
   return (
     <div className="info-card basic-card">
       <div className="info-title">Basic Info</div>
-      <div className="basic-table">
-        <div className="basic-header-spacer" />
-        {rows.map((row, idx) => (
-          <div key={idx} className="basic-row">
-            {row.map((item) => (
-              <div key={item.label} className="basic-cell">
-                <span className="basic-label">{item.label}</span>
-                <span className="basic-value">{item.value}</span>
-              </div>
-            ))}
-            {row.length < 3 &&
-              Array.from({ length: 3 - row.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="basic-cell empty" />
+      {loading ? (
+        <div style={{ padding: '16px', textAlign: 'center', color: '#9ca3af' }}>Loading...</div>
+      ) : (
+        <div className="basic-table">
+          <div className="basic-header-spacer" />
+          {rows.map((row, idx) => (
+            <div key={idx} className="basic-row">
+              {row.map((item) => (
+                <div key={item.label} className="basic-cell">
+                  <span className="basic-label">{item.label}</span>
+                  <span className="basic-value">{item.value}</span>
+                </div>
               ))}
-          </div>
-        ))}
-      </div>
+              {row.length < 3 &&
+                Array.from({ length: 3 - row.length }).map((_, i) => (
+                  <div key={`empty-${i}`} className="basic-cell empty" />
+                ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -199,20 +203,24 @@ export default function InverterSummary({ inverterId, plantNo }) {
     '#dc2626',
   ];
 
-  const basicInfo = useMemo(
-    () => [
-      { label: 'Device', value: 'QB-5KTLD' },
-      { label: 'No.', value: inverterId || '—' },
-      { label: 'RS485 ID', value: '1' },
-      { label: 'Collector', value: '250508024' },
-      { label: 'Record Time', value: '2025-08-12' },
-      { label: 'Serial', value: '250508024' },
-      { label: 'Time-zone', value: '55' },
-      { label: 'Panel', value: '330 W' },
-      { label: 'Panel Qty.', value: '17 Pieces' },
-    ],
-    [inverterId]
-  );
+  const [basicInfoData, setBasicInfoData] = useState(null);
+  const [loadingBasicInfo, setLoadingBasicInfo] = useState(false);
+
+  const basicInfo = useMemo(() => {
+    const inv = basicInfoData || {};
+    const toDisplay = (value) => (value === null || value === undefined || value === '' ? '—' : value);
+    return [
+      { label: 'Device', value: toDisplay(inv.model) },
+      { label: 'No.', value: toDisplay(inv.id ?? inverterId) },
+      { label: 'RS485 ID', value: toDisplay(inv.inverter_no) },
+      { label: 'Collector', value: toDisplay(inv.collector_address) },
+      { label: 'Record Time', value: toDisplay(inv.record_time) },
+      { label: 'Serial', value: toDisplay(inv.collector_address) },
+      { label: 'Time-zone', value: toDisplay(inv.timezone) },
+      { label: 'Panel', value: toDisplay(inv.panel) },
+      { label: 'Panel Qty.', value: toDisplay(inv.panel_num) },
+    ];
+  }, [basicInfoData, inverterId]);
 
   const prodStats = useMemo(
     () => [
@@ -353,6 +361,59 @@ export default function InverterSummary({ inverterId, plantNo }) {
   useEffect(() => {
     setAlarmCurrentPage(1);
   }, [activeTab]);
+
+  // Fetch basic info from latest inverter data
+  useEffect(() => {
+    if (!plantNo) {
+      setBasicInfoData(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchBasicInfo = async () => {
+      try {
+        setLoadingBasicInfo(true);
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        const headers = { Accept: 'application/json' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        const url = `https://qbits.quickestimate.co/api/v1/inverter/latest_data?plantId=${plantNo}`;
+        const response = await fetch(url, { method: 'GET', headers, signal: abortController.signal });
+        if (response.ok) {
+          const data = await response.json();
+          const inverterList =
+            data?.data?.inverters ||
+            data?.inverters ||
+            data?.data ||
+            [];
+
+          let inverter = null;
+          if (Array.isArray(inverterList) && inverterList.length > 0) {
+            if (inverterId) {
+              inverter = inverterList.find((inv) => String(inv.id) === String(inverterId)) || inverterList[0];
+            } else {
+              inverter = inverterList[0];
+            }
+          }
+
+          setBasicInfoData(inverter || null);
+        } else {
+          setBasicInfoData(null);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setBasicInfoData(null);
+        }
+      } finally {
+        setLoadingBasicInfo(false);
+      }
+    };
+
+    fetchBasicInfo();
+    return () => abortController.abort();
+  }, [plantNo, inverterId]);
 
   const getPaginatedAlarms = () => {
     const startIndex = (alarmCurrentPage - 1) * alarmsPerPage;
@@ -551,7 +612,7 @@ export default function InverterSummary({ inverterId, plantNo }) {
       </div>
 
       <div className="summary-layout">
-        <BasicInfo items={basicInfo} />
+        <BasicInfo items={basicInfo} loading={loadingBasicInfo} />
         <ProductionSummary stats={prodStats} percentage={25} />
       </div>
 
