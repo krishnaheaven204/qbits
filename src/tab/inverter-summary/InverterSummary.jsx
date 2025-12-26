@@ -240,26 +240,49 @@ export default function InverterSummary({ inverterId, plantNo }) {
     { label: new Date().toLocaleString() },
   ];
 
-  const acInfo = [
-    { label: 'Aphase', value: '240.3V / 5.54A' },
-    { label: 'Frequency', value: '49.96Hz' },
-    { label: 'Power', value: '1.4kW' },
-    { label: 'Temperature(IGBT)', value: '38.2°C' },
-  ];
+  const formatValue = (value, suffix = '') => {
+    if (value === null || value === undefined || value === '') return '—';
+    const num = Number(value);
+    const display = Number.isFinite(num) ? num : value;
+    return suffix ? `${display} ${suffix}` : display;
+  };
 
-  const dcRows = [
-    { label: 'PV1', voltage: '241.7V', current: '4.42A', power: '1068W' },
-    { label: 'PV2', voltage: '288V', current: '3.77A', power: '1086W' },
-  ];
+  const computePower = (voltage, current) => {
+    const v = Number(voltage);
+    const c = Number(current);
+    if (Number.isFinite(v) && Number.isFinite(c)) {
+      return `${(v * c).toFixed(2)} W`;
+    }
+    return '—';
+  };
 
-  const acRows = [
-    [
-      { label: 'Aphase', value: '240.3V / 5.54A' },
-      { label: 'Frequency', value: '49.96Hz' },
-    ],
-    [{ label: 'Power', value: '1.4kW' }],
-    [{ label: 'Temperature(IGBT)', value: '38.2°C' }],
-  ];
+  const acRows = useMemo(() => {
+    const inv = basicInfoData || {};
+    return [
+      [
+        { label: 'Aphase', value: formatValue(inv.acVoltage, 'V') },
+        { label: 'Frequency', value: formatValue(inv.acFrequency, 'Hz') },
+      ],
+      [{ label: 'Power', value: formatValue(inv.acMomentaryPower, 'kW') }],
+      [{ label: 'Temperature(IGBT)', value: formatValue(inv.temperature, '°C') }],
+    ];
+  }, [basicInfoData]);
+
+  const dcRows = useMemo(() => {
+    const inv = basicInfoData || {};
+    const pv1Voltage = inv.dcVoltage;
+    const pv1Current = inv.dcCurrent;
+    const pv2Voltage = inv.dcVoltage2;
+    const pv2Current = inv.dcCurrent2;
+
+    const pv1Power = computePower(pv1Voltage, pv1Current);
+    const pv2Power = computePower(pv2Voltage, pv2Current);
+
+    return [
+      { label: 'PV1', voltage: formatValue(pv1Voltage, 'V'), current: formatValue(pv1Current, 'A'), power: pv1Power },
+      { label: 'PV2', voltage: formatValue(pv2Voltage, 'V'), current: formatValue(pv2Current, 'A'), power: pv2Power },
+    ];
+  }, [basicInfoData]);
 
   // Alarm card component (same design as plant details)
   function AlarmCard({ alarm, index }) {
@@ -383,11 +406,33 @@ export default function InverterSummary({ inverterId, plantNo }) {
         const response = await fetch(url, { method: 'GET', headers, signal: abortController.signal });
         if (response.ok) {
           const data = await response.json();
-          const inverterList =
-            data?.data?.inverters ||
-            data?.inverters ||
-            data?.data ||
-            [];
+          const inverterCandidates = [
+            data?.data?.inverters?.data,
+            data?.data?.inverters,
+            data?.inverters?.data,
+            data?.inverters,
+            data?.data,
+            data?.inverter,
+            data,
+          ];
+
+          let inverterList = [];
+          for (const candidate of inverterCandidates) {
+            if (Array.isArray(candidate)) {
+              inverterList = candidate;
+              break;
+            }
+            if (candidate && typeof candidate === 'object') {
+              // If it's an object with numeric/string keys, take values as list
+              const values = Object.values(candidate);
+              if (values.length > 0 && values.every((v) => typeof v === 'object')) {
+                inverterList = values;
+                break;
+              }
+              inverterList = [candidate];
+              break;
+            }
+          }
 
           let inverter = null;
           if (Array.isArray(inverterList) && inverterList.length > 0) {
@@ -398,7 +443,14 @@ export default function InverterSummary({ inverterId, plantNo }) {
             }
           }
 
-          setBasicInfoData(inverter || null);
+          // Merge latest_detail into top-level for easy access in UI
+          if (inverter) {
+            const detail = inverter.latest_detail || inverter.latestDetail || {};
+            const merged = { ...inverter, ...detail };
+            setBasicInfoData(merged);
+          } else {
+            setBasicInfoData(null);
+          }
         } else {
           setBasicInfoData(null);
         }

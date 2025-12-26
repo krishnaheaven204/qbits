@@ -624,8 +624,34 @@ export default function PlantDetails() {
 
         if (response.ok) {
           const data = await response.json();
-          const inverterData = data?.data?.inverters || [];
-          setInverters(Array.isArray(inverterData) ? inverterData : []);
+          const inverterCandidates = [
+            data?.data?.inverters?.data,
+            data?.data?.inverters,
+            data?.inverters?.data,
+            data?.inverters,
+            data?.data,
+            data?.inverter,
+            data,
+          ];
+
+          let inverterList = [];
+          for (const candidate of inverterCandidates) {
+            if (Array.isArray(candidate)) {
+              inverterList = candidate;
+              break;
+            }
+            if (candidate && typeof candidate === "object") {
+              const values = Object.values(candidate);
+              if (values.length > 0 && values.every((v) => typeof v === "object")) {
+                inverterList = values;
+                break;
+              }
+              inverterList = [candidate];
+              break;
+            }
+          }
+
+          setInverters(Array.isArray(inverterList) ? inverterList : []);
         } else {
           setInverters([]);
         }
