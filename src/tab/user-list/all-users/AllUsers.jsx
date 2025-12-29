@@ -126,6 +126,21 @@ export default function AllUsers() {
   });
   const filterButtonRef = useRef(null);
   const filterMenuRef = useRef(null);
+  const [isFlagMenuOpen, setIsFlagMenuOpen] = useState(false);
+  const flagMenuRef = useRef(null);
+  const flagMenuButtonRef = useRef(null);
+  const [selectedUserIds, setSelectedUserIds] = useState(() => new Set());
+  const [flagMenuPos, setFlagMenuPos] = useState({ top: 0, left: 0 });
+  const selectAllRef = useRef(null);
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
+  const updateFlagMenuPosition = useCallback(() => {
+    if (typeof window === "undefined" || !flagMenuButtonRef.current) return;
+    const rect = flagMenuButtonRef.current.getBoundingClientRect();
+    setFlagMenuPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+    });
+  }, []);
 
   const updateFilterMenuPosition = useCallback(() => {
     if (typeof window === "undefined" || !filterButtonRef.current) return;
@@ -203,6 +218,73 @@ export default function AllUsers() {
       left: rect.left + window.scrollX,
     });
   }, []);
+
+  const closeFlagMenu = useCallback(() => {
+    setIsFlagMenuOpen(false);
+  }, []);
+
+  const handleFlagMenuToggle = () => {
+    if (isFlagMenuOpen) {
+      closeFlagMenu();
+    } else {
+      updateFlagMenuPosition();
+      setIsFlagMenuOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!isFlagMenuOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        flagMenuButtonRef.current?.contains(event.target) ||
+        flagMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      closeFlagMenu();
+    };
+
+    const handleViewportChange = () => {
+      updateFlagMenuPosition();
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleViewportChange, true);
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleViewportChange, true);
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [isFlagMenuOpen, closeFlagMenu, updateFlagMenuPosition]);
+
+  const handleRowCheckboxChange = (userId, checked) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(userId);
+      } else {
+        next.delete(userId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllChange = (checked, visibleUsers) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      visibleUsers.forEach((u) => {
+        if (checked) {
+          next.add(u.id);
+        } else {
+          next.delete(u.id);
+        }
+      });
+      return next;
+    });
+  };
 
   const closePlantTypeFilterMenu = useCallback(() => {
     setIsPlantTypeFilterOpen(false);
@@ -1242,6 +1324,19 @@ export default function AllUsers() {
   }, [hasFilter, tablePage]);
 
   useEffect(() => {
+    const visibleIds = paginatedUsers.map((u) => u.id);
+    const allSelected =
+      visibleIds.length > 0 &&
+      visibleIds.every((id) => selectedUserIds.has(id));
+    const someSelected =
+      visibleIds.some((id) => selectedUserIds.has(id)) && !allSelected;
+    setSelectAllChecked(allSelected);
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected;
+    }
+  }, [paginatedUsers, selectedUserIds]);
+
+  useEffect(() => {
     if (typeof window !== "undefined" && selectedStatus) {
       localStorage.setItem("userListSelectedStatus", selectedStatus);
     }
@@ -1428,6 +1523,65 @@ export default function AllUsers() {
         )
       : null;
 
+  const flagActionOptions = [
+    { key: "whatsapp_notification_flag", label: "Whatsapp Flag" },
+    { key: "inverter_fault_flag", label: "Inverter Fault" },
+    { key: "daily_generation_report_flag", label: "Daily Gen" },
+    { key: "weekly_generation_report_flag", label: "Weekly Gen" },
+    { key: "monthly_generation_report_flag", label: "Monthly Gen" },
+  ];
+
+  const bulkToggleFlag = async (flagKey, enabled) => {
+    const ids = Array.from(selectedUserIds);
+    if (!ids.length) {
+      alert("Select at least one user first.");
+      return;
+    }
+    for (const id of ids) {
+      await handleFlagToggle(id, flagKey, enabled);
+    }
+  };
+
+  const flagMenu =
+    isFlagMenuOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={flagMenuRef}
+            className="flag-menu"
+            style={{
+              top: flagMenuPos.top,
+              left: flagMenuPos.left,
+            }}
+          >
+            <div className="filter-menu-header">Flags – apply to selected users</div>
+            <div className="flag-menu-body">
+              {flagActionOptions.map((opt) => (
+                <div key={opt.key} className="flag-menu-row">
+                  <span className="flag-menu-label">{opt.label}</span>
+                  <div className="flag-menu-actions">
+                    <button
+                      type="button"
+                      className="flag-menu-action-btn on"
+                      onClick={() => bulkToggleFlag(opt.key, true)}
+                    >
+                      On
+                    </button>
+                    <button
+                      type="button"
+                      className="flag-menu-action-btn off"
+                      onClick={() => bulkToggleFlag(opt.key, false)}
+                    >
+                      Off
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   // Reusable sortable header component
   function SortableHeader({ label, field }) {
     const isActive = sortConfig.field === field;
@@ -1497,6 +1651,23 @@ export default function AllUsers() {
           </form>
         </div>
         <div className="ul-body">
+          <div className="table-actions flag-actions">
+            <button
+              type="button"
+              ref={flagMenuButtonRef}
+              className={`column-visibility-btn ${isFlagMenuOpen ? "active" : ""}`}
+              aria-label="Toggle flag columns"
+              aria-expanded={isFlagMenuOpen}
+              onClick={handleFlagMenuToggle}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 6H20" />
+                <path d="M4 12H14" />
+                <path d="M4 18H10" />
+              </svg>
+            </button>
+            <span className="flag-actions-label"></span>
+          </div>
           {loading ? (
             <div className="ul-empty">
               <p className="ul-muted">Loading users...</p>
@@ -1587,7 +1758,19 @@ export default function AllUsers() {
                   <table className="custom-table">
                     <thead>
                       <tr>
-                        <th className="sticky-col col-no">No.</th>
+                        <th className="sticky-col col-check">
+                          <label className="row-checkbox">
+                            <input
+                              ref={selectAllRef}
+                              type="checkbox"
+                              checked={selectAllChecked}
+                              onChange={(e) =>
+                                handleSelectAllChange(e.target.checked, paginatedUsers)
+                              }
+                              aria-label="Select all rows"
+                            />
+                          </label>
+                        </th>
                         <th className="sticky-col col-id">
                           <SortableHeader label="User ID" field="id" />
                         </th>
@@ -1747,8 +1930,17 @@ export default function AllUsers() {
                             
                             <tr key={u.id ?? index}>
                               {console.log("USER OBJECT", u)}
-                              <td className="sticky-col col-no">
-                                {rowStartIndex + index + 1}
+                              <td className="sticky-col col-check">
+                                <label className="row-checkbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedUserIds.has(u.id)}
+                                    onChange={(e) =>
+                                      handleRowCheckboxChange(u.id, e.target.checked)
+                                    }
+                                    aria-label={`Select user ${u.username ?? u.id}`}
+                                  />
+                                </label>
                               </td>
                               <td className="sticky-col col-id">
                                 {u.id ?? "N/A"}
@@ -2009,6 +2201,7 @@ export default function AllUsers() {
       {filterMenu}
       {cityFilterMenu}
       {plantTypeFilterMenu}
+      {flagMenu}
     </div>
   );
 }

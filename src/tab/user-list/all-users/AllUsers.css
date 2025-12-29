@@ -148,6 +148,39 @@
   justify-content: flex-start;
   margin-bottom: 12px;
 }
+.flag-actions {
+  align-items: center;
+  gap: 8px;
+}
+
+.column-visibility-btn {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.column-visibility-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.column-visibility-btn.active {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+}
+
+.flag-actions-label {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 600;
+}
 
 /* Table Scroll Container */
 .table-scroll-container {
@@ -336,6 +369,33 @@
   background: #ffffff;
   z-index: 4;
 }
+.custom-table .col-check {
+  left: 0;
+  min-width: 46px;
+  text-align: center;
+}
+.custom-table .col-id {
+  left: 46px;
+  min-width: 60px;
+  text-align: center;
+}
+.custom-table .col-username {
+  left: 106px;
+  min-width: 160px;
+}
+
+.row-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.row-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
 
 .custom-table .sticky-col-right {
   background: #ffffff;
@@ -353,23 +413,6 @@
   background: #f8f9fa;
 }
 
-.custom-table .col-no {
-  left: 0;
-  min-width: 50px;
-  text-align: center;
-}
-
-.custom-table .col-id {
-  left: 40px;
-  min-width: 50px;
-  text-align: center;
-}
-
-.custom-table .col-username {
-  left: 85px;
-  min-width: 160px;
-}
-
 .sortable-header {
   cursor: pointer;
   user-select: none;
@@ -377,6 +420,76 @@
 }
 .sortable-header:hover {
   color: #0d6efd;
+}
+
+.flag-menu {
+  position: absolute;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+  min-width: 220px;
+  z-index: 1300;
+  animation: fadeInScale 0.12s ease;
+}
+
+.flag-menu-body {
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flag-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.flag-menu-label {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.flag-menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flag-menu-action-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.flag-menu-action-btn.on {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.flag-menu-action-btn.off {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.flag-menu-action-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.flag-menu-action-btn:active {
+  transform: translateY(0);
 }
 
 .custom-table td.col-username {
