@@ -593,15 +593,17 @@ export default function AllUsers() {
         setLoading(false);
         return;
       }
-  
-      const url = `${API_BASE_ROOT}/client/grouped-clients?search=${search}&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
-  
+
+      const encodedSearch = encodeURIComponent(search);
+      const url = `${API_BASE_ROOT}/client/grouped-clients?search=${encodedSearch}&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
+      const commonHeaders = {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
       const response = await fetch(url, {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: commonHeaders,
       });
   
       if (!response.ok) {
@@ -610,11 +612,55 @@ export default function AllUsers() {
   
       const json = await response.json();
   
+      const fetchBucketPages = async (bucket, key) => {
+        const items = [...(bucket?.data || [])];
+        let next = bucket?.next_page_url;
+        while (next) {
+          try {
+            const pageResp = await fetch(next, {
+              method: "GET",
+              headers: commonHeaders,
+            });
+            if (!pageResp.ok) break;
+            const pageJson = await pageResp.json();
+            const nextBucket = pageJson.data?.[key];
+            items.push(...(nextBucket?.data || []));
+            next = nextBucket?.next_page_url;
+          } catch (e) {
+            console.warn("Pagination fetch failed for", key, e);
+            break;
+          }
+        }
+        return items;
+      };
+
+      const dedupeById = (items) => {
+        const seen = new Map();
+        items.forEach((item) => {
+          const key =
+            item?.id ??
+            item?.user_id ??
+            item?.client_id ??
+            item?.uid ??
+            item?.qbits_user_id ??
+            `${item?.plant_no ?? ""}-${item?.username ?? ""}-${item?.email ?? ""}`;
+          if (!seen.has(key)) {
+            seen.set(key, item);
+          }
+        });
+        return Array.from(seen.values());
+      };
+
+      const allPlant = dedupeById(await fetchBucketPages(json.data?.all_plant, "all_plant"));
+      const normalPlant = dedupeById(await fetchBucketPages(json.data?.normal_plant, "normal_plant"));
+      const alarmPlant = dedupeById(await fetchBucketPages(json.data?.alarm_plant, "alarm_plant"));
+      const offlinePlant = dedupeById(await fetchBucketPages(json.data?.offline_plant, "offline_plant"));
+
       setGroupedClients({
-        all_plant: json.data?.all_plant?.data || [],
-        normal_plant: json.data?.normal_plant?.data || [],
-        alarm_plant: json.data?.alarm_plant?.data || [],
-        offline_plant: json.data?.offline_plant?.data || [],
+        all_plant: allPlant,
+        normal_plant: normalPlant,
+        alarm_plant: alarmPlant,
+        offline_plant: offlinePlant,
       });
     } catch (err) {
       setError("Failed to load user list");
@@ -1582,6 +1628,17 @@ export default function AllUsers() {
         )
       : null;
 
+  const getUserRowKey = (user, index) => {
+    return (
+      user?.id ??
+      user?.user_id ??
+      user?.client_id ??
+      user?.uid ??
+      user?.qbits_user_id ??
+      `${user?.plant_no ?? "p"}-${user?.username ?? "u"}-${user?.email ?? "e"}-${index}`
+    );
+  };
+
   // Reusable sortable header component
   function SortableHeader({ label, field }) {
     const isActive = sortConfig.field === field;
@@ -1928,7 +1985,7 @@ export default function AllUsers() {
                          
                           ? paginatedUsers.map((u, index) => (
                             
-                            <tr key={u.id ?? index}>
+                            <tr key={getUserRowKey(u, index)}>
                               {console.log("USER OBJECT", u)}
                               <td className="sticky-col col-check">
                                 <label className="row-checkbox">
