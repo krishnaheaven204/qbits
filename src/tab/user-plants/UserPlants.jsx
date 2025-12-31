@@ -4,21 +4,6 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import "./UserPlants.css";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-
-const normalizeApiBase = (input) => {
-  if (!input) return "";
-  let base = input.trim();
-  const queryIndex = base.indexOf("?");
-  if (queryIndex !== -1) {
-    base = base.substring(0, queryIndex);
-  }
-  base = base.replace(/\/client\/index\/?$/i, "");
-  base = base.replace(/\/client\/?$/i, "");
-  base = base.replace(/\/$/, "");
-  return base;
-};
-
 
 function renderStatusIcon(code) {
   if (code === 1) {
@@ -230,13 +215,6 @@ export default function UserPlants() {
     const num = parseFloat(value);
     if (isNaN(num)) return "N/A";
     return `${num.toFixed(2)} `;
-  };
-
-  const formatProduction = (value) => {
-    if (!value && value !== 0) return "N/A";
-    const num = parseFloat(value);
-    if (isNaN(num)) return "N/A";
-    return `${num.toFixed(2)} kWh`;
   };
 
   const capitalizeText = (text) => {

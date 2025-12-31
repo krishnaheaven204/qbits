@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import "./AllUsers.css";
@@ -82,10 +82,6 @@ export default function AllUsers() {
   const plantTypeFilterButtonRef = useRef(null);
   const plantTypeFilterMenuRef = useRef(null);
 
-  // Popup states
-  const [showCompanyPopup, setShowCompanyPopup] = useState(false);
-  const [popupUserId, setPopupUserId] = useState("");
-  const [popupCompanyCode, setPopupCompanyCode] = useState("");
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [companyCodeInput, setCompanyCodeInput] = useState("");
@@ -1017,9 +1013,6 @@ export default function AllUsers() {
       // Update UI immediately
        
 
-      setShowCompanyPopup(false);
-      setPopupUserId("");
-      setPopupCompanyCode("");
     } catch (err) {
       alert("Failed to update: " + err.message);
     }
