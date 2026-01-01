@@ -21,25 +21,6 @@
     "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
-.breadcrumb-item {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #64748b;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.breadcrumb-item:hover {
-  color: #159f6c;
-}
 
 .breadcrumb-item.active {
   color: #1e293b;
