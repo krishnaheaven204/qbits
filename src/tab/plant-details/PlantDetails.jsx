@@ -516,6 +516,22 @@ export default function PlantDetails() {
     return "--";
   };
 
+  // Sort alarms by latest start time (then end time) descending
+  const sortAlarmsByTime = (list) => {
+    const safeDate = (value) => {
+      const ts = new Date(value).getTime();
+      return Number.isFinite(ts) ? ts : 0;
+    };
+    return [...list].sort((a, b) => {
+      const aStart = safeDate(a?.stime);
+      const bStart = safeDate(b?.stime);
+      if (bStart !== aStart) return bStart - aStart;
+      const aEnd = safeDate(a?.etime);
+      const bEnd = safeDate(b?.etime);
+      return bEnd - aEnd;
+    });
+  };
+
   // Get chart data based on time filter
   const getChartDataForFilter = () => {
     if (productionTimeFilter === "month") return getMonthChartData();
@@ -572,7 +588,8 @@ export default function PlantDetails() {
             console.log("First alarm object:", alarmData[0]);
             console.log("Alarm keys:", Object.keys(alarmData[0]));
           }
-          setAlarms(Array.isArray(alarmData) ? alarmData : []);
+          const normalized = Array.isArray(alarmData) ? alarmData : [];
+          setAlarms(sortAlarmsByTime(normalized));
         } else {
           setAlarms([]);
         }

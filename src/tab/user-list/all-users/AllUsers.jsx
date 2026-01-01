@@ -583,7 +583,7 @@ export default function AllUsers() {
         typeof window !== "undefined"
           ? localStorage.getItem("authToken")
           : null;
-  
+
       if (!token) {
         setError("No authentication token");
         setLoading(false);
@@ -601,13 +601,44 @@ export default function AllUsers() {
         method: "GET",
         headers: commonHeaders,
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-  
+
       const json = await response.json();
-  
+
+      const dedupeById = (items) => {
+        const seen = new Map();
+        items.forEach((item) => {
+          const key =
+            item?.id ??
+            item?.user_id ??
+            item?.client_id ??
+            item?.uid ??
+            item?.qbits_user_id ??
+            `${item?.plant_no ?? ""}-${item?.username ?? ""}-${item?.email ?? ""}`;
+          if (!seen.has(key)) {
+            seen.set(key, item);
+          }
+        });
+        return Array.from(seen.values());
+      };
+
+      // Show first page immediately
+      const initialAll = dedupeById(json.data?.all_plant?.data || []);
+      const initialNormal = dedupeById(json.data?.normal_plant?.data || []);
+      const initialAlarm = dedupeById(json.data?.alarm_plant?.data || []);
+      const initialOffline = dedupeById(json.data?.offline_plant?.data || []);
+
+      setGroupedClients({
+        all_plant: initialAll,
+        normal_plant: initialNormal,
+        alarm_plant: initialAlarm,
+        offline_plant: initialOffline,
+      });
+      setLoading(false);
+
       const fetchBucketPages = async (bucket, key) => {
         const items = [...(bucket?.data || [])];
         let next = bucket?.next_page_url;
@@ -630,38 +661,28 @@ export default function AllUsers() {
         return items;
       };
 
-      const dedupeById = (items) => {
-        const seen = new Map();
-        items.forEach((item) => {
-          const key =
-            item?.id ??
-            item?.user_id ??
-            item?.client_id ??
-            item?.uid ??
-            item?.qbits_user_id ??
-            `${item?.plant_no ?? ""}-${item?.username ?? ""}-${item?.email ?? ""}`;
-          if (!seen.has(key)) {
-            seen.set(key, item);
-          }
-        });
-        return Array.from(seen.values());
-      };
+      // Continue fetching remaining pages in the background
+      (async () => {
+        try {
+          const allPlant = dedupeById(await fetchBucketPages(json.data?.all_plant, "all_plant"));
+          const normalPlant = dedupeById(await fetchBucketPages(json.data?.normal_plant, "normal_plant"));
+          const alarmPlant = dedupeById(await fetchBucketPages(json.data?.alarm_plant, "alarm_plant"));
+          const offlinePlant = dedupeById(await fetchBucketPages(json.data?.offline_plant, "offline_plant"));
 
-      const allPlant = dedupeById(await fetchBucketPages(json.data?.all_plant, "all_plant"));
-      const normalPlant = dedupeById(await fetchBucketPages(json.data?.normal_plant, "normal_plant"));
-      const alarmPlant = dedupeById(await fetchBucketPages(json.data?.alarm_plant, "alarm_plant"));
-      const offlinePlant = dedupeById(await fetchBucketPages(json.data?.offline_plant, "offline_plant"));
-
-      setGroupedClients({
-        all_plant: allPlant,
-        normal_plant: normalPlant,
-        alarm_plant: alarmPlant,
-        offline_plant: offlinePlant,
-      });
+          setGroupedClients({
+            all_plant: allPlant,
+            normal_plant: normalPlant,
+            alarm_plant: alarmPlant,
+            offline_plant: offlinePlant,
+          });
+        } catch (e) {
+          console.warn("Background pagination fetch failed", e);
+        }
+      })();
     } catch (err) {
       setError("Failed to load user list");
-    } finally {
       setLoading(false);
+    } finally {
       setTimeout(() => { fetchLock.current = false; }, 150);
     }
   };
@@ -2024,10 +2045,10 @@ export default function AllUsers() {
                               <td>{u.gmt ?? "N/A"}</td>
                               <td>{getPlantTypeLabel(u.plant_type)}</td>
                               <td>{u.iserial ?? "N/A"}</td>
+                              <td>{u.power ?? "N/A"}</td>
                               <td>{u.capacity ?? "N/A"}</td>
                               <td>{u.day_power ?? "N/A"}</td>
                               <td>{u.total_power ?? "N/A"}</td>
-                              <td>{u.power ?? "N/A"}</td>
                               <td className="flag-toggle-cell">
                                 <label className="toggle-switch">
                                   <input
