@@ -230,6 +230,19 @@ function AlarmCard({ alarm, index, tabType }) {
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   };
 
+  const displayModel =
+    alarm?.model ||
+    alarm?.inverter?.model ||
+    alarm?.inverter?.inverter_model ||
+    alarm?.inverter?.model_name ||
+    alarm?.inverter_model ||
+    alarm?.inverterModel ||
+    alarm?.device_model ||
+    alarm?.model_name ||
+    alarm?.inverter_name ||
+    alarm?.inverter_id ||
+    "N/A";
+
   return (
     <div className={`error-card ${statusClass}`}>
       <div className="error-header">
@@ -240,7 +253,7 @@ function AlarmCard({ alarm, index, tabType }) {
       </div>
 
       <div className="error-body">
-        <div className="error-model">{alarm.inverter_id || "N/A"}</div>
+        <div className="error-model">{displayModel}</div>
         <div className="error-text">
           {messages.map((msg, idx) => (
             <div key={idx}>{msg}</div>
@@ -961,7 +974,7 @@ export default function PlantDetails() {
                     <tr>
                       <th>Inverter ID</th>
                       <th>Collector Address</th>
-                      <th>Plant Id</th>
+                      <th>Plant Name</th>
                       <th>Record Time</th>
                     </tr>
                   </thead>
@@ -975,7 +988,7 @@ export default function PlantDetails() {
                       >
                         <td>{row.id ?? "--"}</td>
                         <td>{row.collector_address ?? "--"}</td>
-                        <td>{row.plant_id ?? "--"}</td>
+                        <td>{row.plant_name ?? plant?.plant_name ?? "--"}</td>
                         <td>{row.record_time ?? "--"}</td>
                       </tr>
                     ))}
