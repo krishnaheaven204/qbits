@@ -308,6 +308,20 @@ export default function InverterSummary({ inverterId, plantNo }) {
       return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     };
 
+    const displayModel =
+      alarm?.model ||
+      alarm?.inverter?.model ||
+      alarm?.inverter?.inverter_model ||
+      alarm?.inverter?.model_name ||
+      alarm?.inverter_model ||
+      alarm?.inverterModel ||
+      alarm?.device_model ||
+      alarm?.model_name ||
+      alarm?.inverter_name ||
+      alarm?.inverter_id ||
+      inverterId ||
+      'N/A';
+
     return (
       <div className={`error-card ${statusClass}`}>
         <div className="error-header">
@@ -316,7 +330,7 @@ export default function InverterSummary({ inverterId, plantNo }) {
         </div>
 
         <div className="error-body">
-          <div className="error-model">{alarm.inverter_id || inverterId || 'N/A'}</div>
+          <div className="error-model">{displayModel}</div>
           <div className="error-text">
             {messages.map((msg, idx) => (
               <div key={idx}>{msg}</div>
