@@ -433,6 +433,8 @@ export default function Register() {
 
   const validateIndividual = () => {
     const err = {};
+    const fieldErrs = { ...fieldErrors };
+    let toastMessage = "";
 
     if (!formData.homeName.trim()) err.homeName = "Home name required";
 
@@ -441,28 +443,60 @@ export default function Register() {
 
     if (!formData.userId.trim()) err.userId = "User ID required";
 
-    if (!formData.password.trim()) err.password = "Password required";
-    else if (formData.password.trim().length < 8)
+    if (!formData.password.trim()) {
+      err.password = "Password required";
+      toastMessage = toastMessage || "Password required";
+    } else if (formData.password.trim().length < 8) {
       err.password = "Minimum 8 characters";
-    else if (!/[A-Za-z]/.test(formData.password.trim()))
+      toastMessage = toastMessage || "Password must be at least 8 characters";
+    } else if (!/[A-Za-z]/.test(formData.password.trim())) {
       err.password = "Must include letters";
+      toastMessage = toastMessage || "Password must include at least one letter";
+    }
 
-    if (formData.password.trim() !== formData.confirmPassword.trim())
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
       err.confirmPassword = "Passwords do not match";
+      toastMessage = toastMessage || "Passwords do not match";
+    }
 
-    if (!/^\d{10}$/.test(formData.whatsapp.trim()))
+    if (!/^\d{10}$/.test(formData.whatsapp.trim())) {
       err.whatsapp = "Enter 10 digit WhatsApp";
+      toastMessage = toastMessage || "Enter 10 digit WhatsApp";
+    }
 
-    if (!formData.wifiSerial.trim()) err.wifiSerial = "WiFi Serial required";
+    if (!formData.wifiSerial.trim()) {
+      err.wifiSerial = "WiFi Serial required";
+      toastMessage = toastMessage || "WiFi Serial required";
+    }
 
-    if (!formData.city.trim()) err.city = "City required";
+    if (!formData.city.trim()) {
+      err.city = "City required";
+      toastMessage = toastMessage || "City required";
+    }
 
-    if (!formData.timezone.trim()) err.timezone = "Select timezone";
+    if (!formData.timezone.trim()) {
+      err.timezone = "Select timezone";
+      toastMessage = toastMessage || "Select timezone";
+    }
 
-    if (!formData.stationType.trim()) err.stationType = "Select station type";
+    if (!formData.stationType.trim()) {
+      err.stationType = "Select station type";
+      toastMessage = toastMessage || "Select station type";
+    }
 
+    // mark field errors for visual feedback
+    Object.keys(err).forEach((key) => {
+      fieldErrs[key] = true;
+    });
+    setFieldErrors((prev) => ({ ...prev, ...fieldErrs }));
     setErrors(err);
-    return Object.keys(err).length === 0;
+
+    if (Object.keys(err).length > 0) {
+      toast.error(toastMessage || "Please correct highlighted fields");
+      return false;
+    }
+
+    return true;
   };
 
   const handleIndividualSubmit = async (e) => {
@@ -473,25 +507,36 @@ export default function Register() {
 
     if (!validateIndividual()) return;
 
+    // Backend expects raw string values (no decimal conversion) and blank optional fields
+    const normalizedTimeZone = String(formData.timezone).trim(); // e.g., "55"
+    const normalizedStationType = String(formData.stationType).trim();
+    const emailValue = ""; // backend expects empty when not provided
+    const parentValue = ""; // backend expects empty when not provided
+    const companyCodeValue = formData.company_code?.trim() || "";
+    const rawWhatsapp = formData.whatsapp.trim().replace(/^\+/, "");
+    const whatsappWithCode = rawWhatsapp.startsWith("91")
+      ? rawWhatsapp
+      : `91${rawWhatsapp}`;
+
     const payload = {
       user_id: formData.userId.trim().toLowerCase(), // backend expects lowercase
       password: formData.password.trim(),
       c_password: formData.confirmPassword.trim(),
-      whatsapp_no: "91" + formData.whatsapp.trim(), // format required by backend
+      whatsapp_no: whatsappWithCode, // ensure single 91 prefix
       wifi_serial_number: formData.wifiSerial.trim(),
       home_name: formData.homeName.trim(),
       inverter_serial_number: formData.inverterSerial.trim(),
-      city_name: formData.city.trim().toLowerCase(),
+      city_name: formData.city.trim(), // keep as provided to match backend sample
       longitude: formData.longitude?.trim() || "0",
       latitude: formData.latitude?.trim() || "0",
 
-      time_zone: String(formData.timezone).trim(),
-      station_type: String(formData.stationType).trim(),
+      time_zone: normalizedTimeZone,
+      station_type: normalizedStationType,
       iserial: "",
       qq: "",
-      email: "",
-      parent: "",
-      company_code: "",
+      email: emailValue,
+      parent: parentValue,
+      company_code: companyCodeValue,
     };
 
     console.log("INDIVIDUAL PAYLOAD --->", payload);
@@ -509,16 +554,15 @@ export default function Register() {
       let data = {};
 
       try {
-        data = JSON.parse(text);
+        data = text ? JSON.parse(text) : {};
       } catch (err) {
         toast.error("Registration failed, please check the inputs", { id: toastId });
-        setIsLoading(false);
         return;
       }
 
       if (!res.ok) {
-        toast.error(data.message || "Registration failed, please check the inputs", { id: toastId });
-        setIsLoading(false);
+        const message = data.message || text || "Registration failed, please check the inputs";
+        toast.error(message, { id: toastId });
         return;
       }
 
@@ -545,9 +589,9 @@ export default function Register() {
       router.push("/login?registered=true");
     } catch (err) {
       toast.error("Registration failed, please check the inputs", { id: toastId });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   /* ----------------------------------------------------
@@ -628,6 +672,12 @@ export default function Register() {
                       )}
                     </button>
                   </div>
+                  {formData.password?.trim().length > 0 &&
+                    formData.password.trim().length < 8 && (
+                      <p className="inline-error">
+                        Password must be at least 8 characters
+                      </p>
+                    )}
                 </div>
 
                 <div className="form-group">
@@ -779,13 +829,25 @@ export default function Register() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">User ID *</label>
+                <label className="form-label">User ID (Email or Mobile) *</label>
                 <input
                   type="text"
                   name="userId"
                   className={getFieldErrorClass("userId", getInputClassName("userId"))}
                   placeholder="Enter User ID"
                   value={formData.userId}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Company Code</label>
+                <input
+                  type="text"
+                  name="company_code"
+                  className="form-input"
+                  placeholder="Enter company code "
+                  value={formData.company_code}
                   onChange={handleChange}
                 />
               </div>

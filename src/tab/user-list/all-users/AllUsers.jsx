@@ -1687,7 +1687,7 @@ export default function AllUsers() {
       <div className="ul-card-allusers">
         <div className="ul-header">
           <div className="ul-header-text">
-            <h5 className="ul-title">User List – All Users</h5>
+            <h4 className="ul-title">Station List</h4>
              
             <button
               className="refresh-btn"
