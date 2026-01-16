@@ -98,6 +98,7 @@ export default function Sidebar() {
             </li>
 
             {/* Device Library */}
+            {/*
             <li className={`pc-item pc-hasmenu ${expandedMenus.deviceLibrary || isMenuActive(['device-library/inverters', 'device-library/sensors', 'device-library/controllers']) ? 'active' : ''}`}>
               <a
                 href="#!"
@@ -127,6 +128,7 @@ export default function Sidebar() {
                 </li>
               </ul>
             </li>
+            */}
 
             {/* User List */}
             <li className={`pc-item pc-hasmenu ${expandedMenus.userList || isMenuActive(['user-list/all-users', 'user-list/admins', 'user-list/operators']) ? 'active' : ''}`}>
@@ -148,7 +150,7 @@ export default function Sidebar() {
               </a>
               <ul className="pc-submenu" style={{maxHeight: expandedMenus.userList || isMenuActive(['user-list/all-users', 'user-list/admins', 'user-list/operators']) ? '500px' : '0'}}>
                 <li className="pc-item">
-                  <Link href="/user-list/all-users" className={`pc-link ${isActive('user-list/all-users') || pathname === '/user-list/all-users' ? 'active' : ''}`}>All Users</Link>
+                  <Link href="/user-list/all-users" className={`pc-link ${isActive('user-list/all-users') || pathname === '/user-list/all-users' ? 'active' : ''}`}>Stations</Link>
                 </li>
                 <li className="pc-item">
                   <Link href="/user-list/admins" className={`pc-link ${isActive('user-list/admins') || pathname === '/user-list/admins' ? 'active' : ''}`}>Company</Link>
@@ -160,6 +162,7 @@ export default function Sidebar() {
             </li>
 
             {/* Data Excel */}
+            {/*
             <li className="pc-item">
               <Link href="/data-excel" className={`pc-link qbits-nav-item ${isActive('data-excel') ? 'active' : ''}`}>
                 <span className="pc-micon">
@@ -168,8 +171,10 @@ export default function Sidebar() {
                 <span className="pc-mtext">Data Excel</span>
               </Link>
             </li>
+            */}
 
             {/* Fault Export */}
+            {/*
             <li className={`pc-item pc-hasmenu ${expandedMenus.faultExport || isMenuActive(['fault-export/export-all', 'fault-export/export-date', 'fault-export/export-station']) ? 'active' : ''}`}>
               <a
                 href="#!"
@@ -199,8 +204,10 @@ export default function Sidebar() {
                 </li>
               </ul>
             </li>
+            */}
 
             {/* Toolbox */}
+            {/*
             <li className="pc-item">
               <Link href="/toolbox" className={`pc-link qbits-nav-item ${isActive('toolbox') ? 'active' : ''}`}>
                 <span className="pc-micon">
@@ -209,6 +216,7 @@ export default function Sidebar() {
                 <span className="pc-mtext">Toolbox</span>
               </Link>
             </li>
+            */}
           </ul>
         </div>
       </div>
