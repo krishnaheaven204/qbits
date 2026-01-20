@@ -43,7 +43,7 @@ const buildPageList = (total, current) => {
 
 const getStatusMeta = (status) => {
   if (status === 1) return { label: 'Recovered', className: 'badge-recovered' };
-  if (status === 2) return { label: 'Fault', className: 'badge-fault' };
+  if (status === 2) return { label: 'Unknown', className: 'badge-unknown' };
   if (status === 0) return { label: 'Going', className: 'badge-unknown' };
   return { label: 'Unknown', className: 'badge-unknown' };
 };
