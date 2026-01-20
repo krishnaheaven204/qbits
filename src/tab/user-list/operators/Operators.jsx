@@ -45,10 +45,9 @@ const formatDate = (value) => {
 };
 
 const getStateMeta = (state) => {
-  if (state === 1) return { label: 'Online', className: 'state-online' };
-  if (state === 0) return { label: 'Offline', className: 'state-offline' };
-  if (state === 2) return { label: 'Unknown', className: 'state-unknown' };
-  return { label: 'Unknown', className: 'state-unknown' };
+  if (state === 1) return { label: 'Normal', className: 'state-online' };
+  if (state === 4 || state === 5) return { label: 'Fault', className: 'state-fault' };
+  return { label: 'Offline', className: 'state-offline' };
 };
 
 export default function Operators() {
