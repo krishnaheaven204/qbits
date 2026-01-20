@@ -1,41 +1,22 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Bars3Icon,
   ChartBarIcon,
   ListBulletIcon,
   ExclamationTriangleIcon,
-  PlusCircleIcon,
   CpuChipIcon,
-  UserGroupIcon,
-  DocumentArrowDownIcon,
-  ArrowDownTrayIcon,
-  WrenchScrewdriverIcon,
-  ChevronRightIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import './Sidebar.css';
 
 export default function Sidebar() {
-  const [expandedMenus, setExpandedMenus] = useState({});
   const pathname = usePathname();
-
-  const toggleMenu = (menuName) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [menuName]: !prev[menuName]
-    }));
-  };
 
   const isActive = (path) => {
     return pathname === `/${path}` || pathname.endsWith(`/${path}`);
-  };
-
-  const isMenuActive = (paths) => {
-    return paths.some(path => pathname === `/${path}` || pathname.includes(`/${path}`));
   };
 
   return (
@@ -67,7 +48,8 @@ export default function Sidebar() {
               </Link>
             </li>
 
-            {/* Station List */}
+            {/* Station List (hidden per request) */}
+            {/*
             <li className="pc-item">
               <Link href="/station-list" className={`pc-link qbits-nav-item ${isActive('station-list') ? 'active' : ''}`}>
                 <span className="pc-micon">
@@ -76,6 +58,7 @@ export default function Sidebar() {
                 <span className="pc-mtext">Station List</span>
               </Link>
             </li>
+            */}
 
             {/* Fault Info */}
             <li className="pc-item">
@@ -87,13 +70,45 @@ export default function Sidebar() {
               </Link>
             </li>
 
-            {/* Create Station */}
+            {/* Create Station (hidden per request) */}
+            {/*
             <li className="pc-item">
               <Link href="/create-station" className={`pc-link qbits-nav-item ${isActive('create-station') ? 'active' : ''}`}>
                 <span className="pc-micon">
                   <PlusCircleIcon style={{width: '20px', height: '20px'}} />
                 </span>
                 <span className="pc-mtext">Create Station</span>
+              </Link>
+            </li>
+            */}
+
+            {/* Stations */}
+            <li className="pc-item">
+              <Link href="/user-list/all-users" className={`pc-link qbits-nav-item ${isActive('user-list/all-users') ? 'active' : ''}`}>
+                <span className="pc-micon">
+                  <ListBulletIcon style={{width: '20px', height: '20px'}} />
+                </span>
+                <span className="pc-mtext">Stations</span>
+              </Link>
+            </li>
+
+            {/* Company */}
+            <li className="pc-item">
+              <Link href="/user-list/admins" className={`pc-link qbits-nav-item ${isActive('user-list/admins') ? 'active' : ''}`}>
+                <span className="pc-micon">
+                  <UserGroupIcon style={{width: '20px', height: '20px'}} />
+                </span>
+                <span className="pc-mtext">Company</span>
+              </Link>
+            </li>
+
+            {/* Inverters */}
+            <li className="pc-item">
+              <Link href="/user-list/operators" className={`pc-link qbits-nav-item ${isActive('user-list/operators') ? 'active' : ''}`}>
+                <span className="pc-micon">
+                  <CpuChipIcon style={{width: '20px', height: '20px'}} />
+                </span>
+                <span className="pc-mtext">Inverters</span>
               </Link>
             </li>
 
@@ -130,36 +145,7 @@ export default function Sidebar() {
             </li>
             */}
 
-            {/* User List */}
-            <li className={`pc-item pc-hasmenu ${expandedMenus.userList || isMenuActive(['user-list/all-users', 'user-list/admins', 'user-list/operators']) ? 'active' : ''}`}>
-              <a
-                href="#!"
-                className="pc-link qbits-nav-item"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleMenu('userList');
-                }}
-              >
-                <span className="pc-micon">
-                  <UserGroupIcon style={{width: '20px', height: '20px'}} />
-                </span>
-                <span className="pc-mtext">User List</span>
-                <span className="pc-arrow">
-                  <ChevronRightIcon style={{width: '16px', height: '16px'}} />
-                </span>
-              </a>
-              <ul className="pc-submenu" style={{maxHeight: expandedMenus.userList || isMenuActive(['user-list/all-users', 'user-list/admins', 'user-list/operators']) ? '500px' : '0'}}>
-                <li className="pc-item">
-                  <Link href="/user-list/all-users" className={`pc-link ${isActive('user-list/all-users') || pathname === '/user-list/all-users' ? 'active' : ''}`}>Stations</Link>
-                </li>
-                <li className="pc-item">
-                  <Link href="/user-list/admins" className={`pc-link ${isActive('user-list/admins') || pathname === '/user-list/admins' ? 'active' : ''}`}>Company</Link>
-                </li>
-                <li className="pc-item">
-                  <Link href="/user-list/operators" className={`pc-link ${isActive('user-list/operators') || pathname === '/user-list/operators' ? 'active' : ''}`}>Inverters</Link>
-                </li>
-              </ul>
-            </li>
+            {/* User List removed per request */}
 
             {/* Data Excel */}
             {/*
