@@ -104,7 +104,7 @@
   align-items: center;
   gap: 6px;
   justify-content: center;
-  padding: 12px 4px 4px;
+  padding: 16px 4px 4px;
 }
 
 .fault-pagination-arrow,
@@ -112,12 +112,12 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   color: #64748b;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  min-width: 34px;
+  min-width: 38px;
   transition: all 0.2s ease;
 }
 
@@ -131,6 +131,14 @@
   background: #159f6c;
   color: white;
   border-color: #159f6c;
+  box-shadow: 0 4px 10px rgba(21, 159, 108, 0.2);
+}
+
+.fault-pagination-ellipsis {
+  color: #9ca3af;
+  padding: 0 4px;
+  font-weight: 600;
+  user-select: none;
 }
 
 .fault-pagination-arrow:disabled,
