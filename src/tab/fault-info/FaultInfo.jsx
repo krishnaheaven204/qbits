@@ -9,6 +9,38 @@ const STATUS_TABS = [
   { key: 'recovered', label: 'Recovered', statusParam: 1 }
 ];
 
+const FALLBACK_TOTAL_PAGES = 33; // allow navigation when API doesn't return pagination info
+
+const buildPageList = (total, current) => {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const candidatePages = new Set([
+    1,
+    total,
+    current - 1,
+    current,
+    current + 1,
+    current - 2,
+    current + 2
+  ].filter((p) => p >= 1 && p <= total));
+
+  const sortedPages = Array.from(candidatePages).sort((a, b) => a - b);
+  const pageList = [];
+
+  for (let i = 0; i < sortedPages.length; i += 1) {
+    const page = sortedPages[i];
+    const prevPage = sortedPages[i - 1];
+    if (i > 0 && page - prevPage > 1) {
+      pageList.push('ellipsis');
+    }
+    pageList.push(page);
+  }
+
+  return pageList;
+};
+
 const getStatusMeta = (status) => {
   if (status === 1) return { label: 'Recovered', className: 'badge-recovered' };
   if (status === 2) return { label: 'Fault', className: 'badge-fault' };
@@ -41,19 +73,12 @@ export default function FaultInfo() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
 
   const sortedFaults = useMemo(() => {
     const safeDate = (value) => parseDate(value)?.getTime() || 0;
     return [...faults].sort((a, b) => safeDate(b?.stime) - safeDate(a?.stime));
   }, [faults]);
-
-  const paginatedFaults = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return sortedFaults.slice(start, start + rowsPerPage);
-  }, [sortedFaults, currentPage]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedFaults.length / rowsPerPage));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,7 +92,7 @@ export default function FaultInfo() {
         if (token) headers.Authorization = `Bearer ${token}`;
 
         const statusParam = STATUS_TABS.find((t) => t.key === activeTab)?.statusParam ?? -1;
-        const url = `https://qbits.quickestimate.co/api/v1/faults?plant_id=&inverter_id=&status=${statusParam}`;
+        const url = `https://qbits.quickestimate.co/api/v1/faults?plant_id=&inverter_id=&status=${statusParam}&page=${currentPage}`;
 
         const response = await fetch(url, { method: 'GET', headers, signal: controller.signal });
         if (!response.ok) {
@@ -75,13 +100,38 @@ export default function FaultInfo() {
         }
 
         const data = await response.json();
+        const faultsContainer = data?.data?.faults ?? data?.faults ?? data?.data ?? {};
         const rows =
-          data?.data?.faults?.data ||
-          data?.data?.faults ||
-          data?.data ||
-          data?.faults ||
+          (Array.isArray(faultsContainer?.data) && faultsContainer.data) ||
+          (Array.isArray(faultsContainer) && faultsContainer) ||
+          (Array.isArray(data?.data) && data.data) ||
+          (Array.isArray(data?.faults) && data.faults) ||
           [];
 
+        const paginationMeta =
+          faultsContainer?.meta ||
+          faultsContainer?.pagination ||
+          faultsContainer;
+
+        const lastPageRaw =
+          paginationMeta?.last_page ??
+          paginationMeta?.lastPage ??
+          paginationMeta?.total_pages ??
+          paginationMeta?.totalPages ??
+          paginationMeta?.pages ??
+          paginationMeta?.last ??
+          paginationMeta?.page_count;
+
+        const perPage = paginationMeta?.per_page ?? paginationMeta?.perPage ?? paginationMeta?.page_size;
+        const totalCount = paginationMeta?.total ?? paginationMeta?.total_count ?? paginationMeta?.count;
+
+        const derivedLastPage = perPage && totalCount ? Math.ceil(Number(totalCount) / Number(perPage)) : undefined;
+
+        const lastPage = [lastPageRaw, derivedLastPage, FALLBACK_TOTAL_PAGES]
+          .map((v) => Number(v))
+          .find((v) => Number.isFinite(v) && v > 0) || 1;
+
+        setTotalPages(Math.max(1, lastPage));
         setFaults(Array.isArray(rows) ? rows : []);
       } catch (err) {
         if (err.name === 'AbortError') return;
@@ -94,11 +144,17 @@ export default function FaultInfo() {
 
     fetchFaults();
     return () => controller.abort();
-  }, [activeTab]);
+  }, [activeTab, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, sortedFaults.length]);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -145,7 +201,7 @@ export default function FaultInfo() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedFaults.map((fault) => {
+                  {sortedFaults.map((fault) => {
                     const statusMeta = getStatusMeta(fault?.status);
                     const faultMessage = Array.isArray(fault?.message_en)
                       ? fault.message_en.join(', ')
@@ -174,7 +230,7 @@ export default function FaultInfo() {
                 </tbody>
               </table>
 
-              {totalPages > 1 && (
+              {totalPages > 1 || sortedFaults.length > 0 ? (
                 <div className="fault-pagination-container">
                   <button
                     className="fault-pagination-arrow"
@@ -183,15 +239,19 @@ export default function FaultInfo() {
                   >
                     ‹
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      className={`fault-pagination-number ${currentPage === page ? 'active' : ''}`}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {buildPageList(totalPages, currentPage).map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="fault-pagination-ellipsis">…</span>
+                    ) : (
+                      <button
+                        key={page}
+                        className={`fault-pagination-number ${currentPage === page ? 'active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
                   <button
                     className="fault-pagination-arrow"
                     onClick={() => handlePageChange(currentPage + 1)}
@@ -200,7 +260,7 @@ export default function FaultInfo() {
                     ›
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
