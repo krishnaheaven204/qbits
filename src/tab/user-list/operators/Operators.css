@@ -64,10 +64,17 @@
   border-color: #b9e8cb;
 }
 
-.state-offline {
+
+.state-fault {
   background: #ffe9e8;
   color: #d13a2f;
   border-color: #ffc6c1;
+}
+
+.state-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #e5e7eb;
 }
 
 .state-unknown {
