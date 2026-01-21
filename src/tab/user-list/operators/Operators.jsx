@@ -45,8 +45,9 @@ const formatDate = (value) => {
 };
 
 const getStateMeta = (state) => {
-  if (state === 1) return { label: 'Normal', className: 'state-online' };
-  if (state === 4 || state === 5) return { label: 'Fault', className: 'state-fault' };
+  const code = Number(state);
+  if (code === 1) return { label: 'Normal', className: 'state-online' };
+  if (code === 4 || code === 5) return { label: 'Fault', className: 'state-fault' };
   return { label: 'Offline', className: 'state-offline' };
 };
 
@@ -167,7 +168,7 @@ export default function Operators() {
                     </thead>
                     <tbody>
                       {paginatedRecords.map((row) => {
-                        const stateMeta = getStateMeta(row?.state);
+                        const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
                         return (
                           <tr key={row?.id ?? `${row?.collector_address}-${row?.record_time}`}>
                             <td>{row?.id ?? '—'}</td>
