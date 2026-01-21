@@ -6,6 +6,8 @@ import { api } from './api';
 export const AUTH_TOKEN_KEY = 'authToken';
 export const USER_EMAIL_KEY = 'userEmail';
 export const USER_ROLE_KEY = 'userRole';
+export const USER_NAME_KEY = 'userName';
+export const USER_FLAG_KEY = 'userFlag';
 
 /**
  * Authenticate using Laravel API
@@ -34,8 +36,9 @@ export const authenticateWithApi = async (email, password) => {
       data.data?.role ||
       null;
 
-    const returnedEmail =
-      data.user?.email || data.data?.user?.email || email;
+    const returnedEmail = data.user?.email || data.data?.user?.email || email;
+    const returnedName = data.user?.name || data.data?.user?.name || data.name || data.data?.name || returnedEmail;
+    const userFlag = data.user?.user_flag ?? data.data?.user?.user_flag ?? data.user_flag ?? data.data?.user_flag ?? null;
 
     if (!token) {
       return {
@@ -45,7 +48,7 @@ export const authenticateWithApi = async (email, password) => {
       };
     }
 
-    return { success: true, token, role, email: returnedEmail, data };
+    return { success: true, token, role, email: returnedEmail, name: returnedName, userFlag, data };
   } catch (err) {
     const message =
       err?.data?.message ||
@@ -87,6 +90,17 @@ export const getCurrentUser = () => {
   return localStorage.getItem(USER_EMAIL_KEY) || sessionStorage.getItem(USER_EMAIL_KEY);
 };
 
+export const getUserName = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(USER_NAME_KEY) || sessionStorage.getItem(USER_NAME_KEY);
+};
+
+export const getUserFlag = () => {
+  if (typeof window === 'undefined') return null;
+  const flag = localStorage.getItem(USER_FLAG_KEY) ?? sessionStorage.getItem(USER_FLAG_KEY);
+  return flag !== null ? Number(flag) : null;
+};
+
 /**
  * Get current user role
  * @returns {string|null}
@@ -104,12 +118,15 @@ export const getUserRole = () => {
  * @param {string} role 
  * @param {boolean} rememberMe 
  */
-export const login = (email, token, role, rememberMe = false) => {
+export const login = (email, token, role, rememberMe = false, name = '', userFlag = null) => {
   // const storage = rememberMe ? localStorage : sessionStorage;
-  
   localStorage.setItem(AUTH_TOKEN_KEY, token);
   localStorage.setItem(USER_EMAIL_KEY, email);
-  localStorage.setItem(USER_ROLE_KEY, role);
+  localStorage.setItem(USER_ROLE_KEY, role ?? '');
+  localStorage.setItem(USER_NAME_KEY, name || email || '');
+  if (userFlag !== null && userFlag !== undefined) {
+    localStorage.setItem(USER_FLAG_KEY, String(userFlag));
+  }
 };
 
 /**
@@ -119,9 +136,13 @@ export const logout = () => {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(USER_EMAIL_KEY);
   localStorage.removeItem(USER_ROLE_KEY);
+  localStorage.removeItem(USER_NAME_KEY);
+  localStorage.removeItem(USER_FLAG_KEY);
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
   sessionStorage.removeItem(USER_EMAIL_KEY);
   sessionStorage.removeItem(USER_ROLE_KEY);
+  sessionStorage.removeItem(USER_NAME_KEY);
+  sessionStorage.removeItem(USER_FLAG_KEY);
 };
 
 /**
