@@ -56,6 +56,7 @@ export default function Operators() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const rowsPerPage = 10;
 
   useEffect(() => {
@@ -110,13 +111,32 @@ export default function Operators() {
     return () => controller.abort();
   }, []);
 
+  const filteredRecords = useMemo(() => {
+    const term = searchQuery.trim().toLowerCase();
+    if (!term) return records;
+
+    const normalize = (value) => (value ?? '').toString().toLowerCase();
+
+    return records.filter((row) => {
+      const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
+      const fields = [
+        normalize(row?.id),
+        normalize(row?.collector_address),
+        normalize(row?.model),
+        normalize(stateMeta.label)
+      ];
+
+      return fields.some((field) => field.includes(term));
+    });
+  }, [records, searchQuery]);
+
   const sortedRecords = useMemo(() => {
-    return [...records].sort((a, b) => {
+    return [...filteredRecords].sort((a, b) => {
       const aTime = new Date(a?.record_time || a?.updated_at || 0).getTime();
       const bTime = new Date(b?.record_time || b?.updated_at || 0).getTime();
       return bTime - aTime;
     });
-  }, [records]);
+  }, [filteredRecords]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / rowsPerPage));
   const hasRecords = sortedRecords.length > 0;
@@ -134,6 +154,10 @@ export default function Operators() {
     setCurrentPage(1);
   }, [records.length]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
@@ -143,8 +167,18 @@ export default function Operators() {
     <div className="operators-page">
       <div className="col-xl-12">
         <div className="card qbits-card">
-          <div className="card-header">
+          <div className="card-header op-header">
             <h5>Inverters</h5>
+            <div className="op-search">
+              <input
+                type="text"
+                className="op-search-input"
+                placeholder="Search by ID, Collector, Model, State"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search inverters"
+              />
+            </div>
           </div>
           <div className="card-body">
             {loading ? (
@@ -163,7 +197,7 @@ export default function Operators() {
                         <th>Record Time</th>
                         <th>Created At</th>
                         <th>Updated At</th>
-                        <th>State</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
