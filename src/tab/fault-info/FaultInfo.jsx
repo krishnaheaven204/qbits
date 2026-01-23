@@ -80,6 +80,9 @@ export default function FaultInfo() {
     return [...faults].sort((a, b) => safeDate(b?.stime) - safeDate(a?.stime));
   }, [faults]);
 
+  const hasFaults = sortedFaults.length > 0;
+  const pageList = useMemo(() => buildPageList(totalPages, currentPage), [totalPages, currentPage]);
+
   useEffect(() => {
     const controller = new AbortController();
     const fetchFaults = async () => {
@@ -184,8 +187,6 @@ export default function FaultInfo() {
             <div className="fault-empty">Loading faults...</div>
           ) : error ? (
             <div className="fault-empty error-text">{error}</div>
-          ) : sortedFaults.length === 0 ? (
-            <div className="fault-empty">No fault records found</div>
           ) : (
             <div className="fault-table-wrapper">
               <table className="fault-table">
@@ -201,66 +202,70 @@ export default function FaultInfo() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedFaults.map((fault) => {
-                    const statusMeta = getStatusMeta(fault?.status);
-                    const faultMessage = Array.isArray(fault?.message_en)
-                      ? fault.message_en.join(', ')
-                      : fault?.message_en || fault?.fault_name || 'N/A';
-                    const deviceModel =
-                      fault?.model ||
-                      fault?.device_model ||
-                      fault?.inverter_model ||
-                      fault?.inverter?.model ||
-                      'N/A';
+                  {hasFaults ? (
+                    sortedFaults.map((fault) => {
+                      const statusMeta = getStatusMeta(fault?.status);
+                      const faultMessage = Array.isArray(fault?.message_en)
+                        ? fault.message_en.join(', ')
+                        : fault?.message_en || fault?.fault_name || 'N/A';
+                      const deviceModel =
+                        fault?.model ||
+                        fault?.device_model ||
+                        fault?.inverter_model ||
+                        fault?.inverter?.model ||
+                        'N/A';
 
-                    return (
-                      <tr key={fault?.id || `${fault?.plant_name}-${fault?.stime}`}>
-                        <td>
-                          <span className={`status-badge ${statusMeta.className}`}>{statusMeta.label}</span>
-                        </td>
-                        <td>{fault?.atun || fault?.plant_name || fault?.station_name || 'N/A'}</td>
-                        <td>{deviceModel}</td>
-                        <td>{fault?.serial_no || fault?.sn || 'N/A'}</td>
-                        <td>{faultMessage}</td>
-                        <td>{formatDateTime(fault?.stime)}</td>
-                        <td>{formatDateTime(fault?.etime)}</td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={fault?.id || `${fault?.plant_name}-${fault?.stime}`}>
+                          <td>
+                            <span className={`status-badge ${statusMeta.className}`}>{statusMeta.label}</span>
+                          </td>
+                          <td>{fault?.atun || fault?.plant_name || fault?.station_name || 'N/A'}</td>
+                          <td>{deviceModel}</td>
+                          <td>{fault?.serial_no || fault?.sn || 'N/A'}</td>
+                          <td>{faultMessage}</td>
+                          <td>{formatDateTime(fault?.stime)}</td>
+                          <td>{formatDateTime(fault?.etime)}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td className="fault-empty" colSpan={7}>No fault records found</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
-              {totalPages > 1 || sortedFaults.length > 0 ? (
-                <div className="fault-pagination-container">
-                  <button
-                    className="fault-pagination-arrow"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    ‹
-                  </button>
-                  {buildPageList(totalPages, currentPage).map((page, idx) =>
-                    page === 'ellipsis' ? (
-                      <span key={`ellipsis-${idx}`} className="fault-pagination-ellipsis">…</span>
-                    ) : (
-                      <button
-                        key={page}
-                        className={`fault-pagination-number ${currentPage === page ? 'active' : ''}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    )
-                  )}
-                  <button
-                    className="fault-pagination-arrow"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    ›
-                  </button>
-                </div>
-              ) : null}
+              <div className="fault-pagination-container">
+                <button
+                  className="fault-pagination-arrow"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </button>
+                {pageList.map((page, idx) =>
+                  page === 'ellipsis' ? (
+                    <span key={`ellipsis-${idx}`} className="fault-pagination-ellipsis">…</span>
+                  ) : (
+                    <button
+                      key={page}
+                      className={`fault-pagination-number ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  className="fault-pagination-arrow"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+              </div>
             </div>
           )}
         </div>

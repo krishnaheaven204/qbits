@@ -119,6 +119,8 @@ export default function Operators() {
   }, [records]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / rowsPerPage));
+  const hasRecords = sortedRecords.length > 0;
+  const pageList = useMemo(() => buildPageList(totalPages, currentPage), [totalPages, currentPage]);
   const paginatedRecords = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
     return sortedRecords.slice(start, start + rowsPerPage);
@@ -149,8 +151,6 @@ export default function Operators() {
               <div className="op-empty">Loading...</div>
             ) : error ? (
               <div className="op-empty op-error">{error}</div>
-            ) : sortedRecords.length === 0 ? (
-              <div className="op-empty">No inverter records found</div>
             ) : (
               <>
                 <div className="op-table-wrapper">
@@ -167,57 +167,61 @@ export default function Operators() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedRecords.map((row) => {
-                        const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
-                        return (
-                          <tr key={row?.id ?? `${row?.collector_address}-${row?.record_time}`}>
-                            <td>{row?.id ?? '—'}</td>
-                            <td>{row?.collector_address ?? '—'}</td>
-                            <td>{row?.model ?? '—'}</td>
-                            <td>{formatDate(row?.record_time)}</td>
-                            <td>{formatDate(row?.created_at)}</td>
-                            <td>{formatDate(row?.updated_at)}</td>
-                            <td>
-                              <span className={`op-state-badge ${stateMeta.className}`}>{stateMeta.label}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {hasRecords ? (
+                        paginatedRecords.map((row) => {
+                          const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
+                          return (
+                            <tr key={row?.id ?? `${row?.collector_address}-${row?.record_time}`}>
+                              <td>{row?.id ?? '—'}</td>
+                              <td>{row?.collector_address ?? '—'}</td>
+                              <td>{row?.model ?? '—'}</td>
+                              <td>{formatDate(row?.record_time)}</td>
+                              <td>{formatDate(row?.created_at)}</td>
+                              <td>{formatDate(row?.updated_at)}</td>
+                              <td>
+                                <span className={`op-state-badge ${stateMeta.className}`}>{stateMeta.label}</span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td className="op-empty-row" colSpan={7}>No inverter records found</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="op-pagination">
-                    <button
-                      className="op-page-btn"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      ‹
-                    </button>
-                    {buildPageList(totalPages, currentPage).map((page, idx) =>
-                      page === 'ellipsis' ? (
-                        <span key={`ellipsis-${idx}`} className="op-pagination-ellipsis">…</span>
-                      ) : (
-                        <button
-                          key={page}
-                          className={`op-page-btn ${currentPage === page ? 'active' : ''}`}
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </button>
-                      )
-                    )}
-                    <button
-                      className="op-page-btn"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      ›
-                    </button>
-                  </div>
-                )}
+                <div className="op-pagination">
+                  <button
+                    className="op-page-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    ‹
+                  </button>
+                  {pageList.map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="op-pagination-ellipsis">…</span>
+                    ) : (
+                      <button
+                        key={page}
+                        className={`op-page-btn ${currentPage === page ? 'active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    className="op-page-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    ›
+                  </button>
+                </div>
               </>
             )}
           </div>
