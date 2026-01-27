@@ -223,14 +223,6 @@ export default function Company() {
         return direction === "asc" ? cmp : -cmp;
       }
 
-      // PHONE SORTING (string comparison)
-      if (field === "phone") {
-        const va = (a.phone || "").toLowerCase();
-        const vb = (b.phone || "").toLowerCase();
-        const cmp = va.localeCompare(vb);
-        return direction === "asc" ? cmp : -cmp;
-      }
-
       // EMAIL SORTING (string comparison)
       if (field === "email") {
         const va = (a.email || "").toLowerCase();
@@ -392,13 +384,11 @@ const updateFlagsAPI = async (userId, values) => {
   const filteredUsers = normalizedSearchTerm
     ? users.filter((user) => {
         const usernameValue = (user.username ?? "").toLowerCase();
-        const phoneValue = (user.phone ?? "").toLowerCase();
         const emailValue = (user.email ?? "").toLowerCase();
         const companyCodeValue = (user.company_code ?? "").toLowerCase();
 
         return [
           usernameValue,
-          phoneValue,
           emailValue,
           companyCodeValue,
         ].some((field) => field.includes(normalizedSearchTerm));
@@ -519,7 +509,7 @@ const updateFlagsAPI = async (userId, values) => {
                 <input
                   type="text"
                   className="ul-input"
-                  placeholder="Search by username, company code, phone, email..."
+                  placeholder="Search by username, company code, email..."
                   value={searchInput}
                   onChange={handleSearchChange}
                 />
@@ -557,9 +547,6 @@ const updateFlagsAPI = async (userId, values) => {
                             <SortableHeader label="Username" field="username" />
                           </th>
                           <th>
-                            <SortableHeader label="Phone" field="phone" />
-                          </th>
-                          <th>
                             <SortableHeader label="Email" field="email" />
                           </th>
                           <th>
@@ -585,7 +572,6 @@ const updateFlagsAPI = async (userId, values) => {
                               <td className="sticky-col col-username">
                                 {u.username ?? "N/A"}
                               </td>
-                              <td>{u.phone ?? "N/A"}</td>
                               <td>{u.email ?? "N/A"}</td>
                               <td>{u.password ?? "N/A"}</td>
                               <td>{formatDate(u.created_at)}</td>
@@ -596,7 +582,7 @@ const updateFlagsAPI = async (userId, values) => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={8} style={{ textAlign: "center", padding: "16px" }}>
+                            <td colSpan={7} style={{ textAlign: "center", padding: "16px" }}>
                               No matching users found
                             </td>
                           </tr>

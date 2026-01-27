@@ -21,12 +21,31 @@ const normalizeApiBase = (input) => {
 };
 
 const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
-const GROUPED_CLIENTS_PER_PAGE = 200;
+const GROUPED_CLIENTS_PER_PAGE = 25; // fetch more entries in a single call
 let inverterTotalsLock = false;
+const refetchAllOnce = { current: false };
+
+const dedupeById = (items) => {
+  const seen = new Map();
+  items.forEach((item) => {
+    const key =
+      item?.id ??
+      item?.user_id ??
+      item?.client_id ??
+      item?.uid ??
+      item?.qbits_user_id ??
+      `${item?.plant_no ?? ""}-${item?.username ?? ""}-${item?.email ?? ""}`;
+    if (!seen.has(key)) {
+      seen.set(key, item);
+    }
+  });
+  return Array.from(seen.values());
+};
 
 export default function AllUsers() {
   const router = useRouter();
   const fetchLock = useRef(false);
+  const loadingMoreAllRef = useRef(false);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -120,6 +139,8 @@ export default function AllUsers() {
     alarm_plant: [],
     offline_plant: [],
   });
+  const [allNextPageUrl, setAllNextPageUrl] = useState(null);
+  const [allTotal, setAllTotal] = useState(0);
   const filterButtonRef = useRef(null);
   const filterMenuRef = useRef(null);
   const [isFlagMenuOpen, setIsFlagMenuOpen] = useState(false);
@@ -608,25 +629,8 @@ export default function AllUsers() {
 
       const json = await response.json();
 
-      const dedupeById = (items) => {
-        const seen = new Map();
-        items.forEach((item) => {
-          const key =
-            item?.id ??
-            item?.user_id ??
-            item?.client_id ??
-            item?.uid ??
-            item?.qbits_user_id ??
-            `${item?.plant_no ?? ""}-${item?.username ?? ""}-${item?.email ?? ""}`;
-          if (!seen.has(key)) {
-            seen.set(key, item);
-          }
-        });
-        return Array.from(seen.values());
-      };
-
-      // Show first page immediately
-      const initialAll = dedupeById(json.data?.all_plant?.data || []);
+      const allBucket = json.data?.all_plant;
+      const initialAll = dedupeById(allBucket?.data || []);
       const initialNormal = dedupeById(json.data?.normal_plant?.data || []);
       const initialAlarm = dedupeById(json.data?.alarm_plant?.data || []);
       const initialOffline = dedupeById(json.data?.offline_plant?.data || []);
@@ -637,48 +641,48 @@ export default function AllUsers() {
         alarm_plant: initialAlarm,
         offline_plant: initialOffline,
       });
-      setLoading(false);
+      const totalMeta =
+        allBucket?.total ??
+        allBucket?.meta?.total ??
+        allBucket?.pagination?.total ??
+        allBucket?.pagination?.total_count ??
+        allBucket?.total_count ??
+        0;
+      const resolvedTotal = Number(totalMeta) || initialAll.length;
 
-      const fetchBucketPages = async (bucket, key) => {
-        const items = [...(bucket?.data || [])];
-        let next = bucket?.next_page_url;
-        while (next) {
-          try {
-            const pageResp = await fetch(next, {
-              method: "GET",
-              headers: commonHeaders,
-            });
-            if (!pageResp.ok) break;
-            const pageJson = await pageResp.json();
-            const nextBucket = pageJson.data?.[key];
-            items.push(...(nextBucket?.data || []));
-            next = nextBucket?.next_page_url;
-          } catch (e) {
-            console.warn("Pagination fetch failed for", key, e);
-            break;
-          }
-        }
-        return items;
-      };
+      // If API reports a total larger than the current per_page, refetch once with per_page=total to load all in one call
+      if (!refetchAllOnce.current && resolvedTotal > GROUPED_CLIENTS_PER_PAGE) {
+        refetchAllOnce.current = true;
+        const fullUrl = `${API_BASE_ROOT}/client/grouped-clients?search=${encodedSearch}&per_page=${resolvedTotal}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
+        const fullResp = await fetch(fullUrl, {
+          method: "GET",
+          headers: commonHeaders,
+        });
 
-      // Continue fetching remaining pages in the background
-      (async () => {
-        try {
-          const allPlant = dedupeById(await fetchBucketPages(json.data?.all_plant, "all_plant"));
-          const normalPlant = dedupeById(await fetchBucketPages(json.data?.normal_plant, "normal_plant"));
-          const alarmPlant = dedupeById(await fetchBucketPages(json.data?.alarm_plant, "alarm_plant"));
-          const offlinePlant = dedupeById(await fetchBucketPages(json.data?.offline_plant, "offline_plant"));
+        if (fullResp.ok) {
+          const fullJson = await fullResp.json();
+          const fullAllBucket = fullJson.data?.all_plant;
+          const fullAll = dedupeById(fullAllBucket?.data || []);
+          const fullNormal = dedupeById(fullJson.data?.normal_plant?.data || []);
+          const fullAlarm = dedupeById(fullJson.data?.alarm_plant?.data || []);
+          const fullOffline = dedupeById(fullJson.data?.offline_plant?.data || []);
 
           setGroupedClients({
-            all_plant: allPlant,
-            normal_plant: normalPlant,
-            alarm_plant: alarmPlant,
-            offline_plant: offlinePlant,
+            all_plant: fullAll,
+            normal_plant: fullNormal,
+            alarm_plant: fullAlarm,
+            offline_plant: fullOffline,
           });
-        } catch (e) {
-          console.warn("Background pagination fetch failed", e);
+          setAllTotal(resolvedTotal);
+          setAllNextPageUrl(fullAllBucket?.next_page_url || null);
+          setLoading(false);
+          return;
         }
-      })();
+      }
+
+      setAllTotal(resolvedTotal);
+      setAllNextPageUrl(allBucket?.next_page_url || null);
+      setLoading(false);
     } catch (err) {
       setError("Failed to load user list");
       setLoading(false);
@@ -687,6 +691,35 @@ export default function AllUsers() {
     }
   };
   
+  const fetchNextAllPage = async () => {
+    if (loadingMoreAllRef.current || !allNextPageUrl) return;
+    loadingMoreAllRef.current = true;
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      if (!token) return;
+
+      const resp = await fetch(allNextPageUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const nextBucket = data?.data?.all_plant;
+      const newItems = nextBucket?.data || [];
+      setAllNextPageUrl(nextBucket?.next_page_url || null);
+      setGroupedClients((prev) => ({
+        ...prev,
+        all_plant: dedupeById([...prev.all_plant, ...newItems]),
+      }));
+    } catch (e) {
+      console.warn("Failed to fetch next all_plant page", e);
+    } finally {
+      loadingMoreAllRef.current = false;
+    }
+  };
 
   // Call Refresh/Sync API
   const runInverterCommand = async () => {
@@ -1364,8 +1397,12 @@ export default function AllUsers() {
   });
 
   // Determine effective rows per page based on filter mode
+  const baseTotalCount =
+    hasFilter || searchInput.trim()
+      ? inverterFilteredUsers.length
+      : (allTotal || groupedClients.all_plant.length);
   const effectiveRowsPerPage = hasFilter ? inverterFilteredUsers.length : rowsPerPage;
-  const totalTablePages = Math.max(1, Math.ceil(inverterFilteredUsers.length / effectiveRowsPerPage));
+  const totalTablePages = Math.max(1, Math.ceil(baseTotalCount / effectiveRowsPerPage));
   const rowStartIndex = (tablePage - 1) * effectiveRowsPerPage;
   const paginatedUsers = inverterFilteredUsers.slice(
     rowStartIndex,
@@ -1375,7 +1412,32 @@ export default function AllUsers() {
 
   useEffect(() => {
     setTablePage(1);
-  }, [selectedStatus, search, searchInput, groupedClients, selectedInverter, selectedCity, selectedPlantType]);
+  }, [selectedStatus, search, searchInput, selectedInverter, selectedCity, selectedPlantType]);
+
+  useEffect(() => {
+    if (tablePage > totalTablePages) {
+      setTablePage(totalTablePages);
+    }
+  }, [totalTablePages, tablePage]);
+
+  // Fetch additional all_plant pages on demand (standby tab, no filters/search)
+  useEffect(() => {
+    const normalizedSearchTerm = searchInput.trim();
+    const needsMoreAll =
+      selectedStatus === "standby" &&
+      !hasFilter &&
+      normalizedSearchTerm === "" &&
+      allNextPageUrl;
+
+    if (!needsMoreAll) return;
+
+    const neededRows = tablePage * rowsPerPage;
+    const availableRows = groupedClients.all_plant.length;
+    if (availableRows < neededRows) {
+      fetchNextAllPage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tablePage, groupedClients.all_plant.length, selectedStatus, hasFilter, allNextPageUrl]);
 
   useEffect(() => {
     if (hasFilter && tablePage !== 1) {
