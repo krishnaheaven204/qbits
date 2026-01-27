@@ -9,8 +9,6 @@ const STATUS_TABS = [
   { key: 'recovered', label: 'Recovered', statusParam: 1 }
 ];
 
-const FALLBACK_TOTAL_PAGES = 33; // allow navigation when API doesn't return pagination info
-
 const buildPageList = (total, current) => {
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
@@ -125,14 +123,27 @@ export default function FaultInfo() {
           paginationMeta?.last ??
           paginationMeta?.page_count;
 
-        const perPage = paginationMeta?.per_page ?? paginationMeta?.perPage ?? paginationMeta?.page_size;
+        const nextPageUrl = paginationMeta?.next_page_url ?? faultsContainer?.next_page_url ?? data?.next_page_url;
+        const hasNext = Boolean(nextPageUrl);
+
+        const perPage = (paginationMeta?.per_page ?? paginationMeta?.perPage ?? paginationMeta?.page_size) || rows.length || 1;
         const totalCount = paginationMeta?.total ?? paginationMeta?.total_count ?? paginationMeta?.count;
 
         const derivedLastPage = perPage && totalCount ? Math.ceil(Number(totalCount) / Number(perPage)) : undefined;
 
-        const lastPage = [lastPageRaw, derivedLastPage, FALLBACK_TOTAL_PAGES]
+        let lastPage = [derivedLastPage, lastPageRaw]
           .map((v) => Number(v))
           .find((v) => Number.isFinite(v) && v > 0) || 1;
+
+        // If API indicates more pages but doesn't provide last_page/total, allow advancing by one
+        if (hasNext && lastPage <= currentPage) {
+          lastPage = currentPage + 1;
+        }
+
+        // If no next page and we received a short page, clamp to current
+        if (!hasNext && rows.length < perPage) {
+          lastPage = Math.min(lastPage, currentPage);
+        }
 
         setTotalPages(Math.max(1, lastPage));
         setFaults(Array.isArray(rows) ? rows : []);
