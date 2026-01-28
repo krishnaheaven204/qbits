@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import './Operators.css';
 
 const API_URL = 'https://qbits.quickestimate.co/api/v1/inverter/all_latest_data';
@@ -67,6 +68,7 @@ const getStateMeta = (state) => {
 };
 
 export default function Operators() {
+  const router = useRouter();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -178,6 +180,14 @@ export default function Operators() {
     setCurrentPage(page);
   };
 
+  const handleRowClick = (row) => {
+    const inverterId = row?.id;
+    if (!inverterId) return;
+    const plantNo = row?.plant_no ?? row?.plant?.plant_no ?? row?.plantNo ?? row?.plant?.plantNo;
+    const query = plantNo ? `?plant_no=${encodeURIComponent(plantNo)}` : '';
+    router.push(`/inverters/${inverterId}/summary${query}`);
+  };
+
   return (
     <div className="operators-page">
       <div className="col-xl-12">
@@ -220,7 +230,12 @@ export default function Operators() {
                         paginatedRecords.map((row) => {
                           const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
                           return (
-                            <tr key={row?.id ?? `${row?.collector_address}-${row?.record_time}`}>
+                            <tr
+                              key={row?.id ?? `${row?.collector_address}-${row?.record_time}`}
+                              className="op-row-clickable"
+                              onClick={() => handleRowClick(row)}
+                              style={{ cursor: row?.id ? 'pointer' : 'default' }}
+                            >
                               <td>{row?.id ?? '—'}</td>
                               <td>{row?.collector_address ?? '—'}</td>
                               <td>{row?.model ?? '—'}</td>

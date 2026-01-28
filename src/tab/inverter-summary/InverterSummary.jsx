@@ -399,6 +399,16 @@ export default function InverterSummary({ inverterId, plantNo }) {
     setAlarmCurrentPage(1);
   }, [activeTab]);
 
+  const alarmSortKey = (alarm) => {
+    const start = new Date(alarm?.stime || alarm?.start_time || alarm?.start || 0).getTime() || 0;
+    const end = new Date(alarm?.etime || alarm?.end_time || alarm?.end || 0).getTime() || 0;
+    return Math.max(start, end);
+  };
+
+  const sortedAlarms = useMemo(() => {
+    return [...alarms].sort((a, b) => alarmSortKey(b) - alarmSortKey(a));
+  }, [alarms]);
+
   // Fetch basic info from latest inverter data
   useEffect(() => {
     if (!plantNo) {
@@ -483,10 +493,10 @@ export default function InverterSummary({ inverterId, plantNo }) {
 
   const getPaginatedAlarms = () => {
     const startIndex = (alarmCurrentPage - 1) * alarmsPerPage;
-    return alarms.slice(startIndex, startIndex + alarmsPerPage);
+    return sortedAlarms.slice(startIndex, startIndex + alarmsPerPage);
   };
 
-  const getTotalAlarmPages = () => Math.ceil(alarms.length / alarmsPerPage);
+  const getTotalAlarmPages = () => Math.ceil(sortedAlarms.length / alarmsPerPage);
 
   const handleAlarmPageChange = (page) => {
     if (page < 1 || page > getTotalAlarmPages()) return;
