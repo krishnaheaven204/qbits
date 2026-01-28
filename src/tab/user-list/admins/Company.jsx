@@ -383,11 +383,13 @@ const updateFlagsAPI = async (userId, values) => {
 
   const filteredUsers = normalizedSearchTerm
     ? users.filter((user) => {
+        const idValue = String(user.id ?? "").toLowerCase();
         const usernameValue = (user.username ?? "").toLowerCase();
         const emailValue = (user.email ?? "").toLowerCase();
         const companyCodeValue = (user.company_code ?? "").toLowerCase();
 
         return [
+          idValue,
           usernameValue,
           emailValue,
           companyCodeValue,
@@ -485,169 +487,114 @@ const updateFlagsAPI = async (userId, values) => {
   }
 
   return (
-    <div className="user-list-page-company">
-      <div className="ul-container">
-        <div className="ul-card">
-          <div className="ul-header">
-            <div className="ul-header-text">
-              <h5 className="ul-title">Company</h5>
-               
-            </div>
-            <form onSubmit={handleSearchSubmit} className="ul-search">
-              <div className="ul-search-input">
-                <span className="ul-search-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85Zm-5.242.656a5 5 0 1 1 0-10.001 5 5 0 0 1 0 10Z" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  className="ul-input"
-                  placeholder="Search by username, company code, email..."
-                  value={searchInput}
-                  onChange={handleSearchChange}
-                />
-              </div>
+    <div className="company-page">
+      <div className="col-xl-12">
+        <div className="card qbits-card">
+          <div className="card-header company-header">
+            <h5>Company</h5>
+            <form onSubmit={handleSearchSubmit} className="company-search" role="search">
+              <input
+                type="text"
+                className="company-search-input"
+                placeholder="Search by username, company code, email..."
+                value={searchInput}
+                onChange={handleSearchChange}
+              />
             </form>
           </div>
-          <div className="ul-body">
+          <div className="card-body">
             {loading ? (
-              <div className="ul-empty">
-                <p className="ul-muted">Loading users...</p>
-              </div>
+              <div className="company-empty">Loading users...</div>
             ) : error ? (
-              <div className="ul-error" role="alert">
-                {error}
-              </div>
+              <div className="company-error" role="alert">{error}</div>
             ) : users.length === 0 ? (
-              <div className="ul-empty">
-                <p className="ul-muted">No users found.</p>
-              </div>
+              <div className="company-empty">No users found.</div>
             ) : (
               <>
-                <div className="table-scroll-container">
-                  <div className="table-inner-force-allusers">
-                    <table className="custom-table">
-                      <thead>
-                        <tr>
-                          <th className="sticky-col col-no">No.</th>
-                          <th className="sticky-col col-id">
-                            <SortableHeader label="ID" field="id" />
-                          </th>
-                          <th>
-                            <SortableHeader label="Code" field="company_code" />
-                          </th>
-                          <th className="sticky-col col-username">
-                            <SortableHeader label="Username" field="username" />
-                          </th>
-                          <th>
-                            <SortableHeader label="Email" field="email" />
-                          </th>
-                          <th>
-                            <SortableHeader label="Password" field="password" />
-                          </th>
-                          <th>
-                            <SortableHeader label="Created At" field="created_at" />
-                          </th>
-                          <th className="sticky-col sticky-col-right col-updated">
-                            <SortableHeader label="Updated At" field="updated_at" />
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedUsers && paginatedUsers.length > 0 ? (
-                          paginatedUsers.map((u, index) => (
-                            <tr key={u.id ?? index}>
-                              <td className="sticky-col col-no">
-                                {rowStartIndex + index + 1}
-                              </td>
-                              <td className="sticky-col col-id">{u.id ?? "N/A"}</td>
-                              <td>{u.company_code ?? "N/A"}</td>
-                              <td className="sticky-col col-username">
-                                {u.username ?? "N/A"}
-                              </td>
-                              <td>{u.email ?? "N/A"}</td>
-                              <td>{u.password ?? "N/A"}</td>
-                              <td>{formatDate(u.created_at)}</td>
-                              <td className="sticky-col sticky-col-right col-updated">
-                                {formatDate(u.updated_at)}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={7} style={{ textAlign: "center", padding: "16px" }}>
-                              No matching users found
-                            </td>
+                <div className="company-table-wrapper">
+                  <table className="company-table">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>
+                          <SortableHeader label="ID" field="id" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Code" field="company_code" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Username" field="username" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Email" field="email" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Password" field="password" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Created At" field="created_at" />
+                        </th>
+                        <th>
+                          <SortableHeader label="Updated At" field="updated_at" />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedUsers && paginatedUsers.length > 0 ? (
+                        paginatedUsers.map((u, index) => (
+                          <tr key={u.id ?? index}>
+                            <td>{rowStartIndex + index + 1}</td>
+                            <td>{u.id ?? "N/A"}</td>
+                            <td>{u.company_code ?? "N/A"}</td>
+                            <td>{u.username ?? "N/A"}</td>
+                            <td>{u.email ?? "N/A"}</td>
+                            <td>{u.password ?? "N/A"}</td>
+                            <td>{formatDate(u.created_at)}</td>
+                            <td>{formatDate(u.updated_at)}</td>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="company-empty">No matching users found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
 
-                {page < totalPages && (
-                  <div className="ul-load-more-container">
-                    <button
-                      className="ul-btn ul-btn-primary"
-                      onClick={() => setPage((prev) => prev + 1)}
-                      disabled={loading}
-                    >
-                      Load More
-                    </button>
-                  </div>
-                )}
-
-                <div className="ul-pagination">
-                  <div className="pagination-info">
-                    Showing {Math.min(rowStartIndex + 1, sortedUsers.length)} to {Math.min(rowStartIndex + rowsPerPage, sortedUsers.length)} of {sortedUsers.length} entries
-                  </div>
-                  <div className="pagination-controls">
-                    <button
-                      type="button"
-                      className="pagination-arrow-btn"
-                      onClick={handleTablePrevious}
-                      disabled={tablePage === 1}
-                      aria-label="Previous page"
-                    >
-                      ‹
-                    </button>
-                    <div className="pagination-numbers">
-                      {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
-                        pageNum === '...' ? (
-                          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
-                            {pageNum}
-                          </span>
-                        ) : (
-                          <button
-                            key={pageNum}
-                            type="button"
-                            className={`pagination-number ${
-                              tablePage === pageNum ? 'active' : ''
-                            }`}
-                            onClick={() => setTablePage(pageNum)}
-                          >
-                            {pageNum}
-                          </button>
-                        )
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="pagination-arrow-btn"
-                      onClick={handleTableNext}
-                      disabled={tablePage === totalTablePages}
-                      aria-label="Next page"
-                    >
-                      ›
-                    </button>
-                  </div>
+                <div className="company-pagination">
+                  <button
+                    type="button"
+                    className="company-page-btn"
+                    onClick={handleTablePrevious}
+                    disabled={tablePage === 1}
+                    aria-label="Previous page"
+                  >
+                    ‹
+                  </button>
+                  {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
+                    pageNum === '...' ? (
+                      <span key={`ellipsis-${idx}`} className="company-pagination-ellipsis">…</span>
+                    ) : (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        className={`company-page-btn ${tablePage === pageNum ? 'active' : ''}`}
+                        onClick={() => setTablePage(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  ))}
+                  <button
+                    type="button"
+                    className="company-page-btn"
+                    onClick={handleTableNext}
+                    disabled={tablePage === totalTablePages}
+                    aria-label="Next page"
+                  >
+                    ›
+                  </button>
                 </div>
               </>
             )}

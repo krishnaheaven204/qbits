@@ -44,6 +44,21 @@ const formatDate = (value) => {
   });
 };
 
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+};
+
 const getStateMeta = (state) => {
   const code = Number(state);
   if (code === 1) return { label: 'Normal', className: 'state-online' };
@@ -210,8 +225,8 @@ export default function Operators() {
                               <td>{row?.collector_address ?? '—'}</td>
                               <td>{row?.model ?? '—'}</td>
                               <td>{formatDate(row?.record_time)}</td>
-                              <td>{formatDate(row?.created_at)}</td>
-                              <td>{formatDate(row?.updated_at)}</td>
+                              <td>{formatDateTime(row?.created_at)}</td>
+                              <td>{formatDateTime(row?.updated_at)}</td>
                               <td>
                                 <span className={`op-state-badge ${stateMeta.className}`}>{stateMeta.label}</span>
                               </td>
