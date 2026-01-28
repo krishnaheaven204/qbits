@@ -55,12 +55,9 @@ const formatDate = (value) => {
 export default function AllUsers() {
   const router = useRouter();
   const fetchLock = useRef(false);
- 
-  
+  const searchPagingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-   
-   
   const [tablePage, setTablePage] = useState(1);
   const rowsPerPage = 25;
   const [search, setSearch] = useState("");
@@ -150,6 +147,9 @@ export default function AllUsers() {
     offline_plant: [],
   });
   const [allNextPageUrl, setAllNextPageUrl] = useState(null);
+  const [normalNextPageUrl, setNormalNextPageUrl] = useState(null);
+  const [alarmNextPageUrl, setAlarmNextPageUrl] = useState(null);
+  const [offlineNextPageUrl, setOfflineNextPageUrl] = useState(null);
   const [allTotal, setAllTotal] = useState(0);
   const [normalTotal, setNormalTotal] = useState(0);
   const [alarmTotal, setAlarmTotal] = useState(0);
@@ -197,19 +197,34 @@ export default function AllUsers() {
  
   // Load remaining pages for search so local filtering sees all matches
   const fetchAllSearchPages = async () => {
-    const term = searchInput.trim();
+    const term = (search || "").trim();
     if (!term) return;
     if (searchPagingRef.current) return;
-    if (!allNextPageUrl) return;
+
+    let nextUrl = null;
+    let collected = [];
+
+    if (selectedStatus === "normal") {
+      nextUrl = normalNextPageUrl;
+      collected = groupedClients.normal_plant;
+    } else if (selectedStatus === "warning") {
+      nextUrl = alarmNextPageUrl;
+      collected = groupedClients.alarm_plant;
+    } else if (selectedStatus === "fault") {
+      nextUrl = offlineNextPageUrl;
+      collected = groupedClients.offline_plant;
+    } else {
+      nextUrl = allNextPageUrl;
+      collected = groupedClients.all_plant;
+    }
+
+    if (!nextUrl) return;
 
     const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
     if (!token) return;
 
     searchPagingRef.current = true;
     try {
-      let nextUrl = allNextPageUrl;
-      let collected = groupedClients.all_plant;
-
       while (nextUrl) {
         const resp = await fetch(nextUrl, {
           method: "GET",
@@ -220,7 +235,14 @@ export default function AllUsers() {
         });
         if (!resp.ok) break;
         const data = await resp.json();
-        const nextBucket = data?.data?.all_plant;
+        const bucketKey = selectedStatus === "normal"
+          ? "normal_plant"
+          : selectedStatus === "warning"
+            ? "alarm_plant"
+            : selectedStatus === "fault"
+              ? "offline_plant"
+              : "all_plant";
+        const nextBucket = data?.data?.[bucketKey];
         const newItems = nextBucket?.data || [];
         collected = dedupeById([...collected, ...newItems]);
         nextUrl = nextBucket?.next_page_url || data?.data?.next_page_url || null;
@@ -228,9 +250,24 @@ export default function AllUsers() {
 
       setGroupedClients((prev) => ({
         ...prev,
-        all_plant: collected,
+        [selectedStatus === "normal"
+          ? "normal_plant"
+          : selectedStatus === "warning"
+            ? "alarm_plant"
+            : selectedStatus === "fault"
+              ? "offline_plant"
+              : "all_plant"]: collected,
       }));
-      setAllNextPageUrl(null);
+
+      if (selectedStatus === "normal") {
+        setNormalNextPageUrl(null);
+      } else if (selectedStatus === "warning") {
+        setAlarmNextPageUrl(null);
+      } else if (selectedStatus === "fault") {
+        setOfflineNextPageUrl(null);
+      } else {
+        setAllNextPageUrl(null);
+      }
     } catch (err) {
       console.warn("Failed to fetch remaining search pages", err);
     } finally {
@@ -678,21 +715,22 @@ export default function AllUsers() {
       const pageResolver = (total) => (useReversePaging ? serverPageForDesc(total) : Math.max(1, tablePage));
 
       const fallbackCount = (list) => (Array.isArray(list) ? list.length : 0);
+      const isSearching = !!(search && search.trim());
       const pageAll = selectedStatus === "standby"
-        ? pageResolver(allTotal || fallbackCount(groupedClients.all_plant))
+        ? (isSearching ? 1 : pageResolver(allTotal || fallbackCount(groupedClients.all_plant)))
         : 1;
       const pageNormal = selectedStatus === "normal"
-        ? pageResolver(normalTotal || fallbackCount(groupedClients.normal_plant))
+        ? (isSearching ? 1 : pageResolver(normalTotal || fallbackCount(groupedClients.normal_plant)))
         : 1;
       const pageAlarm = selectedStatus === "warning"
-        ? pageResolver(alarmTotal || fallbackCount(groupedClients.alarm_plant))
+        ? (isSearching ? 1 : pageResolver(alarmTotal || fallbackCount(groupedClients.alarm_plant)))
         : 1;
       const pageOffline = selectedStatus === "fault"
-        ? pageResolver(offlineTotal || fallbackCount(groupedClients.offline_plant))
+        ? (isSearching ? 1 : pageResolver(offlineTotal || fallbackCount(groupedClients.offline_plant)))
         : 1;
 
-      // Do not trigger search-based API requests; always fetch the current page only
-      const url = `${API_BASE_ROOT}/client/grouped-clients?search=&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=${pageAll}&page_normal=${pageNormal}&page_alarm=${pageAlarm}&page_offline=${pageOffline}`;
+      const searchParam = encodeURIComponent(search || "");
+      const url = `${API_BASE_ROOT}/client/grouped-clients?search=${searchParam}&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=${pageAll}&page_normal=${pageNormal}&page_alarm=${pageAlarm}&page_offline=${pageOffline}`;
       const commonHeaders = {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -700,7 +738,7 @@ export default function AllUsers() {
 
       const fetchPageData = async (overridePages) => {
         const query = new URLSearchParams({
-          search: "",
+          search: search || "",
           per_page: String(GROUPED_CLIENTS_PER_PAGE),
           page_all: String(overridePages.pageAll),
           page_normal: String(overridePages.pageNormal),
@@ -810,6 +848,9 @@ export default function AllUsers() {
       setAlarmTotal(resolveTotal(alarmBucketFinal, initialAlarmFinal.length));
       setOfflineTotal(resolveTotal(offlineBucketFinal, initialOfflineFinal.length));
       setAllNextPageUrl(allBucketFinal?.next_page_url || null);
+      setNormalNextPageUrl(normalBucketFinal?.next_page_url || null);
+      setAlarmNextPageUrl(alarmBucketFinal?.next_page_url || null);
+      setOfflineNextPageUrl(offlineBucketFinal?.next_page_url || null);
       setLoading(false);
     } catch (err) {
       setError("Failed to load user list");
@@ -876,12 +917,12 @@ export default function AllUsers() {
     e.preventDefault();
   };
 
-  // Fetch users when page or status changes (search is client-side only); re-fetch when sort changes to map page ordering
+  // Fetch users when page/status/sort changes; include search to pull matching pages
   useEffect(() => {
     fetchInverterTotals();
     fetchGroupedClients();
     setSelectedUserIds(new Set());
-  }, [tablePage, selectedStatus, sortConfig.field, sortConfig.direction, allTotal, normalTotal, alarmTotal, offlineTotal]);
+  }, [tablePage, selectedStatus, sortConfig.field, sortConfig.direction, allTotal, normalTotal, alarmTotal, offlineTotal, search]);
 
   useEffect(() => {
     const normalizedInput = searchInput.trim();
@@ -894,6 +935,12 @@ export default function AllUsers() {
 
     return () => clearTimeout(handler);
   }, [searchInput, search]);
+
+  useEffect(() => {
+    if (search && search.trim()) {
+      fetchAllSearchPages();
+    }
+  }, [search]);
 
   const handleTablePrevious = () => {
     setTablePage((prev) => Math.max(1, prev - 1));
@@ -1469,7 +1516,6 @@ export default function AllUsers() {
 
   // Check if any filter is active (only non-empty selections count as filters)
   const hasFilter =
-    (search && search.trim() !== "") ||
     (selectedInverter && selectedInverter.trim() !== "") ||
     (selectedCity && selectedCity.trim() !== "") ||
     (selectedPlantType !== null &&
@@ -1504,10 +1550,6 @@ export default function AllUsers() {
   useEffect(() => {
     setTablePage(1);
   }, [selectedStatus, search, selectedInverter, selectedCity, selectedPlantType]);
-
-  useEffect(() => {
-    setTablePage(1);
-  }, [searchInput]);
 
   useEffect(() => {
     if (tablePage > totalTablePages) {
