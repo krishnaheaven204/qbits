@@ -23,7 +23,6 @@ const normalizeApiBase = (input) => {
 const API_BASE_ROOT = normalizeApiBase(API_BASE_URL);
 const GROUPED_CLIENTS_PER_PAGE = 25; // fetch more entries in a single call
 let inverterTotalsLock = false;
-const refetchAllOnce = { current: false };
 
 const dedupeById = (items) => {
   const seen = new Map();
@@ -42,10 +41,21 @@ const dedupeById = (items) => {
   return Array.from(seen.values());
 };
 
+const formatDate = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export default function AllUsers() {
   const router = useRouter();
   const fetchLock = useRef(false);
-  const loadingMoreAllRef = useRef(false);
+ 
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,6 +151,9 @@ export default function AllUsers() {
   });
   const [allNextPageUrl, setAllNextPageUrl] = useState(null);
   const [allTotal, setAllTotal] = useState(0);
+  const [normalTotal, setNormalTotal] = useState(0);
+  const [alarmTotal, setAlarmTotal] = useState(0);
+  const [offlineTotal, setOfflineTotal] = useState(0);
   const filterButtonRef = useRef(null);
   const filterMenuRef = useRef(null);
   const [isFlagMenuOpen, setIsFlagMenuOpen] = useState(false);
@@ -179,6 +192,49 @@ export default function AllUsers() {
     } else {
       updateFilterMenuPosition();
       setIsFilterOpen(true);
+    }
+  };
+ 
+  // Load remaining pages for search so local filtering sees all matches
+  const fetchAllSearchPages = async () => {
+    const term = searchInput.trim();
+    if (!term) return;
+    if (searchPagingRef.current) return;
+    if (!allNextPageUrl) return;
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    if (!token) return;
+
+    searchPagingRef.current = true;
+    try {
+      let nextUrl = allNextPageUrl;
+      let collected = groupedClients.all_plant;
+
+      while (nextUrl) {
+        const resp = await fetch(nextUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!resp.ok) break;
+        const data = await resp.json();
+        const nextBucket = data?.data?.all_plant;
+        const newItems = nextBucket?.data || [];
+        collected = dedupeById([...collected, ...newItems]);
+        nextUrl = nextBucket?.next_page_url || data?.data?.next_page_url || null;
+      }
+
+      setGroupedClients((prev) => ({
+        ...prev,
+        all_plant: collected,
+      }));
+      setAllNextPageUrl(null);
+    } catch (err) {
+      console.warn("Failed to fetch remaining search pages", err);
+    } finally {
+      searchPagingRef.current = false;
     }
   };
 
@@ -611,77 +667,149 @@ export default function AllUsers() {
         return;
       }
 
-      const encodedSearch = encodeURIComponent(search);
-      const url = `${API_BASE_ROOT}/client/grouped-clients?search=${encodedSearch}&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
+      const totalPagesFor = (total) => Math.max(1, Math.ceil((total || 0) / rowsPerPage));
+      const serverPageForDesc = (total) => {
+        const totalPages = totalPagesFor(total);
+        return Math.max(1, totalPages - tablePage + 1);
+      };
+
+      const isIdSort = sortConfig.field === "id";
+      const useReversePaging = isIdSort ? sortConfig.direction === "desc" : false;
+      const pageResolver = (total) => (useReversePaging ? serverPageForDesc(total) : Math.max(1, tablePage));
+
+      const fallbackCount = (list) => (Array.isArray(list) ? list.length : 0);
+      const pageAll = selectedStatus === "standby"
+        ? pageResolver(allTotal || fallbackCount(groupedClients.all_plant))
+        : 1;
+      const pageNormal = selectedStatus === "normal"
+        ? pageResolver(normalTotal || fallbackCount(groupedClients.normal_plant))
+        : 1;
+      const pageAlarm = selectedStatus === "warning"
+        ? pageResolver(alarmTotal || fallbackCount(groupedClients.alarm_plant))
+        : 1;
+      const pageOffline = selectedStatus === "fault"
+        ? pageResolver(offlineTotal || fallbackCount(groupedClients.offline_plant))
+        : 1;
+
+      // Do not trigger search-based API requests; always fetch the current page only
+      const url = `${API_BASE_ROOT}/client/grouped-clients?search=&per_page=${GROUPED_CLIENTS_PER_PAGE}&page_all=${pageAll}&page_normal=${pageNormal}&page_alarm=${pageAlarm}&page_offline=${pageOffline}`;
       const commonHeaders = {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       };
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: commonHeaders,
-      });
+      const fetchPageData = async (overridePages) => {
+        const query = new URLSearchParams({
+          search: "",
+          per_page: String(GROUPED_CLIENTS_PER_PAGE),
+          page_all: String(overridePages.pageAll),
+          page_normal: String(overridePages.pageNormal),
+          page_alarm: String(overridePages.pageAlarm),
+          page_offline: String(overridePages.pageOffline),
+        }).toString();
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const json = await response.json();
-
-      const allBucket = json.data?.all_plant;
-      const initialAll = dedupeById(allBucket?.data || []);
-      const initialNormal = dedupeById(json.data?.normal_plant?.data || []);
-      const initialAlarm = dedupeById(json.data?.alarm_plant?.data || []);
-      const initialOffline = dedupeById(json.data?.offline_plant?.data || []);
-
-      setGroupedClients({
-        all_plant: initialAll,
-        normal_plant: initialNormal,
-        alarm_plant: initialAlarm,
-        offline_plant: initialOffline,
-      });
-      const totalMeta =
-        allBucket?.total ??
-        allBucket?.meta?.total ??
-        allBucket?.pagination?.total ??
-        allBucket?.pagination?.total_count ??
-        allBucket?.total_count ??
-        0;
-      const resolvedTotal = Number(totalMeta) || initialAll.length;
-
-      // If API reports a total larger than the current per_page, refetch once with per_page=total to load all in one call
-      if (!refetchAllOnce.current && resolvedTotal > GROUPED_CLIENTS_PER_PAGE) {
-        refetchAllOnce.current = true;
-        const fullUrl = `${API_BASE_ROOT}/client/grouped-clients?search=${encodedSearch}&per_page=${resolvedTotal}&page_all=1&page_normal=1&page_alarm=1&page_offline=1`;
-        const fullResp = await fetch(fullUrl, {
+        const response = await fetch(`${API_BASE_ROOT}/client/grouped-clients?${query}`, {
           method: "GET",
           headers: commonHeaders,
         });
 
-        if (fullResp.ok) {
-          const fullJson = await fullResp.json();
-          const fullAllBucket = fullJson.data?.all_plant;
-          const fullAll = dedupeById(fullAllBucket?.data || []);
-          const fullNormal = dedupeById(fullJson.data?.normal_plant?.data || []);
-          const fullAlarm = dedupeById(fullJson.data?.alarm_plant?.data || []);
-          const fullOffline = dedupeById(fullJson.data?.offline_plant?.data || []);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-          setGroupedClients({
-            all_plant: fullAll,
-            normal_plant: fullNormal,
-            alarm_plant: fullAlarm,
-            offline_plant: fullOffline,
-          });
-          setAllTotal(resolvedTotal);
-          setAllNextPageUrl(fullAllBucket?.next_page_url || null);
-          setLoading(false);
-          return;
+        return response.json();
+      };
+
+      const requestedPages = {
+        pageAll,
+        pageNormal,
+        pageAlarm,
+        pageOffline,
+      };
+
+      let json = await fetchPageData(requestedPages);
+
+      const resolveTotal = (bucket, fallback = 0) =>
+        Number(
+          bucket?.total ??
+          bucket?.meta?.total ??
+          bucket?.pagination?.total ??
+          bucket?.pagination?.total_count ??
+          bucket?.total_count ??
+          fallback
+        ) || fallback;
+
+      const allBucket = json.data?.all_plant;
+      const initialAll = dedupeById(allBucket?.data || []);
+      const normalBucket = json.data?.normal_plant;
+      const alarmBucket = json.data?.alarm_plant;
+      const offlineBucket = json.data?.offline_plant;
+
+      const initialNormal = dedupeById(normalBucket?.data || []);
+      const initialAlarm = dedupeById(alarmBucket?.data || []);
+      const initialOffline = dedupeById(offlineBucket?.data || []);
+
+      const totals = {
+        all: resolveTotal(allBucket, initialAll.length),
+        normal: resolveTotal(normalBucket, initialNormal.length),
+        alarm: resolveTotal(alarmBucket, initialAlarm.length),
+        offline: resolveTotal(offlineBucket, initialOffline.length),
+      };
+
+      const shouldRefetchDesc =
+        !hasFilter && !searchInput.trim() &&
+        sortConfig.field === "id" && sortConfig.direction === "desc" &&
+        tablePage === 1;
+
+      if (shouldRefetchDesc) {
+        const desiredPages = { ...requestedPages };
+        if (selectedStatus === "standby") {
+          desiredPages.pageAll = Math.max(1, Math.ceil(totals.all / GROUPED_CLIENTS_PER_PAGE));
+        } else if (selectedStatus === "normal") {
+          desiredPages.pageNormal = Math.max(1, Math.ceil(totals.normal / GROUPED_CLIENTS_PER_PAGE));
+        } else if (selectedStatus === "warning") {
+          desiredPages.pageAlarm = Math.max(1, Math.ceil(totals.alarm / GROUPED_CLIENTS_PER_PAGE));
+        } else if (selectedStatus === "fault") {
+          desiredPages.pageOffline = Math.max(1, Math.ceil(totals.offline / GROUPED_CLIENTS_PER_PAGE));
+        }
+
+        const needsRefetch =
+          desiredPages.pageAll !== requestedPages.pageAll ||
+          desiredPages.pageNormal !== requestedPages.pageNormal ||
+          desiredPages.pageAlarm !== requestedPages.pageAlarm ||
+          desiredPages.pageOffline !== requestedPages.pageOffline;
+
+        if (needsRefetch) {
+          try {
+            json = await fetchPageData(desiredPages);
+          } catch (refetchErr) {
+            console.warn("Desc refetch failed, keeping initial page", refetchErr);
+          }
         }
       }
 
-      setAllTotal(resolvedTotal);
-      setAllNextPageUrl(allBucket?.next_page_url || null);
+      const allBucketFinal = json.data?.all_plant;
+      const normalBucketFinal = json.data?.normal_plant;
+      const alarmBucketFinal = json.data?.alarm_plant;
+      const offlineBucketFinal = json.data?.offline_plant;
+
+      const initialAllFinal = dedupeById(allBucketFinal?.data || []);
+      const initialNormalFinal = dedupeById(normalBucketFinal?.data || []);
+      const initialAlarmFinal = dedupeById(alarmBucketFinal?.data || []);
+      const initialOfflineFinal = dedupeById(offlineBucketFinal?.data || []);
+
+      setGroupedClients({
+        all_plant: initialAllFinal,
+        normal_plant: initialNormalFinal,
+        alarm_plant: initialAlarmFinal,
+        offline_plant: initialOfflineFinal,
+      });
+
+      setAllTotal(resolveTotal(allBucketFinal, initialAllFinal.length));
+      setNormalTotal(resolveTotal(normalBucketFinal, initialNormalFinal.length));
+      setAlarmTotal(resolveTotal(alarmBucketFinal, initialAlarmFinal.length));
+      setOfflineTotal(resolveTotal(offlineBucketFinal, initialOfflineFinal.length));
+      setAllNextPageUrl(allBucketFinal?.next_page_url || null);
       setLoading(false);
     } catch (err) {
       setError("Failed to load user list");
@@ -691,36 +819,6 @@ export default function AllUsers() {
     }
   };
   
-  const fetchNextAllPage = async () => {
-    if (loadingMoreAllRef.current || !allNextPageUrl) return;
-    loadingMoreAllRef.current = true;
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-      if (!token) return;
-
-      const resp = await fetch(allNextPageUrl, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!resp.ok) return;
-      const data = await resp.json();
-      const nextBucket = data?.data?.all_plant;
-      const newItems = nextBucket?.data || [];
-      setAllNextPageUrl(nextBucket?.next_page_url || null);
-      setGroupedClients((prev) => ({
-        ...prev,
-        all_plant: dedupeById([...prev.all_plant, ...newItems]),
-      }));
-    } catch (e) {
-      console.warn("Failed to fetch next all_plant page", e);
-    } finally {
-      loadingMoreAllRef.current = false;
-    }
-  };
-
   // Call Refresh/Sync API
   const runInverterCommand = async () => {
     if (isRefreshing) return;
@@ -750,50 +848,12 @@ export default function AllUsers() {
         throw new Error("Failed to run refresh command");
       }
 
-      // Refresh all tables
-      
-      fetchInverterTotals();
-      fetchGroupedClients();
-
       console.info("Sync command triggered successfully.");
     } catch (err) {
       console.error("Refresh failed", err);
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  // Fetch users when page or search changes
-  useEffect(() => {
-    fetchInverterTotals();
-    fetchGroupedClients();
-  
-  
-
-    // Refresh button countdown timer
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-
-    const date = new Date(dateString);
-    if (isNaN(date)) return "Invalid Date";
-
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = date.toLocaleString("en-US", { month: "short" });
-    const year = date.getFullYear();
-
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-
-    hours = hours % 12;
-    hours = hours ? hours : 12; // 0 becomes 12
-    const formattedHours = String(hours).padStart(2, "0");
-
-    return `${day} ${month} ${year}  ${formattedHours}:${minutes} ${ampm}`;
   };
 
   // Format time for "last refreshed at"
@@ -816,13 +876,20 @@ export default function AllUsers() {
     e.preventDefault();
   };
 
+  // Fetch users when page or status changes (search is client-side only); re-fetch when sort changes to map page ordering
+  useEffect(() => {
+    fetchInverterTotals();
+    fetchGroupedClients();
+    setSelectedUserIds(new Set());
+  }, [tablePage, selectedStatus, sortConfig.field, sortConfig.direction, allTotal, normalTotal, alarmTotal, offlineTotal]);
+
   useEffect(() => {
     const normalizedInput = searchInput.trim();
-
     const handler = setTimeout(() => {
       if (normalizedInput === search) return;
-      
       setSearch(normalizedInput);
+      // reset to first page of local results
+      setTablePage(1);
     }, 400);
 
     return () => clearTimeout(handler);
@@ -1347,18 +1414,38 @@ export default function AllUsers() {
   const filteredUsersRaw = normalizedSearchTerm
     ? displayedUsers.filter((user) => {
         const idValue = String(user.id ?? "").toLowerCase();
+        const userIdValue = String(user.user_id ?? "").toLowerCase();
+        const clientIdValue = String(user.client_id ?? "").toLowerCase();
+        const uidValue = String(user.uid ?? "").toLowerCase();
+        const qbitsUserIdValue = String(user.qbits_user_id ?? "").toLowerCase();
+        const plantNoValue = String(user.plant_no ?? "").toLowerCase();
+        const userIdAltValue = String(user.userid ?? "").toLowerCase();
         const usernameValue = (user.username ?? "").toLowerCase();
         const phoneValue = (user.phone ?? "").toLowerCase();
         const emailValue = (user.email ?? "").toLowerCase();
         const companyCodeValue = (user.company_code ?? "").toLowerCase();
         const collectorValue = (user.collector ?? "").toLowerCase();
+        const plantNameValue = (user.plant_name ?? "").toLowerCase();
+        const cityNameValue = (user.city_name ?? "").toLowerCase();
+        const inverterTypeValue = (user.inverter_type ?? "").toLowerCase();
+        const plantTypeValue = String(user.plant_type ?? "").toLowerCase();
         return [
           idValue,
+          userIdValue,
+          clientIdValue,
+          uidValue,
+          qbitsUserIdValue,
+          plantNoValue,
+          userIdAltValue,
           usernameValue,
           phoneValue,
           emailValue,
           companyCodeValue,
           collectorValue,
+          plantNameValue,
+          cityNameValue,
+          inverterTypeValue,
+          plantTypeValue,
         ].some((field) => field.includes(normalizedSearchTerm));
       })
     : displayedUsers;
@@ -1382,6 +1469,7 @@ export default function AllUsers() {
 
   // Check if any filter is active (only non-empty selections count as filters)
   const hasFilter =
+    (search && search.trim() !== "") ||
     (selectedInverter && selectedInverter.trim() !== "") ||
     (selectedCity && selectedCity.trim() !== "") ||
     (selectedPlantType !== null &&
@@ -1396,23 +1484,30 @@ export default function AllUsers() {
     hasFilter
   });
 
-  // Determine effective rows per page based on filter mode
-  const baseTotalCount =
-    hasFilter || searchInput.trim()
-      ? inverterFilteredUsers.length
-      : (allTotal || groupedClients.all_plant.length);
-  const effectiveRowsPerPage = hasFilter ? inverterFilteredUsers.length : rowsPerPage;
-  const totalTablePages = Math.max(1, Math.ceil(baseTotalCount / effectiveRowsPerPage));
-  const rowStartIndex = (tablePage - 1) * effectiveRowsPerPage;
-  const paginatedUsers = inverterFilteredUsers.slice(
-    rowStartIndex,
-    rowStartIndex + effectiveRowsPerPage
-  );
+  // Determine totals based on selected status
+  const currentTotal = (() => {
+    if (hasFilter) return inverterFilteredUsers.length;
+    if (selectedStatus === "normal") return normalTotal || groupedClients.normal_plant.length;
+    if (selectedStatus === "warning") return alarmTotal || groupedClients.alarm_plant.length;
+    if (selectedStatus === "fault") return offlineTotal || groupedClients.offline_plant.length;
+    return allTotal || groupedClients.all_plant.length;
+  })();
 
+  const totalTablePages = Math.max(1, Math.ceil(currentTotal / rowsPerPage));
+  const rowStartIndex = (tablePage - 1) * rowsPerPage;
+
+  // When not filtering, data is already server-paginated; do not slice again
+  const paginatedUsers = hasFilter
+    ? inverterFilteredUsers.slice(rowStartIndex, rowStartIndex + rowsPerPage)
+    : inverterFilteredUsers;
 
   useEffect(() => {
     setTablePage(1);
-  }, [selectedStatus, search, searchInput, selectedInverter, selectedCity, selectedPlantType]);
+  }, [selectedStatus, search, selectedInverter, selectedCity, selectedPlantType]);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [searchInput]);
 
   useEffect(() => {
     if (tablePage > totalTablePages) {
@@ -1420,25 +1515,9 @@ export default function AllUsers() {
     }
   }, [totalTablePages, tablePage]);
 
-  // Fetch additional all_plant pages on demand (standby tab, no filters/search)
-  useEffect(() => {
-    const normalizedSearchTerm = searchInput.trim();
-    const needsMoreAll =
-      selectedStatus === "standby" &&
-      !hasFilter &&
-      normalizedSearchTerm === "" &&
-      allNextPageUrl;
+  // Remove search-driven paging; search stays client-side only
 
-    if (!needsMoreAll) return;
-
-    const neededRows = tablePage * rowsPerPage;
-    const availableRows = groupedClients.all_plant.length;
-    if (availableRows < neededRows) {
-      fetchNextAllPage();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tablePage, groupedClients.all_plant.length, selectedStatus, hasFilter, allNextPageUrl]);
-
+  // If filter toggles on, reset page
   useEffect(() => {
     if (hasFilter && tablePage !== 1) {
       setTablePage(1);
@@ -1719,6 +1798,12 @@ export default function AllUsers() {
   function SortableHeader({ label, field }) {
     const isActive = sortConfig.field === field;
     const direction = isActive ? sortConfig.direction : null;
+    const icon = direction === "asc" ? "▲" : direction === "desc" ? "▼" : "▲";
+    const iconColor = !isActive
+      ? "#9ca3af"
+      : direction === "desc"
+        ? "#f97316"
+        : "#16a34a";
 
     return (
       <button
@@ -1727,8 +1812,11 @@ export default function AllUsers() {
         onClick={() => handleSort(field)}
       >
         <span className="th-label">{label}</span>
-        <span className={`th-icon ${direction === "asc" ? "asc" : direction === "desc" ? "desc" : ""}`}>
-          ▲
+        <span
+          className={`th-icon ${direction === "asc" ? "asc" : direction === "desc" ? "desc" : ""}`}
+          style={{ color: iconColor }}
+        >
+          {icon}
         </span>
       </button>
     );
@@ -2238,9 +2326,9 @@ export default function AllUsers() {
               <div className="ul-pagination">
                 <div className="pagination-info">
                   {hasFilter ? (
-                    <>Showing 1 to {inverterFilteredUsers.length} of {inverterFilteredUsers.length} entries</>
+                    <>Showing 1 to {paginatedUsers.length} of {currentTotal} entries</>
                   ) : (
-                    <>Showing {Math.min(rowStartIndex + 1, filteredUsers.length)} to {Math.min(rowStartIndex + rowsPerPage, filteredUsers.length)} of {filteredUsers.length} entries</>
+                    <>Showing {Math.min(rowStartIndex + 1, currentTotal)} to {Math.min(rowStartIndex + rowsPerPage, currentTotal)} of {currentTotal} entries</>
                   )}
                 </div>
                 {!hasFilter && (

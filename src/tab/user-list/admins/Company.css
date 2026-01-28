@@ -2,6 +2,11 @@
   width: auto;
 }
 
+/* Core layout aligned to Operators/Inverters UI */
+.company-page {
+  width: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
 
 .ul-container {
   box-sizing: border-box;
@@ -15,15 +20,35 @@
   box-shadow: 0 1px 2px #0000000a;
 }
 
-/* Layout */
+.company-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 
-.ul-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: visible;
-  /* allow inner scrollbars to be visible */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+.company-search {
+  margin-left: auto;
+}
+
+.company-search-input {
+  min-width: 260px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.company-search-input:focus {
+  border-color: #159f6c;
+  box-shadow: 0 0 0 3px rgba(21, 159, 108, 0.15);
+}
+
+.company-search-input::placeholder {
+  color: #9ca3af;
 }
 
 .ul-header {
@@ -89,6 +114,96 @@
   width: 100%;
   background: transparent;
   color: #0f172a;
+}
+
+.company-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.company-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.company-table thead th {
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.company-table tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #4b5563;
+  vertical-align: middle;
+}
+
+.company-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.company-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  padding: 14px 4px 4px;
+}
+
+.company-page-btn {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 38px;
+  transition: all 0.2s ease;
+}
+
+.company-page-btn:hover {
+  background: #f0f4f8;
+  border-color: #cbd5e1;
+}
+
+.company-page-btn.active {
+  background: #159f6c;
+  color: white;
+  border-color: #159f6c;
+  box-shadow: 0 4px 10px rgba(21, 159, 108, 0.2);
+}
+
+.company-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.company-pagination-ellipsis {
+  color: #9ca3af;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.company-empty {
+  padding: 18px;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.company-error {
+  color: #d13a2f;
+  background: #ffe9e8;
+  border: 1px solid #ffc6c1;
+  padding: 12px 14px;
+  border-radius: 8px;
 }
 
 /* Buttons */
