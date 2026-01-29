@@ -3961,13 +3961,13 @@ export default function AllUsers() {
 
                         </th>
 
-                        <th>
+                        <th className="col-email">
 
                           <SortableHeader label="Email" field="email" />
 
                         </th>
 
-                        <th>
+                        <th className="col-total-plant">
 
                           <SortableHeader label="Total Plant" field="all_plant" />
 
@@ -4209,12 +4209,6 @@ export default function AllUsers() {
 
                         </th>
 
-                        <th>
-
-                          <SortableHeader label="Total Plant" field="all_plant" />
-
-                        </th>
-
                         <th>WhatsApp Flag</th>
 
                         <th>Inverter Fault</th>
@@ -4325,9 +4319,9 @@ export default function AllUsers() {
 
                               <td>{u.phone ?? "N/A"}</td>
 
-                              <td>{u.email ?? "N/A"}</td>
+                              <td className="col-email">{u.email ?? "N/A"}</td>
 
-                              <td>{u.all_plant ?? "N/A"}</td>
+                              <td className="col-total-plant">{u.all_plant ?? "N/A"}</td>
 
                               <td>{u.inverter_type ?? "N/A"}</td>
 
