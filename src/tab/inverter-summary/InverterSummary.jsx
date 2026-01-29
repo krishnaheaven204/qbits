@@ -27,60 +27,6 @@ ChartJS.register(
   Legend
 );
 
-// Wave animation lifted from PlantDetails (SVG sine paths)
-function WaterWaveCircle({ percentage = 25 }) {
-  const [wavePath, setWavePath] = React.useState('');
-  const [offset, setOffset] = React.useState(0);
-
-  React.useEffect(() => {
-    const generateWave = (offset = 0) => {
-      const width = 400;
-      const amplitude = 12;
-      const waveY = 200 - percentage * 2;
-      let path = '';
-      for (let x = 0; x <= width; x++) {
-        const y = waveY + Math.sin((x + offset) * 0.03) * amplitude;
-        path += `${x === 0 ? 'M' : 'L'} ${x},${y} `;
-      }
-      path += `L ${width},200 L 0,200 Z`;
-      return path;
-    };
-
-    setWavePath(generateWave(offset));
-  }, [percentage, offset]);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setOffset((prev) => (prev + 2) % 400);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="water-wave-container">
-      <svg className="water-wave-svg" viewBox="0 0 200 200">
-        <defs>
-          <clipPath id="summaryCircleClip">
-            <circle cx="100" cy="100" r="98" />
-          </clipPath>
-        </defs>
-
-        <circle cx="100" cy="100" r="98" fill="white" stroke="#159f6c" strokeWidth="1.6" />
-
-        <g clipPath="url(#summaryCircleClip)" id="waveGroup">
-          <g className="wave1">
-            <path d={wavePath} fill="#159f6c" />
-          </g>
-        </g>
-      </svg>
-
-      <div className="wave-text">
-        <span className="wave-value">{percentage}%</span>
-      </div>
-    </div>
-  );
-}
-
 function BasicInfo({ items, loading }) {
   const rows = [];
   for (let i = 0; i < items.length; i += 3) {
@@ -111,25 +57,6 @@ function BasicInfo({ items, loading }) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function ProductionSummary({ stats, percentage = 25 }) {
-  return (
-    <div className="prod-card">
-      <div className="prod-wave-center">
-        <WaterWaveCircle percentage={percentage} />
-      </div>
-      <div className="prod-tile-grid">
-        {stats.map((tile) => (
-          <div key={tile.label} className="tile">
-            <div className="tile-value main">{tile.value}</div>
-            <div className="tile-label main">{tile.label}</div>
-            {tile.unit && <div className="tile-unit">{tile.unit}</div>}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -221,18 +148,6 @@ export default function InverterSummary({ inverterId, plantNo }) {
       { label: 'Panel Qty.', value: toDisplay(inv.panel_num) },
     ];
   }, [basicInfoData, inverterId]);
-
-  const prodStats = useMemo(
-    () => [
-      { label: 'Keep-live power', value: '1.4 kW' },
-      { label: 'Capacity', value: '5.6 kWp' },
-      { label: 'Day Production', value: '1.17 kWh' },
-      { label: 'Total Production', value: '2137 kWh' },
-      { label: 'kpi', value: '0.2' },
-      { label: 'Work Time', value: '2:8:0' },
-    ],
-    []
-  );
 
   const breadcrumbs = [
     { label: 'Back', action: () => router.back() },
@@ -689,7 +604,6 @@ export default function InverterSummary({ inverterId, plantNo }) {
 
       <div className="summary-layout">
         <BasicInfo items={basicInfo} loading={loadingBasicInfo} />
-        <ProductionSummary stats={prodStats} percentage={25} />
       </div>
 
       <div className="lower-layout">
