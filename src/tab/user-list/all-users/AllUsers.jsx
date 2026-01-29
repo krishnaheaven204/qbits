@@ -96,13 +96,21 @@ const formatDate = (value) => {
 
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleString("en-GB", {
 
     day: "2-digit",
 
     month: "short",
 
     year: "numeric",
+
+    hour: "2-digit",
+
+    minute: "2-digit",
+
+    second: "2-digit",
+
+    hour12: false,
 
   });
 
@@ -1153,6 +1161,20 @@ export default function AllUsers() {
         const va = parseFloat(a.total_power) || 0;
 
         const vb = parseFloat(b.total_power) || 0;
+
+        return direction === "asc" ? va - vb : vb - va;
+
+      }
+
+
+
+      // Total Plant: numeric
+
+      if (field === "all_plant") {
+
+        const va = parseFloat(a.all_plant) || 0;
+
+        const vb = parseFloat(b.all_plant) || 0;
 
         return direction === "asc" ? va - vb : vb - va;
 
@@ -3945,6 +3967,12 @@ export default function AllUsers() {
 
                         </th>
 
+                        <th>
+
+                          <SortableHeader label="Total Plant" field="all_plant" />
+
+                        </th>
+
                         <th className="relative col-inverter-type">
 
                           <div className="inverter-header">
@@ -4181,6 +4209,12 @@ export default function AllUsers() {
 
                         </th>
 
+                        <th>
+
+                          <SortableHeader label="Total Plant" field="all_plant" />
+
+                        </th>
+
                         <th>WhatsApp Flag</th>
 
                         <th>Inverter Fault</th>
@@ -4292,6 +4326,8 @@ export default function AllUsers() {
                               <td>{u.phone ?? "N/A"}</td>
 
                               <td>{u.email ?? "N/A"}</td>
+
+                              <td>{u.all_plant ?? "N/A"}</td>
 
                               <td>{u.inverter_type ?? "N/A"}</td>
 
