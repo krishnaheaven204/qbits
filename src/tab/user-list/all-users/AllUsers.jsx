@@ -8,9 +8,13 @@ import { createPortal } from "react-dom";
 
 import { useRouter } from "next/navigation";
 
+import { Inter } from "next/font/google";
+
 import "./AllUsers.css";
 
 
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 const API_BASE_URL =process.env.NEXT_PUBLIC_API_URL;
 
@@ -1770,15 +1774,11 @@ export default function AllUsers() {
 
       });
 
-
-
       if (!response.ok) {
 
         throw new Error("Failed to run refresh command");
 
       }
-
-
 
       console.info("Sync command triggered successfully.");
 
@@ -1866,8 +1866,6 @@ export default function AllUsers() {
 
     }, 400);
 
-
-
     return () => clearTimeout(handler);
 
   }, [searchInput, search]);
@@ -1928,15 +1926,11 @@ export default function AllUsers() {
 
       pages.push(1);
 
-
-
       // Calculate range around current page
 
       let startPage = Math.max(2, currentPage - 1);
 
       let endPage = Math.min(totalPages - 1, currentPage + 1);
-
-
 
       // Adjust if near the beginning
 
@@ -1946,8 +1940,6 @@ export default function AllUsers() {
 
       }
 
-
-
       // Adjust if near the end
 
       if (currentPage >= totalPages - 1) {
@@ -1955,8 +1947,6 @@ export default function AllUsers() {
         startPage = Math.max(2, totalPages - 3);
 
       }
-
-
 
       // Add ellipsis if needed
 
@@ -1966,8 +1956,6 @@ export default function AllUsers() {
 
       }
 
-
-
       // Add middle pages
 
       for (let i = startPage; i <= endPage; i++) {
@@ -1975,8 +1963,6 @@ export default function AllUsers() {
         pages.push(i);
 
       }
-
-
 
       // Add ellipsis if needed
 
@@ -1986,15 +1972,11 @@ export default function AllUsers() {
 
       }
 
-
-
       // Always show last page
 
       pages.push(totalPages);
 
     }
-
-
 
     return pages;
 
@@ -2048,8 +2030,6 @@ export default function AllUsers() {
 
       nextFlags.whatsapp_notification_flag = isEnabled ? 1 : 0;
 
-
-
       if (!isEnabled) {
 
         nextFlags.inverter_fault_flag = 1;
@@ -2067,8 +2047,6 @@ export default function AllUsers() {
       nextFlags[field] = isEnabled ? 1 : 0;
 
     }
-
-
 
     // Update groupedClients for instant UI
 
@@ -2098,8 +2076,6 @@ export default function AllUsers() {
 
     });
 
-
-
     // Update users state
 
      
@@ -2113,8 +2089,6 @@ export default function AllUsers() {
     } catch (err) {
 
       console.error("Failed to update API", err);
-
-
 
       // Rollback UI
 
@@ -2139,8 +2113,6 @@ export default function AllUsers() {
         };
 
       });
-
-
 
       setUsers((prev) =>
 
@@ -2192,15 +2164,11 @@ export default function AllUsers() {
 
     }
 
-
-
     if (!API_BASE_ROOT) {
 
       throw new Error("API base URL is not configured");
 
     }
-
-
 
     const url = `${API_BASE_ROOT}/client/whatsapp-notification-update`;
 
@@ -2236,8 +2204,6 @@ export default function AllUsers() {
 
     });
 
-
-
     if (!response.ok) {
 
       let errorDetails = "";
@@ -2257,8 +2223,6 @@ export default function AllUsers() {
       throw new Error(`Failed to update flags: ${errorDetails}`);
 
     }
-
-
 
     return response.json().catch(() => null);
 
@@ -2284,13 +2248,9 @@ export default function AllUsers() {
 
     }
 
-
-
     const url = `${API_BASE_ROOT}/client/company-code`;
 
     let finalCompanyCode = companyCode;
-
-
 
     // If admin left blank, set NULL
 
@@ -2309,8 +2269,6 @@ export default function AllUsers() {
       finalCompanyCode = null;
 
     }
-
-
 
     const payload = {
 
@@ -2342,19 +2300,13 @@ export default function AllUsers() {
 
       });
 
-
-
       const data = await response.json();
-
-
 
       if (!response.ok || data.success === false) {
 
         throw new Error(data.message || "Failed to update company code");
 
       }
-
-
 
       alert("Company code updated successfully");
 
@@ -2408,13 +2360,9 @@ export default function AllUsers() {
 
     if (!selectedQbitsUserId) return false;
 
-
-
     const token =
 
       typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-
-
 
     if (!token) {
 
@@ -2424,11 +2372,7 @@ export default function AllUsers() {
 
     }
 
-
-
     const finalValue = rawValue === null || rawValue === "" ? null : rawValue;
-
-
 
     // backend expects company_code, so send that
 
@@ -2443,8 +2387,6 @@ export default function AllUsers() {
 
 
     setQbitsModalLoading(true);
-
-
 
     try {
 
@@ -2466,19 +2408,13 @@ export default function AllUsers() {
 
       });
 
-
-
       const json = await response.json().catch(() => null);
-
-
 
       if (!response.ok) {
 
         throw new Error(json?.message || `HTTP ${response.status}`);
 
       }
-
-
 
       // Update frontend
 
@@ -2556,8 +2492,6 @@ export default function AllUsers() {
 
     }
 
-
-
     if (!API_BASE_ROOT) {
 
       alert("API base URL is not configured");
@@ -2566,13 +2500,9 @@ export default function AllUsers() {
 
     }
 
-
-
     const token =
 
       typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-
-
 
     if (!token) {
 
@@ -2582,11 +2512,7 @@ export default function AllUsers() {
 
     }
 
-
-
     const finalValue = rawValue === null || rawValue === "" ? null : rawValue;
-
-
 
     const payload = {
 
@@ -2620,8 +2546,6 @@ export default function AllUsers() {
 
       });
 
-
-
       let responseBody = null;
 
       try {
@@ -2634,8 +2558,6 @@ export default function AllUsers() {
 
       }
 
-
-
       if (!response.ok) {
 
         const message =
@@ -2645,8 +2567,6 @@ export default function AllUsers() {
         throw new Error(message);
 
       }
-
-
 
       setUsers((prev) =>
 
@@ -2712,8 +2632,6 @@ export default function AllUsers() {
 
     if (!isFilterOpen) return;
 
-
-
     const handleClickOutside = (event) => {
 
       if (
@@ -2732,23 +2650,17 @@ export default function AllUsers() {
 
     };
 
-
-
     const handleViewportChange = () => {
 
       updateFilterMenuPosition();
 
     };
 
-
-
     document.addEventListener("mousedown", handleClickOutside);
 
     window.addEventListener("scroll", handleViewportChange, true);
 
     window.addEventListener("resize", handleViewportChange);
-
-
 
     return () => {
 
@@ -2762,15 +2674,11 @@ export default function AllUsers() {
 
   }, [isFilterOpen, closeFilterMenu, updateFilterMenuPosition]);
 
-
-
   // City filter menu event listeners
 
   useEffect(() => {
 
     if (!isCityFilterOpen) return;
-
-
 
     const handleClickOutside = (event) => {
 
@@ -2790,23 +2698,17 @@ export default function AllUsers() {
 
     };
 
-
-
     const handleViewportChange = () => {
 
       updateCityFilterMenuPosition();
 
     };
 
-
-
     document.addEventListener("mousedown", handleClickOutside);
 
     window.addEventListener("scroll", handleViewportChange, true);
 
     window.addEventListener("resize", handleViewportChange);
-
-
 
     return () => {
 
@@ -2820,15 +2722,11 @@ export default function AllUsers() {
 
   }, [isCityFilterOpen, closeCityFilterMenu, updateCityFilterMenuPosition]);
 
-
-
   // Plant type filter menu event listeners
 
   useEffect(() => {
 
     if (!isPlantTypeFilterOpen) return;
-
-
 
     const handleClickOutside = (event) => {
 
@@ -2848,23 +2746,17 @@ export default function AllUsers() {
 
     };
 
-
-
     const handleViewportChange = () => {
 
       updatePlantTypeFilterMenuPosition();
 
     };
 
-
-
     document.addEventListener("mousedown", handleClickOutside);
 
     window.addEventListener("scroll", handleViewportChange, true);
 
     window.addEventListener("resize", handleViewportChange);
-
-
 
     return () => {
 
@@ -2878,19 +2770,13 @@ export default function AllUsers() {
 
   }, [isPlantTypeFilterOpen, closePlantTypeFilterMenu, updatePlantTypeFilterMenuPosition]);
 
-
-
   // Decide which grouped list to show in the table
 
   let displayedUsers = [];
 
-
-
   // Here we map your tab names to API keys
 
   // standby = Total, normal = Normal, warning = Fault, fault = Offline
-
-
 
   if (selectedStatus === "normal") {
 
@@ -2912,11 +2798,7 @@ export default function AllUsers() {
 
   }
 
-
-
   const normalizedSearchTerm = (search || "").trim().toLowerCase();
-
-
 
   const filteredUsersRaw = normalizedSearchTerm
     ? displayedUsers.filter((user) => {
@@ -2993,21 +2875,14 @@ export default function AllUsers() {
 
     : displayedUsers;
 
-
-
   const filteredUsers = sortData(filteredUsersRaw);
-
-
 
   // Apply city filter
 
   const cityFilteredUsers = selectedCity
-
     ? filteredUsers.filter(u => u.city_name === selectedCity)
 
     : filteredUsers;
-
-
 
   // Apply plant type filter
 
@@ -3017,17 +2892,12 @@ export default function AllUsers() {
 
     : cityFilteredUsers;
 
-
-
   // Apply inverter filter to paginated results
 
   const inverterFilteredUsers = selectedInverter
-
     ? plantTypeFilteredUsers.filter((u) => u.inverter_type === selectedInverter)
 
     : plantTypeFilteredUsers;
-
-
 
   // Check if any filter is active (only non-empty selections count as filters)
 
@@ -3043,8 +2913,6 @@ export default function AllUsers() {
 
      selectedPlantType !== "");
 
-
-
   // Debug logging
 
   console.log("CHECK FILTER STATE", {
@@ -3058,8 +2926,6 @@ export default function AllUsers() {
     hasFilter
 
   });
-
-
 
   // Determine totals based on selected status
 
@@ -3084,7 +2950,6 @@ export default function AllUsers() {
   // When not filtering, data is already server-paginated; do not slice again
 
   const paginatedUsers = hasFilter
-
     ? inverterFilteredUsers.slice(rowStartIndex, rowStartIndex + rowsPerPage)
 
     : inverterFilteredUsers;
@@ -3092,7 +2957,6 @@ export default function AllUsers() {
   const startEntry = currentTotal === 0 ? 0 : Math.min(rowStartIndex + 1, currentTotal);
 
   const endEntry = currentTotal === 0
-
     ? 0
 
     : Math.min(rowStartIndex + paginatedUsers.length, currentTotal);
@@ -3725,7 +3589,7 @@ export default function AllUsers() {
 
   return (
 
-    <div className="user-list-page-alluser">
+    <div className={`user-list-page-alluser ${inter.className}`}>
 
       <div className="ul-card-allusers">
 
