@@ -139,6 +139,7 @@ export default function Operators() {
       const fields = [
         normalize(row?.id),
         normalize(row?.collector_address),
+        normalize(row?.plant?.plant_name ?? row?.plant_name ?? row?.plantName),
         normalize(row?.model),
         normalize(stateMeta.label)
       ];
@@ -198,7 +199,7 @@ export default function Operators() {
               <input
                 type="text"
                 className="op-search-input"
-                placeholder="Search by ID, Collector, Model, State"
+                placeholder="Search by ID, Collector, Plant Name, Model, State"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="Search inverters"
@@ -217,7 +218,8 @@ export default function Operators() {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Collector Address</th>
+                        <th>Collector Address</th>                        
+                        <th>Plant Name</th>
                         <th>Model</th>
                         <th>Record Time</th>
                         <th>Created At</th>
@@ -236,8 +238,11 @@ export default function Operators() {
                               onClick={() => handleRowClick(row)}
                               style={{ cursor: row?.id ? 'pointer' : 'default' }}
                             >
+                              
                               <td>{row?.id ?? '—'}</td>
-                              <td>{row?.collector_address ?? '—'}</td>
+              
+                              <td>{row?.collector_address ?? '—'}</td> 
+                              <td>{row?.plant?.plant_name ?? row?.plant_name ?? row?.plantName ?? '—'}</td>
                               <td>{row?.model ?? '—'}</td>
                               <td>{formatDate(row?.record_time)}</td>
                               <td>{formatDateTime(row?.created_at)}</td>
@@ -250,7 +255,7 @@ export default function Operators() {
                         })
                       ) : (
                         <tr>
-                          <td className="op-empty-row" colSpan={7}>No inverter records found</td>
+                          <td className="op-empty-row" colSpan={8}>No inverter records found</td>
                         </tr>
                       )}
                     </tbody>
