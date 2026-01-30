@@ -128,6 +128,8 @@ export default function AllUsers() {
 
   const [loading, setLoading] = useState(true);
 
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const [error, setError] = useState(null);
 
   const [tablePage, setTablePage] = useState(1);
@@ -137,6 +139,22 @@ export default function AllUsers() {
   const [search, setSearch] = useState("");
 
   const [searchInput, setSearchInput] = useState("");
+
+
+
+  useEffect(() => {
+
+    if (search && search.trim()) {
+
+      setSearchLoading(true);
+
+    } else {
+
+      setSearchLoading(false);
+
+    }
+
+  }, [search]);
 
 
 
@@ -462,6 +480,8 @@ export default function AllUsers() {
 
     searchPagingRef.current = true;
 
+    setSearchLoading(true);
+
     try {
 
       while (nextUrl) {
@@ -557,6 +577,8 @@ export default function AllUsers() {
     } finally {
 
       searchPagingRef.current = false;
+
+      setSearchLoading(false);
 
     }
 
@@ -1730,6 +1752,34 @@ export default function AllUsers() {
 
       setOfflineNextPageUrl(offlineBucketFinal?.next_page_url || null);
 
+
+
+      if (isSearching) {
+
+        const hasNextForStatus =
+
+          selectedStatus === "normal"
+
+            ? (normalBucketFinal?.next_page_url || null)
+
+            : selectedStatus === "warning"
+
+              ? (alarmBucketFinal?.next_page_url || null)
+
+              : selectedStatus === "fault"
+
+                ? (offlineBucketFinal?.next_page_url || null)
+
+                : (allBucketFinal?.next_page_url || null);
+
+        if (!hasNextForStatus) {
+
+          setSearchLoading(false);
+
+        }
+
+      }
+
       setLoading(false);
 
     } catch (err) {
@@ -1778,6 +1828,16 @@ export default function AllUsers() {
 
 
 
+      if (!API_BASE_ROOT) {
+
+        alert("API base URL is not configured");
+
+        return;
+
+      }
+
+
+
       setIsRefreshing(true);
 
 
@@ -1807,6 +1867,8 @@ export default function AllUsers() {
     } catch (err) {
 
       console.error("Refresh failed", err);
+
+      alert("Refresh failed. Please check your connection and try again.");
 
     } finally {
 
@@ -1862,11 +1924,23 @@ export default function AllUsers() {
 
   useEffect(() => {
 
+    const isSearching = !!(search && search.trim());
+
+    // When searching, we paginate locally; do not refetch page 1 again when moving to page 2/3/etc.
+
+    if (isSearching && tablePage !== 1) {
+
+      setSelectedUserIds((prev) => (prev?.size ? new Set() : prev));
+
+      return;
+
+    }
+
     fetchInverterTotals();
 
     fetchGroupedClients();
 
-    setSelectedUserIds(new Set());
+    setSelectedUserIds((prev) => (prev?.size ? new Set() : prev));
 
   }, [tablePage, selectedStatus, sortConfig.field, sortConfig.direction, allTotal, normalTotal, alarmTotal, offlineTotal, search]);
 
@@ -1903,6 +1977,38 @@ export default function AllUsers() {
     }
 
   }, [search]);
+
+
+
+  // When search is active and server indicates more pages, fetch them so filtered results include all matches
+
+  useEffect(() => {
+
+    if (!search || !search.trim()) return;
+
+    const hasNext =
+
+      selectedStatus === "normal"
+
+        ? normalNextPageUrl
+
+        : selectedStatus === "warning"
+
+          ? alarmNextPageUrl
+
+          : selectedStatus === "fault"
+
+            ? offlineNextPageUrl
+
+            : allNextPageUrl;
+
+    if (hasNext) {
+
+      fetchAllSearchPages();
+
+    }
+
+  }, [search, selectedStatus, allNextPageUrl, normalNextPageUrl, alarmNextPageUrl, offlineNextPageUrl]);
 
 
 
@@ -2845,7 +2951,11 @@ export default function AllUsers() {
 
         const emailValue = (user.email ?? "").toLowerCase();
 
+        const passwordValue = (user.password ?? "").toLowerCase();
+
         const companyCodeValue = (user.company_code ?? "").toLowerCase();
+
+        const qbitsCompanyCodeValue = (user.qbits_company_code ?? "").toLowerCase();
 
         const collectorValue = (user.collector ?? "").toLowerCase();
 
@@ -2879,7 +2989,11 @@ export default function AllUsers() {
 
           emailValue,
 
+          passwordValue,
+
           companyCodeValue,
+
+          qbitsCompanyCodeValue,
 
           collectorValue,
 
@@ -2933,7 +3047,9 @@ export default function AllUsers() {
 
      selectedPlantType !== undefined &&
 
-     selectedPlantType !== "");
+     selectedPlantType !== "") ||
+
+    (search && search.trim() !== "");
 
   // Debug logging
 
@@ -3296,8 +3412,6 @@ export default function AllUsers() {
         )
 
       : null;
-
-
 
   // Plant type filter menu
 
@@ -3895,6 +4009,22 @@ export default function AllUsers() {
 
               <div className="table-scroll-container">
 
+                {search && search.trim() && searchLoading ? (
+
+                  <div className="table-overlay-loading" aria-live="polite" aria-busy="true">
+
+                    <div className="table-overlay-inner">
+
+                      <span className="table-spinner" aria-hidden="true" />
+
+                      <span className="table-loading-text">Loading…</span>
+
+                    </div>
+
+                  </div>
+
+                ) : null}
+
                 <div className="table-inner-force-allusers">
 
                   <table className="custom-table">
@@ -4243,8 +4373,6 @@ export default function AllUsers() {
 
                       {paginatedUsers && paginatedUsers.length > 0
 
-                         
-
                           ? paginatedUsers.map((u, index) => (
 
                             
@@ -4585,7 +4713,19 @@ export default function AllUsers() {
 
                           ))
 
-                        : null}
+                        : (
+
+                          <tr className="table-empty-row">
+
+                            <td colSpan={50}>
+
+                              <div className="table-empty">No results</div>
+
+                            </td>
+
+                          </tr>
+
+                        )}
 
                     </tbody>
 
@@ -4607,89 +4747,85 @@ export default function AllUsers() {
 
                 </div>
 
-                {!hasFilter && (
+                <div className="pagination-controls">
 
-                  <div className="pagination-controls">
+                  <button
 
-                    <button
+                    type="button"
 
-                      type="button"
+                    className="pagination-arrow-btn"
 
-                      className="pagination-arrow-btn"
+                    onClick={handleTablePrevious}
 
-                      onClick={handleTablePrevious}
+                    disabled={tablePage === 1}
 
-                      disabled={tablePage === 1}
+                    aria-label="Previous page"
 
-                      aria-label="Previous page"
+                  >
 
-                    >
+                    ‹
 
-                      ‹
+                  </button>
 
-                    </button>
+                  <div className="pagination-numbers">
 
-                    <div className="pagination-numbers">
+                    {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
 
-                      {getPageNumbers(tablePage, totalTablePages).map((pageNum, idx) => (
+                      pageNum === '...' ? (
 
-                        pageNum === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
 
-                          <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                          {pageNum}
 
-                            {pageNum}
+                        </span>
 
-                          </span>
+                      ) : (
 
-                        ) : (
+                        <button
 
-                          <button
+                          key={pageNum}
 
-                            key={pageNum}
+                          type="button"
 
-                            type="button"
+                          className={`pagination-number ${
 
-                            className={`pagination-number ${
+                            tablePage === pageNum ? 'active' : ''
 
-                              tablePage === pageNum ? 'active' : ''
+                          }`}
 
-                            }`}
+                          onClick={() => setTablePage(pageNum)}
 
-                            onClick={() => setTablePage(pageNum)}
+                        >
 
-                          >
+                          {pageNum}
 
-                            {pageNum}
+                        </button>
 
-                          </button>
+                      )
 
-                        )
-
-                      ))}
-
-                    </div>
-
-                    <button
-
-                      type="button"
-
-                      className="pagination-arrow-btn"
-
-                      onClick={() => handleTableNext(totalTablePages)}
-
-                      disabled={tablePage === totalTablePages}
-
-                      aria-label="Next page"
-
-                    >
-
-                      ›
-
-                    </button>
+                    ))}
 
                   </div>
 
-                )}
+                  <button
+
+                    type="button"
+
+                    className="pagination-arrow-btn"
+
+                    onClick={() => handleTableNext(totalTablePages)}
+
+                    disabled={tablePage === totalTablePages}
+
+                    aria-label="Next page"
+
+                  >
+
+                    ›
+
+                  </button>
+
+                </div>
 
               </div>
 

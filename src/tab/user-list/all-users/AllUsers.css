@@ -112,6 +112,39 @@
   padding: 10px 12px;
   border-radius: 8px;
 }
+
+
+
+.table-loading-row td {
+  padding: 18px 12px;
+}
+
+.table-loading-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.table-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #159f6c;
+  animation: tableSpin 0.8s linear infinite;
+}
+
+@keyframes tableSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .page-btn{
   appearance: none;
   border: 1px solid transparent;
@@ -201,6 +234,29 @@
   background: #ffffff;
   position: relative;
   -webkit-overflow-scrolling: touch;
+}
+
+.table-overlay-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.75);
+  z-index: 50;
+}
+
+.table-overlay-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-weight: 700;
 }
 
 .table-inner-force-allusers {
@@ -504,7 +560,7 @@
 }
 
 .custom-table .col-updated {
-  right: 0;
+  right: 80px;
   min-width: 150px;
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
 }
