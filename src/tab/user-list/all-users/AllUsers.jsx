@@ -1482,27 +1482,139 @@ export default function AllUsers() {
 
       const isSearching = !!(search && search.trim());
 
+      const hasUiFilters =
+
+        (selectedInverter && selectedInverter.trim() !== "") ||
+
+        (selectedCity && selectedCity.trim() !== "") ||
+
+        (selectedPlantType !== null &&
+
+         selectedPlantType !== undefined &&
+
+         selectedPlantType !== "");
+
+      const isIdDescPaging =
+
+        !isSearching &&
+
+        !hasUiFilters &&
+
+        sortConfig.field === "id" &&
+
+        sortConfig.direction === "desc";
+
+      const getBucketKey = () => {
+
+        if (selectedStatus === "normal") return "normal_plant";
+
+        if (selectedStatus === "warning") return "alarm_plant";
+
+        if (selectedStatus === "fault") return "offline_plant";
+
+        return "all_plant";
+
+      };
+
+      const getSelectedTotal = () => {
+
+        if (selectedStatus === "normal") return normalTotal || fallbackCount(groupedClients.normal_plant);
+
+        if (selectedStatus === "warning") return alarmTotal || fallbackCount(groupedClients.alarm_plant);
+
+        if (selectedStatus === "fault") return offlineTotal || fallbackCount(groupedClients.offline_plant);
+
+        return allTotal || fallbackCount(groupedClients.all_plant);
+
+      };
+
+      const buildDescWindow = (total) => {
+
+        const safeTotal = Math.max(0, Number(total) || 0);
+
+        if (safeTotal === 0) return null;
+
+        const per = rowsPerPage;
+
+        const page = Math.max(1, tablePage);
+
+        const high = safeTotal - 1 - (page - 1) * per;
+
+        if (high < 0) return null;
+
+        const low = Math.max(0, safeTotal - page * per);
+
+        const endPage = Math.floor(high / per) + 1;
+
+        const startPage = Math.floor(low / per) + 1;
+
+        const globalStart = (startPage - 1) * per;
+
+        const startOffset = low - globalStart;
+
+        const endOffsetExclusive = (high - globalStart) + 1;
+
+        return { startPage, endPage, startOffset, endOffsetExclusive };
+
+      };
+
+      const selectedBucketKey = getBucketKey();
+
+      const descWindow = isIdDescPaging ? buildDescWindow(getSelectedTotal()) : null;
+
       const pageAll = selectedStatus === "standby"
 
-        ? (isSearching ? 1 : pageResolver(allTotal || fallbackCount(groupedClients.all_plant)))
+        ? (isSearching
+
+            ? 1
+
+            : (descWindow && selectedBucketKey === "all_plant")
+
+              ? descWindow.endPage
+
+              : pageResolver(allTotal || fallbackCount(groupedClients.all_plant)))
 
         : 1;
 
       const pageNormal = selectedStatus === "normal"
 
-        ? (isSearching ? 1 : pageResolver(normalTotal || fallbackCount(groupedClients.normal_plant)))
+        ? (isSearching
+
+            ? 1
+
+            : (descWindow && selectedBucketKey === "normal_plant")
+
+              ? descWindow.endPage
+
+              : pageResolver(normalTotal || fallbackCount(groupedClients.normal_plant)))
 
         : 1;
 
       const pageAlarm = selectedStatus === "warning"
 
-        ? (isSearching ? 1 : pageResolver(alarmTotal || fallbackCount(groupedClients.alarm_plant)))
+        ? (isSearching
+
+            ? 1
+
+            : (descWindow && selectedBucketKey === "alarm_plant")
+
+              ? descWindow.endPage
+
+              : pageResolver(alarmTotal || fallbackCount(groupedClients.alarm_plant)))
 
         : 1;
 
       const pageOffline = selectedStatus === "fault"
 
-        ? (isSearching ? 1 : pageResolver(offlineTotal || fallbackCount(groupedClients.offline_plant)))
+        ? (isSearching
+
+            ? 1
+
+            : (descWindow && selectedBucketKey === "offline_plant")
+
+              ? descWindow.endPage
+
+              : pageResolver(offlineTotal || fallbackCount(groupedClients.offline_plant)))
 
         : 1;
 
@@ -1654,19 +1766,19 @@ export default function AllUsers() {
 
         if (selectedStatus === "standby") {
 
-          desiredPages.pageAll = Math.max(1, Math.ceil(totals.all / GROUPED_CLIENTS_PER_PAGE));
+          desiredPages.pageAll = pageResolver(totals.all);
 
         } else if (selectedStatus === "normal") {
 
-          desiredPages.pageNormal = Math.max(1, Math.ceil(totals.normal / GROUPED_CLIENTS_PER_PAGE));
+          desiredPages.pageNormal = pageResolver(totals.normal);
 
         } else if (selectedStatus === "warning") {
 
-          desiredPages.pageAlarm = Math.max(1, Math.ceil(totals.alarm / GROUPED_CLIENTS_PER_PAGE));
+          desiredPages.pageAlarm = pageResolver(totals.alarm);
 
         } else if (selectedStatus === "fault") {
 
-          desiredPages.pageOffline = Math.max(1, Math.ceil(totals.offline / GROUPED_CLIENTS_PER_PAGE));
+          desiredPages.pageOffline = pageResolver(totals.offline);
 
         }
 
@@ -1719,6 +1831,112 @@ export default function AllUsers() {
       const initialAlarmFinal = dedupeById(alarmBucketFinal?.data || []);
 
       const initialOfflineFinal = dedupeById(offlineBucketFinal?.data || []);
+
+
+
+      const descWindowResolved = isIdDescPaging
+
+        ? buildDescWindow(
+
+            selectedStatus === "normal"
+
+              ? totals.normal
+
+              : selectedStatus === "warning"
+
+                ? totals.alarm
+
+                : selectedStatus === "fault"
+
+                  ? totals.offline
+
+                  : totals.all
+
+          )
+
+        : null;
+
+
+
+      if (descWindowResolved) {
+
+        const fetchAdjPage = async (targetPage) => {
+
+          const overridePages = {
+
+            pageAll,
+
+            pageNormal,
+
+            pageAlarm,
+
+            pageOffline,
+
+          };
+
+          if (selectedBucketKey === "all_plant") overridePages.pageAll = targetPage;
+
+          if (selectedBucketKey === "normal_plant") overridePages.pageNormal = targetPage;
+
+          if (selectedBucketKey === "alarm_plant") overridePages.pageAlarm = targetPage;
+
+          if (selectedBucketKey === "offline_plant") overridePages.pageOffline = targetPage;
+
+          const extraJson = await fetchPageData(overridePages);
+
+          const bucket = extraJson?.data?.[selectedBucketKey];
+
+          return dedupeById(bucket?.data || []);
+
+        };
+
+        let endPageData =
+
+          selectedBucketKey === "all_plant"
+
+            ? initialAllFinal
+
+            : selectedBucketKey === "normal_plant"
+
+              ? initialNormalFinal
+
+              : selectedBucketKey === "alarm_plant"
+
+                ? initialAlarmFinal
+
+                : initialOfflineFinal;
+
+        let combined = endPageData;
+
+        if (descWindowResolved.startPage !== descWindowResolved.endPage) {
+
+          const startPageData = await fetchAdjPage(descWindowResolved.startPage);
+
+          combined = dedupeById([...startPageData, ...endPageData]);
+
+        }
+
+        const windowSlice = combined.slice(descWindowResolved.startOffset, descWindowResolved.endOffsetExclusive);
+
+        if (selectedBucketKey === "all_plant") {
+
+          initialAllFinal.splice(0, initialAllFinal.length, ...windowSlice);
+
+        } else if (selectedBucketKey === "normal_plant") {
+
+          initialNormalFinal.splice(0, initialNormalFinal.length, ...windowSlice);
+
+        } else if (selectedBucketKey === "alarm_plant") {
+
+          initialAlarmFinal.splice(0, initialAlarmFinal.length, ...windowSlice);
+
+        } else {
+
+          initialOfflineFinal.splice(0, initialOfflineFinal.length, ...windowSlice);
+
+        }
+
+      }
 
 
 
