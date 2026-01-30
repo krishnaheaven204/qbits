@@ -75,7 +75,8 @@ export default function FaultInfo() {
 
   const sortedFaults = useMemo(() => {
     const safeDate = (value) => parseDate(value)?.getTime() || 0;
-    return [...faults].sort((a, b) => safeDate(b?.stime) - safeDate(a?.stime));
+    const sortKey = (fault) => Math.max(safeDate(fault?.stime), safeDate(fault?.etime));
+    return [...faults].sort((a, b) => sortKey(b) - sortKey(a));
   }, [faults]);
 
   const hasFaults = sortedFaults.length > 0;
