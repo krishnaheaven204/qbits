@@ -126,7 +126,63 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="dashboard-page">
+    <>
+    <div className="container">
+      <div className="dashboard-header">
+          <h4 className="dashboard-title mb-1">Dashboard</h4>
+        </div>
+      <div className="row g-3">
+         <div className="col-12 col-lg-6">
+          <div className="card" style={{ border: '1px solid #e7ecf2' }}>
+            <div className="card-header">
+              Plant Status
+            </div>
+            <div className="card-body">
+              <div className="metric-row">
+                <div className="metric-blocks">
+                  <div className="metric-strip">
+                    {statusMetrics.map((metric) => (
+                      <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
+                        <div className={`metric-icon-bubble tone-${metric.tone}`}>
+                          <MetricIcon type={metric.icon} />
+                        </div>
+                        <div className="metric-label">{metric.label}</div>
+                        <div className="metric-value">{metric.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+         <div className="col-12 col-lg-6">
+          <div className="card" style={{ border: '1px solid #e7ecf2' }}>
+            <div className="card-header">
+                Plant Metrics
+              </div>
+            <div className="card-body">
+              <div className="metric-blocks">
+                <div className="metric-strip">
+                  {energyMetrics.map((metric) => (
+                    <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
+                      <div className={`metric-icon-bubble tone-${metric.tone}`}>
+                        <MetricIcon type={metric.icon} />
+                      </div>
+                      <div className="metric-label">{metric.label}</div>
+                      <div className="metric-value">{metric.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+    {/* <div className="dashboard-pages">
       <div className="card qbits-card dashboard-shell">
         <div className="dashboard-header">
           <h4 className="dashboard-title mb-1">Dashboard</h4>
@@ -134,23 +190,9 @@ export default function Dashboard() {
         </div>
 
         <div className="metric-row">
-          <div className="metric-block">
+          <div className="metric-blocks">
             <div className="metric-strip">
               {statusMetrics.map((metric) => (
-                <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
-                  <div className={`metric-icon-bubble tone-${metric.tone}`}>
-                    <MetricIcon type={metric.icon} />
-                  </div>
-                  <div className="metric-label">{metric.label}</div>
-                  <div className="metric-value">{metric.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="metric-block">
-            <div className="metric-strip">
-              {energyMetrics.map((metric) => (
                 <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
                   <div className={`metric-icon-bubble tone-${metric.tone}`}>
                     <MetricIcon type={metric.icon} />
@@ -164,6 +206,29 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    <div className="dashboard-pages">
+      <div className="card qbits-card dashboard-shell">
+        <div className="dashboard-header">
+          <h4 className="dashboard-title mb-1">Dashboard</h4>
+          <p className="dashboard-subtitle mb-0">Professional, minimal snapshot of plant health and energy</p>
+        </div>
+
+          <div className="metric-blocks">
+            <div className="metric-strip">
+              {energyMetrics.map((metric) => (
+                <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
+                  <div className={`metric-icon-bubble tone-${metric.tone}`}>
+                    <MetricIcon type={metric.icon} />
+                  </div>
+                  <div className="metric-label">{metric.label}</div>
+                  <div className="metric-value">{metric.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div> */}
+    </>
   );
 }
 
