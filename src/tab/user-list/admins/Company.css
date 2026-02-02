@@ -118,7 +118,10 @@
 
 .company-table-wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
 }
 
 .company-table {
@@ -141,6 +144,7 @@
   border-bottom: 1px solid #f1f5f9;
   color: #4b5563;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .company-table tbody tr:hover {
@@ -405,6 +409,54 @@
 .custom-table tbody tr:hover .sticky-col,
 .custom-table tbody tr:hover .sticky-col-right {
   background-color: #e7f1ff;
+}
+
+@media (max-width: 768px) {
+  /* Stack title and search on mobile */
+  .company-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .company-search {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .company-search-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Make table horizontally scrollable with a compact width baseline */
+  .company-table-wrapper {
+    margin-top: 8px;
+    padding-bottom: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width:100vw;
+    width: 70vw;
+  }
+
+  .company-table {
+    width: max-content;
+    min-width: 1100px;
+  }
+
+  .company-table thead th,
+  .company-table tbody td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  /* Allow the card/page to scroll horizontally if needed */
+  .company-page,
+  .company-page .qbits-card,
+  .company-page .card-body {
+    overflow-x: auto;
+  }
 }
 
 /* Alternating row colors */
