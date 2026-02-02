@@ -120,6 +120,8 @@ const formatDate = (value) => {
 
 export default function AllUsers() {
 
+  const MOBILE_BREAKPOINT = 768;
+
   const router = useRouter();
 
   const fetchLock = useRef(false);
@@ -133,6 +135,16 @@ export default function AllUsers() {
   const [error, setError] = useState(null);
 
   const [tablePage, setTablePage] = useState(1);
+
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+
+    if (typeof window === "undefined") return false;
+
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+
+    return mq.matches || window.innerWidth <= MOBILE_BREAKPOINT;
+
+  });
 
   const rowsPerPage = 25;
 
@@ -155,6 +167,52 @@ export default function AllUsers() {
     }
 
   }, [search]);
+
+  useEffect(() => {
+
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+
+    const handleResize = () => {
+
+      const match = mediaQuery.matches || window.innerWidth <= MOBILE_BREAKPOINT;
+
+      setIsMobileViewport(match);
+
+    };
+
+    handleResize();
+
+    if (mediaQuery.addEventListener) {
+
+      mediaQuery.addEventListener('change', handleResize);
+
+    } else if (mediaQuery.addListener) {
+
+      mediaQuery.addListener(handleResize);
+
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+
+      if (mediaQuery.removeEventListener) {
+
+        mediaQuery.removeEventListener('change', handleResize);
+
+      } else if (mediaQuery.removeListener) {
+
+        mediaQuery.removeListener(handleResize);
+
+      }
+
+      window.removeEventListener('resize', handleResize);
+
+    };
+
+  }, []);
 
 
 
@@ -2250,6 +2308,52 @@ export default function AllUsers() {
 
   const getPageNumbers = (currentPage, totalPages) => {
 
+    const uaMobile =
+
+      typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const isMobile =
+
+      isMobileViewport ||
+
+      uaMobile ||
+
+      (typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT);
+
+    // Mobile: show only current + next two, then ellipsis + last
+
+    if (isMobile) {
+
+      if (totalPages <= 3) {
+
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+      }
+
+      const clampedCurrent = Math.min(Math.max(currentPage, 1), totalPages);
+
+      const start = Math.min(clampedCurrent, Math.max(1, totalPages - 2));
+
+      const pages = [start, Math.min(start + 1, totalPages), Math.min(start + 2, totalPages)];
+
+      // Remove duplicates if near end
+
+      const uniquePages = Array.from(new Set(pages.filter((p) => p >= 1 && p <= totalPages)));
+
+      if (uniquePages[uniquePages.length - 1] < totalPages) {
+
+        uniquePages.push('...');
+
+        uniquePages.push(totalPages);
+
+      }
+
+      return uniquePages;
+
+    }
+
+    // Desktop (existing behavior)
+
     const maxVisible = 5;
 
     const pages = [];
@@ -3944,34 +4048,65 @@ export default function AllUsers() {
   return (
 
     <div className={`user-list-page-alluser ${inter.className}`}>
+      {flagMenu}
 
       <div className="ul-card-allusers">
 
         <div className="ul-header">
 
+        <div className="ul-header-top">
+
           <div className="ul-header-text">
 
             <h5 className="ul-title">Station List</h5>
 
-             
-
-            <button
-
-              className="refresh-btn"
-
-              onClick={runInverterCommand}
-
-              disabled={isRefreshing}
-
-            >
-
-              {isRefreshing ? "Refreshing…" : "⟳ Refresh"}
-
-            </button>
-
           </div>
 
+          <button
 
+            className="refresh-btn"
+
+            onClick={runInverterCommand}
+
+            disabled={isRefreshing}
+
+          >
+
+            {isRefreshing ? "Refreshing…" : "⟳ Refresh"}
+
+          </button>
+
+        </div>
+
+        <div className="ul-header-actions">
+
+          <button
+
+            type="button"
+
+            ref={flagMenuButtonRef}
+
+            className={`column-visibility-btn mobile-filter-btn ${isFlagMenuOpen ? "active" : ""}`}
+
+            aria-label="Toggle flag columns"
+
+            aria-expanded={isFlagMenuOpen}
+
+            onClick={handleFlagMenuToggle}
+
+          >
+
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+              <path d="M4 6H20" />
+
+              <path d="M4 12H14" />
+
+              <path d="M4 18H10" />
+
+            </svg>
+
+          </button>
 
           <form onSubmit={handleSearchSubmit} className="ul-search">
 
@@ -4019,44 +4154,11 @@ export default function AllUsers() {
 
         </div>
 
-        <div className="ul-body">
+      </div>
 
-          <div className="table-actions flag-actions">
+      <div className="ul-body">
 
-            <button
-
-              type="button"
-
-              ref={flagMenuButtonRef}
-
-              className={`column-visibility-btn ${isFlagMenuOpen ? "active" : ""}`}
-
-              aria-label="Toggle flag columns"
-
-              aria-expanded={isFlagMenuOpen}
-
-              onClick={handleFlagMenuToggle}
-
-            >
-
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-
-                <path d="M4 6H20" />
-
-                <path d="M4 12H14" />
-
-                <path d="M4 18H10" />
-
-              </svg>
-
-            </button>
-
-            <span className="flag-actions-label"></span>
-
-          </div>
-
-          {loading ? (
-
+        {loading ? (
             <div className="ul-empty">
 
               <p className="ul-muted">Loading users...</p>

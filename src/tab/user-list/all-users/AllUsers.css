@@ -21,6 +21,21 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
+.ul-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: auto;
+}
+
+.ul-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: auto;
+}
+
 .ul-header-text {
   display: flex;
   flex-direction: column;
@@ -58,12 +73,59 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 8px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   min-width: 280px;
   background: #fff;
   transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .ul-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ul-header-top {
+    width: 100%;
+  }
+
+  .ul-header-actions {
+    width: 100%;
+  }
+
+  .ul-header-actions .column-visibility-btn {
+    flex-shrink: 0;
+  }
+
+  .ul-header-actions .ul-search {
+    flex: 1;
+  }
+
+  .ul-header-actions .ul-search-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Stack status cards vertically on mobile */
+  .status-box-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .status-card {
+    width: 100%;
+  }
+
+  /* Allow horizontal scroll on mobile; remove sticky columns */
+  .custom-table .sticky-col,
+  .custom-table .sticky-col-right {
+    position: static;
+    left: auto;
+    right: auto;
+    z-index: auto;
+  }
 }
 
 .ul-search-icon {
@@ -193,7 +255,7 @@
 }
 
 .column-visibility-btn {
-  padding: 6px 8px;
+  padding: 9px 9px;
   border: 1px solid #d1d5db;
   background: #ffffff;
   border-radius: 8px;
@@ -569,6 +631,35 @@
   right: 0;
   min-width: 80px;
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 768px) {
+  /* Remove sticky behavior on mobile so columns scroll */
+  .custom-table thead,
+  .custom-table th {
+    position: static;
+    top: auto;
+    z-index: auto;
+  }
+
+  .custom-table .sticky-col,
+  .custom-table .sticky-col-right {
+    position: static;
+    left: auto;
+    right: auto;
+    box-shadow: none;
+    z-index: auto;
+  }
+
+  .custom-table .col-check,
+  .custom-table .col-id,
+  .custom-table .col-username,
+  .custom-table .col-updated,
+  .custom-table .col-view {
+    left: auto;
+    right: auto;
+    min-width: auto;
+  }
 }
 
 .th-sortable {
@@ -1014,7 +1105,6 @@ input:checked + .toggle-slider:before {
 
 /* CARD */
 .status-card {
-  width: 230px;
   background: #ffffff;
   padding: 7px 8px;
   border-radius: 1rem;
@@ -1328,6 +1418,35 @@ input:checked + .toggle-slider:before {
   color: #9ca3af;
   font-weight: 700;
   padding: 0 6px;
+}
+
+/* Mobile pagination centering */
+@media (max-width: 768px) {
+  .ul-pagination {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .pagination-info {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+
+  .pagination-controls {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .pagination-numbers {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 /* City search input styling */
