@@ -10,33 +10,22 @@ const STATUS_TABS = [
 ];
 
 const buildPageList = (total, current) => {
-  if (total <= 7) {
+  if (total <= 5) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
-  const candidatePages = new Set([
-    1,
-    total,
-    current - 1,
-    current,
-    current + 1,
-    current - 2,
-    current + 2
-  ].filter((p) => p >= 1 && p <= total));
-
-  const sortedPages = Array.from(candidatePages).sort((a, b) => a - b);
-  const pageList = [];
-
-  for (let i = 0; i < sortedPages.length; i += 1) {
-    const page = sortedPages[i];
-    const prevPage = sortedPages[i - 1];
-    if (i > 0 && page - prevPage > 1) {
-      pageList.push('ellipsis');
-    }
-    pageList.push(page);
+  // Always show first three when near the start
+  if (current <= 3) {
+    return [1, 2, 3, 'ellipsis', total];
   }
 
-  return pageList;
+  // Always show last three when near the end
+  if (current >= total - 2) {
+    return [1, 'ellipsis', total - 2, total - 1, total];
+  }
+
+  // Middle range: show current flanked by neighbors, plus first/last with ellipses
+  return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total];
 };
 
 const getStatusMeta = (status) => {
@@ -75,7 +64,8 @@ export default function FaultInfo() {
 
   const sortedFaults = useMemo(() => {
     const safeDate = (value) => parseDate(value)?.getTime() || 0;
-    const sortKey = (fault) => Math.max(safeDate(fault?.stime), safeDate(fault?.etime));
+    const sortKey = (fault) => safeDate(fault?.stime);
+    // Newest start time first
     return [...faults].sort((a, b) => sortKey(b) - sortKey(a));
   }, [faults]);
 
@@ -200,55 +190,56 @@ export default function FaultInfo() {
           ) : error ? (
             <div className="fault-empty error-text">{error}</div>
           ) : (
-            <div className="fault-table-wrapper">
-              <table className="fault-table">
-                <thead>
-                  <tr>
-                    <th>Status</th>
-                    <th>Station Name</th>
-                    <th>Device</th>
-                    <th>Serial</th>
-                    <th>Fault Info</th>
-                    <th>Start</th>
-                    <th>End</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hasFaults ? (
-                    sortedFaults.map((fault) => {
-                      const statusMeta = getStatusMeta(fault?.status);
-                      const faultMessage = Array.isArray(fault?.message_en)
-                        ? fault.message_en.join(', ')
-                        : fault?.message_en || fault?.fault_name || 'N/A';
-                      const deviceModel =
-                        fault?.model ||
-                        fault?.device_model ||
-                        fault?.inverter_model ||
-                        fault?.inverter?.model ||
-                        'N/A';
-
-                      return (
-                        <tr key={fault?.id || `${fault?.plant_name}-${fault?.stime}`}>
-                          <td>
-                            <span className={`status-badge ${statusMeta.className}`}>{statusMeta.label}</span>
-                          </td>
-                          <td>{fault?.atun || fault?.plant_name || fault?.station_name || 'N/A'}</td>
-                          <td>{deviceModel}</td>
-                          <td>{fault?.serial_no || fault?.sn || 'N/A'}</td>
-                          <td>{faultMessage}</td>
-                          <td>{formatDateTime(fault?.stime)}</td>
-                          <td>{formatDateTime(fault?.etime)}</td>
-                        </tr>
-                      );
-                    })
-                  ) : (
+            <>
+              <div className="fault-table-wrapper">
+                <table className="fault-table">
+                  <thead>
                     <tr>
-                      <td className="fault-empty" colSpan={7}>No fault records found</td>
+                      <th>Status</th>
+                      <th>Station Name</th>
+                      <th>Device</th>
+                      <th>Serial</th>
+                      <th>Fault Info</th>
+                      <th>Start</th>
+                      <th>End</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {hasFaults ? (
+                      sortedFaults.map((fault) => {
+                        const statusMeta = getStatusMeta(fault?.status);
+                        const faultMessage = Array.isArray(fault?.message_en)
+                          ? fault.message_en.join(', ')
+                          : fault?.message_en || fault?.fault_name || 'N/A';
+                        const deviceModel =
+                          fault?.model ||
+                          fault?.device_model ||
+                          fault?.inverter_model ||
+                          fault?.inverter?.model ||
+                          'N/A';
 
+                        return (
+                          <tr key={fault?.id || `${fault?.plant_name}-${fault?.stime}`}>
+                            <td>
+                              <span className={`status-badge ${statusMeta.className}`}>{statusMeta.label}</span>
+                            </td>
+                            <td>{fault?.atun || fault?.plant_name || fault?.station_name || 'N/A'}</td>
+                            <td>{deviceModel}</td>
+                            <td>{fault?.serial_no || fault?.sn || 'N/A'}</td>
+                            <td>{faultMessage}</td>
+                            <td>{formatDateTime(fault?.stime)}</td>
+                            <td>{formatDateTime(fault?.etime)}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td className="fault-empty" colSpan={7}>No fault records found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
               <div className="fault-pagination-container">
                 <button
                   className="fault-pagination-arrow"
@@ -278,7 +269,7 @@ export default function FaultInfo() {
                   ›
                 </button>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>

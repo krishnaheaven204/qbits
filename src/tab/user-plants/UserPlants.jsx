@@ -239,11 +239,7 @@ export default function UserPlants() {
           <div className="up-header-text">
             <h5 className="up-title">Plant List</h5>
           </div>
-          {userName && (
-            <div className="up-user-info">
-              <p className="up-user-name">Username :- <strong>{userName}</strong></p>
-            </div>
-          )}
+           
         </div>
 
         <div className="up-body">

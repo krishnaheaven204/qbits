@@ -189,7 +189,7 @@
   color: #d13a2f;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .fault-card-header {
     flex-direction: column;
     align-items: flex-start;
@@ -203,6 +203,65 @@
   .fault-tab {
     flex: 1 0 auto;
     text-align: center;
+  }
+
+  .fault-info-page {
+    padding: 6px 6px 30px;
+  }
+
+  .fault-card {
+    padding: 10px 10px 9px;
+    border-radius: 12px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 80vw;
+    box-shadow: 0 8px 18px rgba(35, 54, 86, 0.07);
+  }
+
+  .fault-card-body {
+    padding: 8px 6px;
+  }
+
+  .fault-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .fault-table {
+    min-width: 560px;
+    font-size: 12px;
+  }
+
+  .fault-table thead th,
+  .fault-table tbody td {
+    padding: 7px 6px;
+    font-size: 12px;
+  }
+
+  .fault-pagination-container {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 0 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fault-pagination-number,
+  .fault-pagination-arrow {
+    padding: 6px 8px;
+    min-width: 30px;
+    font-size: 12px;
+  }
+
+  .fault-card-header .fault-tabs {
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .fault-title {
+    font-size: 15px;
   }
 }
 
