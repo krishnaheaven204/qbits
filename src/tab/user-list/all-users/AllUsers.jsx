@@ -348,6 +348,18 @@ export default function AllUsers() {
 
   });
 
+  // Allow deep-linking by ?status=standby|normal|warning|fault
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const statusParam = params.get("status");
+    const allowed = ["standby", "normal", "warning", "fault"];
+    if (statusParam && allowed.includes(statusParam)) {
+      setSelectedStatus(statusParam);
+      setTablePage(1);
+    }
+  }, []);
+
   // ADD THIS HERE
 
   const [inverterTotals, setInverterTotals] = useState({

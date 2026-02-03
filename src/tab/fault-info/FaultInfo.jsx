@@ -196,7 +196,7 @@ export default function FaultInfo() {
                   <thead>
                     <tr>
                       <th>Status</th>
-                      <th>Station Name</th>
+                      <th>Plant Name</th>
                       <th>Device</th>
                       <th>Serial</th>
                       <th>Fault Info</th>
