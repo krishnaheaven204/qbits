@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { PlusIcon, EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import './StationList.css';
 
 export default function StationList() {
@@ -16,6 +16,12 @@ export default function StationList() {
             <button className="btn btn-primary qbits-btn qbits-btn-primary" onClick={() => router.push('/create-station')}>
               <PlusIcon style={{width: '16px', height: '16px'}} />
               Create Station
+            </button>
+          </div>
+          <div className="station-refresh-row desktop-only">
+            <button className="btn qbits-btn qbits-btn-secondary station-refresh-btn" type="button">
+              <ArrowPathIcon style={{ width: '16px', height: '16px' }} />
+              Refresh
             </button>
           </div>
           <div className="card-body">

@@ -370,6 +370,10 @@ export default function AllUsers() {
 
 
 
+  const [users, setUsers] = useState([]);
+
+
+
   const [groupedClients, setGroupedClients] = useState({
 
     all_plant: [],
@@ -2868,9 +2872,49 @@ export default function AllUsers() {
 
       // Update frontend
 
-       
+      setUsers((prev) =>
+
+        prev.map((user) =>
+
+          user.id === selectedQbitsUserId
+
+            ? { ...user, qbits_company_code: finalValue }
+
+            : user
+
+        )
+
+      );
+
+      setGroupedClients((prev) => {
+
+        const updateList = (list) =>
+
+          (list || []).map((item) =>
+
+            item.id === selectedQbitsUserId
+
+              ? { ...item, qbits_company_code: finalValue }
+
+              : item
+
+          );
 
 
+
+        return {
+
+          all_plant: updateList(prev.all_plant),
+
+          normal_plant: updateList(prev.normal_plant),
+
+          alarm_plant: updateList(prev.alarm_plant),
+
+          offline_plant: updateList(prev.offline_plant),
+
+        };
+
+      });
 
       return true;
 
@@ -3018,6 +3062,8 @@ export default function AllUsers() {
 
       }
 
+      // Update table data immediately
+
       setUsers((prev) =>
 
         prev.map((user) =>
@@ -3031,6 +3077,36 @@ export default function AllUsers() {
         )
 
       );
+
+      setGroupedClients((prev) => {
+
+        const updateList = (list) =>
+
+          (list || []).map((item) =>
+
+            item.id === selectedUserId
+
+              ? { ...item, company_code: finalValue }
+
+              : item
+
+          );
+
+
+
+        return {
+
+          all_plant: updateList(prev.all_plant),
+
+          normal_plant: updateList(prev.normal_plant),
+
+          alarm_plant: updateList(prev.alarm_plant),
+
+          offline_plant: updateList(prev.offline_plant),
+
+        };
+
+      });
 
       return true;
 
