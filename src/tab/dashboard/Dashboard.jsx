@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import './Dashboard.css';
 
 const MetricIcon = ({ type }) => {
@@ -82,6 +83,7 @@ const MetricIcon = ({ type }) => {
 export default function Dashboard() {
   const [widgetData, setWidgetData] = useState(null);
   const hasFetched = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -112,11 +114,17 @@ export default function Dashboard() {
   }, []);
 
   const statusMetrics = [
-    { label: 'Total Plants', value: widgetData?.all_plant ?? '—', tone: 'mint', icon: 'plants' },
-    { label: 'Normal', value: widgetData?.normal_plant ?? '—', tone: 'indigo', icon: 'normal' },
-    { label: 'Alarm', value: widgetData?.alarm_plant ?? '—', tone: 'amber', icon: 'alarm' },
-    { label: 'Offline', value: widgetData?.offline_plant ?? '—', tone: 'slate', icon: 'offline' },
+    { label: 'Total Plants', value: widgetData?.all_plant ?? '—', tone: 'mint', icon: 'plants', status: 'standby' },
+    { label: 'Normal', value: widgetData?.normal_plant ?? '—', tone: 'indigo', icon: 'normal', status: 'normal' },
+    { label: 'Alarm', value: widgetData?.alarm_plant ?? '—', tone: 'amber', icon: 'alarm', status: 'warning' },
+    { label: 'Offline', value: widgetData?.offline_plant ?? '—', tone: 'slate', icon: 'offline', status: 'fault' },
   ];
+
+  const handleStatusClick = (status) => {
+    if (!status) return;
+    // Redirect to All Users (Station List) with selected status tab
+    router.push(`/user-list/all-users?status=${encodeURIComponent(status)}`);
+  };
 
   const energyMetrics = [
     { label: 'Keep-live Power (kW)', value: widgetData?.power ?? '—', tone: 'sky', icon: 'power' },
@@ -142,7 +150,19 @@ export default function Dashboard() {
                 <div className="metric-blocks">
                   <div className="metric-strip">
                     {statusMetrics.map((metric) => (
-                      <div key={metric.label} className={`metric-card tone-${metric.tone}`}>
+                      <div
+                        key={metric.label}
+                        className={`metric-card tone-${metric.tone}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleStatusClick(metric.status)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleStatusClick(metric.status);
+                          }
+                        }}
+                      >
                         <div className={`metric-icon-bubble tone-${metric.tone}`}>
                           <MetricIcon type={metric.icon} />
                         </div>

@@ -9,23 +9,42 @@ const STATUS_TABS = [
   { key: 'recovered', label: 'Recovered', statusParam: 1 }
 ];
 
+// Build page list with first, last, current window, and ellipsis
 const buildPageList = (total, current) => {
-  if (total <= 5) {
-    return Array.from({ length: total }, (_, i) => i + 1);
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const candidates = new Set(
+    [1, total, current - 2, current - 1, current, current + 1, current + 2].filter(
+      (p) => p >= 1 && p <= total
+    )
+  );
+
+  const sorted = Array.from(candidates).sort((a, b) => a - b);
+  const result = [];
+
+  for (let i = 0; i < sorted.length; i += 1) {
+    const page = sorted[i];
+    const prev = sorted[i - 1];
+    if (i > 0 && page - prev > 1) {
+      result.push('ellipsis');
+    }
+    result.push(page);
   }
 
-  // Always show first three when near the start
-  if (current <= 3) {
-    return [1, 2, 3, 'ellipsis', total];
-  }
+  return result;
+};
 
-  // Always show last three when near the end
-  if (current >= total - 2) {
-    return [1, 'ellipsis', total - 2, total - 1, total];
+// Extract page number from a URL with ?page=
+const extractPageFromUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'https://placeholder');
+    const pageParam = parsed.searchParams.get('page');
+    const n = Number(pageParam);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
   }
-
-  // Middle range: show current flanked by neighbors, plus first/last with ellipses
-  return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total];
 };
 
 const getStatusMeta = (status) => {
@@ -92,7 +111,28 @@ export default function FaultInfo() {
         }
 
         const data = await response.json();
+        const headerTotalCount = Number(
+          response.headers.get('X-Total-Count') ??
+          response.headers.get('X-Total') ??
+          response.headers.get('X-Pagination-Total')
+        );
+
+        const headerTotalPages = Number(
+          response.headers.get('X-Total-Pages') ??
+          response.headers.get('X-Page-Count') ??
+          response.headers.get('X-Pagination-Page-Count')
+        );
+        const linkHeader = response.headers.get('Link');
+        const headerLinkLast = (() => {
+          if (!linkHeader) return null;
+          const parts = linkHeader.split(',');
+          const lastPart = parts.find((p) => p.includes('rel="last"') || p.includes("rel='last'"));
+          if (!lastPart) return null;
+          const match = lastPart.match(/<([^>]+)>/);
+          return match ? extractPageFromUrl(match[1]) : null;
+        })();
         const faultsContainer = data?.data?.faults ?? data?.faults ?? data?.data ?? {};
+
         const rows =
           (Array.isArray(faultsContainer?.data) && faultsContainer.data) ||
           (Array.isArray(faultsContainer) && faultsContainer) ||
@@ -100,43 +140,148 @@ export default function FaultInfo() {
           (Array.isArray(data?.faults) && data.faults) ||
           [];
 
-        const paginationMeta =
+        const meta =
           faultsContainer?.meta ||
           faultsContainer?.pagination ||
+          faultsContainer?.data?.meta ||
+          faultsContainer?.data?.pagination ||
+          data?.data?.faults?.meta ||
+          data?.data?.faults?.pagination ||
+          data?.data?.meta ||
+          data?.data?.pagination ||
+          data?.meta ||
+          data?.pagination ||
           faultsContainer;
 
-        const lastPageRaw =
-          paginationMeta?.last_page ??
-          paginationMeta?.lastPage ??
-          paginationMeta?.total_pages ??
-          paginationMeta?.totalPages ??
-          paginationMeta?.pages ??
-          paginationMeta?.last ??
-          paginationMeta?.page_count;
+        const linksArray = Array.isArray(meta?.links)
+          ? meta?.links
+          : Array.isArray(faultsContainer?.links)
+            ? faultsContainer?.links
+            : Array.isArray(faultsContainer?.data?.links)
+              ? faultsContainer?.data?.links
+              : Array.isArray(data?.links)
+                ? data?.links
+                : Array.isArray(data?.data?.links)
+                  ? data?.data?.links
+                  : [];
 
-        const nextPageUrl = paginationMeta?.next_page_url ?? faultsContainer?.next_page_url ?? data?.next_page_url;
+        const linksMaxFromUrls = (() => {
+          const nums = linksArray
+            .map((link) => extractPageFromUrl(link?.url))
+            .filter((n) => Number.isFinite(n) && n > 0);
+          return nums.length ? Math.max(...nums) : null;
+        })();
+
+        const perPage = (
+          meta?.per_page ??
+          meta?.perPage ??
+          meta?.page_size ??
+          meta?.pageSize ??
+          faultsContainer?.per_page ??
+          faultsContainer?.page_size ??
+          faultsContainer?.data?.per_page ??
+          faultsContainer?.data?.page_size ??
+          data?.per_page ??
+          data?.page_size ??
+          data?.data?.per_page ??
+          data?.data?.page_size ??
+          rows.length
+        ) || 1;
+
+        const totalCount =
+          meta?.total ??
+          meta?.total_count ??
+          meta?.count ??
+          meta?.totalRecords ??
+          faultsContainer?.total ??
+          faultsContainer?.total_count ??
+          faultsContainer?.count ??
+          faultsContainer?.data?.total ??
+          faultsContainer?.data?.total_count ??
+          faultsContainer?.data?.count ??
+          data?.total ??
+          data?.total_count ??
+          data?.count ??
+          data?.data?.total ??
+          data?.data?.total_count ??
+          data?.data?.count ??
+          headerTotalCount;
+
+        const lastFromTotal = perPage && totalCount ? Math.ceil(Number(totalCount) / Number(perPage)) : undefined;
+
+        const lastFromMeta =
+          meta?.last_page ??
+          meta?.lastPage ??
+          meta?.total_pages ??
+          meta?.totalPages ??
+          meta?.pages ??
+          meta?.page_count ??
+          faultsContainer?.last_page ??
+          faultsContainer?.total_pages ??
+          faultsContainer?.pages ??
+          faultsContainer?.page_count ??
+          faultsContainer?.data?.last_page ??
+          faultsContainer?.data?.total_pages ??
+          faultsContainer?.data?.pages ??
+          faultsContainer?.data?.page_count ??
+          data?.data?.last_page ??
+          data?.data?.total_pages ??
+          data?.data?.pages ??
+          data?.data?.page_count ??
+          headerTotalPages ??
+          headerTotalCount;
+
+        const lastFromLinks = extractPageFromUrl(
+          meta?.last_page_url ||
+          meta?.lastPageUrl ||
+          meta?.links?.last ||
+          faultsContainer?.last_page_url ||
+          faultsContainer?.links?.last ||
+          faultsContainer?.data?.last_page_url ||
+          faultsContainer?.data?.links?.last ||
+          data?.links?.last ||
+          data?.data?.links?.last ||
+          headerLinkLast ||
+          data?.last_page_url ||
+          data?.data?.last_page_url
+        );
+
+        const nextPageUrl =
+          meta?.next_page_url || meta?.nextPageUrl || meta?.links?.next ||
+          faultsContainer?.next_page_url || faultsContainer?.links?.next || faultsContainer?.data?.next_page_url ||
+          data?.next_page_url || data?.data?.next_page_url;
         const hasNext = Boolean(nextPageUrl);
 
-        const perPage = (paginationMeta?.per_page ?? paginationMeta?.perPage ?? paginationMeta?.page_size) || rows.length || 1;
-        const totalCount = paginationMeta?.total ?? paginationMeta?.total_count ?? paginationMeta?.count;
-
-        const derivedLastPage = perPage && totalCount ? Math.ceil(Number(totalCount) / Number(perPage)) : undefined;
-
-        let lastPage = [derivedLastPage, lastPageRaw]
+        const candidateLast = [
+          lastFromTotal,
+          lastFromMeta,
+          lastFromLinks,
+          linksMaxFromUrls,
+          headerTotalPages,
+          headerLinkLast,
+          data?.last_page,
+          data?.total_pages,
+          data?.page_count,
+          data?.data?.last_page,
+          data?.data?.total_pages,
+          data?.data?.page_count,
+        ]
           .map((v) => Number(v))
-          .find((v) => Number.isFinite(v) && v > 0) || 1;
+          .filter((v) => Number.isFinite(v) && v > 0);
 
-        // If API indicates more pages but doesn't provide last_page/total, allow advancing by one
-        if (hasNext && lastPage <= currentPage) {
-          lastPage = currentPage + 1;
+        let maxLast = candidateLast.length ? Math.max(...candidateLast) : lastFromTotal || 1;
+
+        // If API hints there is a next page but no total, show a small window forward
+        if (hasNext && maxLast <= currentPage + 1) {
+          maxLast = currentPage + 6;
         }
 
-        // If no next page and we received a short page, clamp to current
-        if (!hasNext && rows.length < perPage) {
-          lastPage = Math.min(lastPage, currentPage);
+        // If we got a full page and still no total hints, assume at least a few pages exist
+        if (!candidateLast.length && rows.length >= perPage) {
+          maxLast = Math.max(maxLast, currentPage + 4);
         }
 
-        setTotalPages(Math.max(1, lastPage));
+        setTotalPages(Math.max(1, maxLast));
         setFaults(Array.isArray(rows) ? rows : []);
       } catch (err) {
         if (err.name === 'AbortError') return;
@@ -154,12 +299,6 @@ export default function FaultInfo() {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -196,7 +335,7 @@ export default function FaultInfo() {
                   <thead>
                     <tr>
                       <th>Status</th>
-                      <th>Station Name</th>
+                      <th>Plant Name</th>
                       <th>Device</th>
                       <th>Serial</th>
                       <th>Fault Info</th>

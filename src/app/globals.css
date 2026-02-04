@@ -403,10 +403,19 @@ h6 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
 
 @media (max-width: 768px) {
   .main-content-wrapper {
+            padding-top: 73px;
+        padding-right: 28px;
+        padding-left: 0px;
+        min-width: 108%;
+        max-width: 69vw;
+        min-height: 100vh;
     margin-left: 0 !important;
   }
   
   .pc-content {
+
+    
     padding-top: 90px;
+    
   }
 }
