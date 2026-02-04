@@ -906,6 +906,9 @@
 
 @media (max-width: 768px) {
   .plant-details-page {
+        min-width: 101%;
+        max-width: 69vw;
+        min-height: 100vh;
     padding: 14px;
     background: linear-gradient(135deg, #f0f4f8 0%, #e8f1ff 100%);
   }
