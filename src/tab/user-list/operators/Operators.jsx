@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import './Operators.css';
 
@@ -74,7 +75,42 @@ export default function Operators() {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
+  const [statusMenuPos, setStatusMenuPos] = useState({ top: 0, left: 0 });
+  const statusFilterButtonRef = useRef(null);
+  const statusFilterMenuRef = useRef(null);
   const rowsPerPage = 10;
+
+  const statusOptions = useMemo(() => ['Normal', 'Fault', 'Offline'], []);
+
+  const updateStatusMenuPosition = useCallback(() => {
+    if (typeof window === 'undefined' || !statusFilterButtonRef.current) return;
+    const rect = statusFilterButtonRef.current.getBoundingClientRect();
+    setStatusMenuPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+    });
+  }, []);
+
+  const closeStatusMenu = useCallback(() => {
+    setIsStatusFilterOpen(false);
+  }, []);
+
+  const toggleStatusMenu = () => {
+    if (isStatusFilterOpen) {
+      closeStatusMenu();
+    } else {
+      updateStatusMenuPosition();
+      setIsStatusFilterOpen(true);
+    }
+  };
+
+  const handleStatusSelect = (value) => {
+    setSelectedStatus(value);
+    setCurrentPage(1);
+    closeStatusMenu();
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -130,12 +166,16 @@ export default function Operators() {
 
   const filteredRecords = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
-    if (!term) return records;
+    const selected = selectedStatus.trim().toLowerCase();
+
+    if (!term && !selected) return records;
 
     const normalize = (value) => (value ?? '').toString().toLowerCase();
 
     return records.filter((row) => {
       const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
+
+      const statusOk = selected ? normalize(stateMeta.label) === selected : true;
       const fields = [
         normalize(row?.id),
         normalize(row?.collector_address),
@@ -144,9 +184,10 @@ export default function Operators() {
         normalize(stateMeta.label)
       ];
 
-      return fields.some((field) => field.includes(term));
+      const termOk = term ? fields.some((field) => field.includes(term)) : true;
+      return statusOk && termOk;
     });
-  }, [records, searchQuery]);
+  }, [records, searchQuery, selectedStatus]);
 
   const sortedRecords = useMemo(() => {
     return [...filteredRecords].sort((a, b) => {
@@ -174,7 +215,68 @@ export default function Operators() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedStatus]);
+
+  useEffect(() => {
+    if (!isStatusFilterOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        statusFilterButtonRef.current?.contains(event.target) ||
+        statusFilterMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      closeStatusMenu();
+    };
+
+    const handleViewportChange = () => {
+      updateStatusMenuPosition();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
+    };
+  }, [isStatusFilterOpen, closeStatusMenu, updateStatusMenuPosition]);
+
+  const statusFilterMenu =
+    isStatusFilterOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={statusFilterMenuRef}
+            className="op-filter-menu"
+            style={{ top: statusMenuPos.top, left: statusMenuPos.left }}
+          >
+            <div className="op-filter-menu-header">Status</div>
+            <button
+              type="button"
+              className={`op-filter-option ${selectedStatus === '' ? 'active' : ''}`}
+              onClick={() => handleStatusSelect('')}
+            >
+              Show All
+            </button>
+            <div className="op-filter-divider" />
+            {statusOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`op-filter-option ${selectedStatus === opt ? 'active' : ''}`}
+                onClick={() => handleStatusSelect(opt)}
+              >
+                {opt}
+                {selectedStatus === opt && <span className="op-filter-check">✓</span>}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )
+      : null;
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -224,7 +326,21 @@ export default function Operators() {
                         <th>Record Time</th>
                         <th>Created At</th>
                         <th>Updated At</th>
-                        <th>Status</th>
+                        <th>
+                          <div className="op-status-header">
+                            <span>Status</span>
+                            <button
+                              ref={statusFilterButtonRef}
+                              type="button"
+                              className={`op-filter-trigger ${isStatusFilterOpen ? 'active' : ''} ${selectedStatus ? 'has-selection' : ''}`}
+                              aria-label="Filter status"
+                              aria-expanded={isStatusFilterOpen}
+                              onClick={toggleStatusMenu}
+                            >
+                              ≡
+                            </button>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -261,14 +377,14 @@ export default function Operators() {
                     </tbody>
                   </table>
                 </div>
-
+                {statusFilterMenu}
                 <div className="op-pagination">
                   <button
-                    className="op-page-btn"
+                    className="op-page-btn op-pagination-arrow op-pagination-arrow-left"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                   >
-                    ‹
+                    &gt;
                   </button>
                   {pageList.map((page, idx) =>
                     page === 'ellipsis' ? (
@@ -284,11 +400,11 @@ export default function Operators() {
                     )
                   )}
                   <button
-                    className="op-page-btn"
+                    className="op-page-btn op-pagination-arrow"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                   >
-                    ›
+                    &gt;
                   </button>
                 </div>
               </>
