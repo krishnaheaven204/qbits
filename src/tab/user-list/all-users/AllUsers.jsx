@@ -2090,8 +2090,6 @@ export default function AllUsers() {
 
   
 
-  // Call Refresh/Sync API
-
   const runInverterCommand = async () => {
 
     if (isRefreshing) return;
@@ -2133,34 +2131,65 @@ export default function AllUsers() {
       setIsRefreshing(true);
 
 
+      const endpointsToTry = [
+        `${API_BASE_ROOT}/client/run-inverter-command`,
+        `${API_BASE_ROOT}/run-inverter-command`,
+      ];
 
-      const response = await fetch(`${API_BASE_ROOT}/run-inverter-command`, {
+      let lastError = null;
+      for (const url of endpointsToTry) {
+        try {
+          console.info("Triggering inverter sync", { url, API_BASE_ROOT });
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-        method: "GET",
+          if (!response.ok) {
+            let text = "";
+            try {
+              text = await response.text();
+            } catch {
+              text = "";
+            }
+            throw new Error(
+              `Request failed (${response.status}): ${text || response.statusText}`
+            );
+          }
 
-        headers: {
-
-          Accept: "application/json",
-
-          Authorization: `Bearer ${token}`,
-
-        },
-
-      });
-
-      if (!response.ok) {
-
-        throw new Error("Failed to run refresh command");
-
+          console.info("Sync command triggered successfully.", { url });
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          console.warn("Sync endpoint attempt failed", { url, error: e });
+        }
       }
 
-      console.info("Sync command triggered successfully.");
+      if (lastError) {
+        throw lastError;
+      }
 
     } catch (err) {
 
-      console.error("Refresh failed", err);
+      console.error("Refresh failed", {
+        err,
+        API_BASE_URL,
+        API_BASE_ROOT,
+        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+      });
 
-      alert("Refresh failed. Please check your connection and try again.");
+      const hint =
+        err?.name === "TypeError"
+          ? "Network/CORS error: check API URL, backend availability, HTTPS/HTTP mismatch, or CORS settings."
+          : "";
+
+      alert(
+        `Refresh failed. ${hint}\n\nAPI: ${API_BASE_ROOT || "(missing)"}\nError: ${err?.message || err}`
+      );
 
     } finally {
 
