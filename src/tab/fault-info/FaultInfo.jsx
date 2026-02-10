@@ -539,7 +539,7 @@ export default function FaultInfo() {
     <div className="fault-info-page">
       <div className="fault-card">
         <div className="fault-card-header">
-          <h5 className="fault-title">Fault Information</h5>
+          <h5 className="fault-title">Fault Info</h5>
           <div className="fault-tabs">
             {STATUS_TABS.map((tab) => (
               <button
