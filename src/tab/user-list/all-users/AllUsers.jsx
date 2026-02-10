@@ -2090,6 +2090,8 @@ export default function AllUsers() {
 
   
 
+  // Call Refresh/Sync API
+
   const runInverterCommand = async () => {
 
     if (isRefreshing) return;
@@ -2131,13 +2133,8 @@ export default function AllUsers() {
       setIsRefreshing(true);
 
 
-      const proxyUrl = "/api/run-inverter-command";
-      console.info("Triggering inverter sync via proxy", {
-        proxyUrl,
-        API_BASE_ROOT,
-      });
 
-      const response = await fetch(proxyUrl, {
+      const response = await fetch(`${API_BASE_ROOT}/run-inverter-command`, {
 
         method: "GET",
 
@@ -2149,74 +2146,23 @@ export default function AllUsers() {
 
         },
 
-        cache: "no-store",
-
       });
 
       if (!response.ok) {
-        let payloadText = "";
-        try {
-          payloadText = await response.text();
-        } catch {
-          payloadText = "";
-        }
 
-        let payloadJson = null;
-        try {
-          payloadJson = payloadText ? JSON.parse(payloadText) : null;
-        } catch {
-          payloadJson = null;
-        }
+        throw new Error("Failed to run refresh command");
 
-        const serverMsg =
-          payloadJson?.error || payloadJson?.message || payloadJson?.data || payloadText;
-
-        console.warn("Inverter refresh command failed", {
-          status: response.status,
-          statusText: response.statusText,
-          serverMsg,
-        });
-
-        alert(
-          `Refresh command failed (${response.status}).\n${serverMsg || response.statusText || "Server Error"}`
-        );
-
-        return;
       }
 
-    console.info("Sync command triggered successfully (proxy)");
+      console.info("Sync command triggered successfully.");
 
-  } catch (err) {
+    } catch (err) {
 
-    const errName = err?.name;
-    const errMessage = err?.message;
-    const errStack = err?.stack;
+      console.error("Refresh failed", err);
 
-    console.error(
-      "Refresh failed",
-      {
-        name: errName,
-        message: errMessage,
-        stack: errStack,
-        API_BASE_URL,
-        API_BASE_ROOT,
-        proxyUrl: "/api/run-inverter-command",
-        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-        origin: typeof window !== "undefined" ? window.location.origin : undefined,
-      },
-      err
-    );
+      alert("Refresh failed. Please check your connection and try again.");
 
-    const hint =
-      err?.name === "TypeError"
-        ? "Network/CORS error: check API URL, backend availability, HTTPS/HTTP mismatch, or CORS settings."
-        : "";
-
-    alert(
-      `Refresh failed. ${hint}\n\nAPI: ${API_BASE_ROOT || "(missing)"}\nError: ${err?.message || err}`
-    );
-
-  } finally {
+    } finally {
 
       setIsRefreshing(false);
 
