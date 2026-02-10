@@ -2131,67 +2131,92 @@ export default function AllUsers() {
       setIsRefreshing(true);
 
 
-      const endpointsToTry = [
-        `${API_BASE_ROOT}/client/run-inverter-command`,
-        `${API_BASE_ROOT}/run-inverter-command`,
-      ];
-
-      let lastError = null;
-      for (const url of endpointsToTry) {
-        try {
-          console.info("Triggering inverter sync", { url, API_BASE_ROOT });
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!response.ok) {
-            let text = "";
-            try {
-              text = await response.text();
-            } catch {
-              text = "";
-            }
-            throw new Error(
-              `Request failed (${response.status}): ${text || response.statusText}`
-            );
-          }
-
-          console.info("Sync command triggered successfully.", { url });
-          lastError = null;
-          break;
-        } catch (e) {
-          lastError = e;
-          console.warn("Sync endpoint attempt failed", { url, error: e });
-        }
-      }
-
-      if (lastError) {
-        throw lastError;
-      }
-
-    } catch (err) {
-
-      console.error("Refresh failed", {
-        err,
-        API_BASE_URL,
+      const proxyUrl = "/api/run-inverter-command";
+      console.info("Triggering inverter sync via proxy", {
+        proxyUrl,
         API_BASE_ROOT,
-        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
       });
 
-      const hint =
-        err?.name === "TypeError"
-          ? "Network/CORS error: check API URL, backend availability, HTTPS/HTTP mismatch, or CORS settings."
-          : "";
+      const response = await fetch(proxyUrl, {
 
-      alert(
-        `Refresh failed. ${hint}\n\nAPI: ${API_BASE_ROOT || "(missing)"}\nError: ${err?.message || err}`
-      );
+        method: "GET",
 
-    } finally {
+        headers: {
+
+          Accept: "application/json",
+
+          Authorization: `Bearer ${token}`,
+
+        },
+
+        cache: "no-store",
+
+      });
+
+      if (!response.ok) {
+        let payloadText = "";
+        try {
+          payloadText = await response.text();
+        } catch {
+          payloadText = "";
+        }
+
+        let payloadJson = null;
+        try {
+          payloadJson = payloadText ? JSON.parse(payloadText) : null;
+        } catch {
+          payloadJson = null;
+        }
+
+        const serverMsg =
+          payloadJson?.error || payloadJson?.message || payloadJson?.data || payloadText;
+
+        console.warn("Inverter refresh command failed", {
+          status: response.status,
+          statusText: response.statusText,
+          serverMsg,
+        });
+
+        alert(
+          `Refresh command failed (${response.status}).\n${serverMsg || response.statusText || "Server Error"}`
+        );
+
+        return;
+      }
+
+    console.info("Sync command triggered successfully (proxy)");
+
+  } catch (err) {
+
+    const errName = err?.name;
+    const errMessage = err?.message;
+    const errStack = err?.stack;
+
+    console.error(
+      "Refresh failed",
+      {
+        name: errName,
+        message: errMessage,
+        stack: errStack,
+        API_BASE_URL,
+        API_BASE_ROOT,
+        proxyUrl: "/api/run-inverter-command",
+        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+        origin: typeof window !== "undefined" ? window.location.origin : undefined,
+      },
+      err
+    );
+
+    const hint =
+      err?.name === "TypeError"
+        ? "Network/CORS error: check API URL, backend availability, HTTPS/HTTP mismatch, or CORS settings."
+        : "";
+
+    alert(
+      `Refresh failed. ${hint}\n\nAPI: ${API_BASE_ROOT || "(missing)"}\nError: ${err?.message || err}`
+    );
+
+  } finally {
 
       setIsRefreshing(false);
 
