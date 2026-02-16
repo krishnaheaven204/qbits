@@ -3,9 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { api } from '@/utils/api';
 import './ChannelPartner.css';
 
@@ -41,6 +38,9 @@ export default function ChannelPartner() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [mapPicked, setMapPicked] = useState(null);
   const [mapOpenNonce, setMapOpenNonce] = useState(0);
+  const [leafletReady, setLeafletReady] = useState(false);
+  const [leafletComponents, setLeafletComponents] = useState(null);
+  const [leafletMarkerIcon, setLeafletMarkerIcon] = useState(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState('');
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -175,15 +175,42 @@ export default function ChannelPartner() {
     return '';
   };
 
-  const leafletMarkerIcon = useMemo(() => {
-    return new L.Icon({
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-    });
-  }, []);
+  useEffect(() => {
+    if (!isMapOpen) return;
+    let cancelled = false;
+
+    const loadLeaflet = async () => {
+      try {
+        const [{ MapContainer, Marker, TileLayer, useMapEvents }, L] = await Promise.all([
+          import('react-leaflet'),
+          import('leaflet'),
+        ]);
+
+        await import('leaflet/dist/leaflet.css');
+
+        if (cancelled) return;
+
+        const icon = new L.Icon({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+
+        setLeafletComponents({ MapContainer, Marker, TileLayer, useMapEvents });
+        setLeafletMarkerIcon(icon);
+        setLeafletReady(true);
+      } catch (e) {
+        setLeafletReady(false);
+      }
+    };
+
+    loadLeaflet();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMapOpen]);
 
   const mapDefaultCenter = useMemo(() => ({ lat: 22.2587, lng: 71.1924 }), []);
   const mapDefaultZoom = 6;
@@ -226,7 +253,9 @@ export default function ChannelPartner() {
   };
 
   const MapClickHandler = ({ onPick }) => {
-    useMapEvents({
+    const useMapEventsFn = leafletComponents?.useMapEvents;
+    if (!useMapEventsFn) return null;
+    useMapEventsFn({
       click(e) {
         const lat = e?.latlng?.lat;
         const lng = e?.latlng?.lng;
@@ -1102,19 +1131,34 @@ export default function ChannelPartner() {
 
             <div className="cp-map-body">
               <div className="cp-map-area">
-                <MapContainer
-                  key={mapOpenNonce}
-                  center={mapDefaultCenter}
-                  zoom={mapDefaultZoom}
-                  style={{ width: '100%', height: '100%' }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <MapClickHandler onPick={setMapPicked} />
-                  {mapPicked ? <Marker position={mapPicked} icon={leafletMarkerIcon} /> : null}
-                </MapContainer>
+                {!leafletReady || !leafletComponents ? (
+                  <div className="text-muted" style={{ padding: 12 }}>
+                    Loading map...
+                  </div>
+                ) : (
+                  (() => {
+                    const { MapContainer, Marker, TileLayer } = leafletComponents;
+                    return (
+                      <MapContainer
+                        key={mapOpenNonce}
+                        center={mapDefaultCenter}
+                        zoom={mapDefaultZoom}
+                        style={{ width: '100%', height: '100%' }}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <MapClickHandler onPick={setMapPicked} />
+                        {mapPicked && leafletMarkerIcon ? (
+                          <Marker position={mapPicked} icon={leafletMarkerIcon} />
+                        ) : mapPicked ? (
+                          <Marker position={mapPicked} />
+                        ) : null}
+                      </MapContainer>
+                    );
+                  })()
+                )}
               </div>
 
               <div className="cp-map-info">
