@@ -80,6 +80,12 @@ export default function Operators() {
   const [statusMenuPos, setStatusMenuPos] = useState({ top: 0, left: 0 });
   const statusFilterButtonRef = useRef(null);
   const statusFilterMenuRef = useRef(null);
+  const [selectedPlant, setSelectedPlant] = useState('');
+  const [plantFilterSearch, setPlantFilterSearch] = useState('');
+  const [isPlantFilterOpen, setIsPlantFilterOpen] = useState(false);
+  const [plantMenuPos, setPlantMenuPos] = useState({ top: 0, left: 0 });
+  const plantFilterButtonRef = useRef(null);
+  const plantFilterMenuRef = useRef(null);
   const rowsPerPage = 10;
 
   const statusOptions = useMemo(() => ['Normal', 'Fault', 'Offline'], []);
@@ -97,6 +103,20 @@ export default function Operators() {
     setIsStatusFilterOpen(false);
   }, []);
 
+  const updatePlantMenuPosition = useCallback(() => {
+    if (typeof window === 'undefined' || !plantFilterButtonRef.current) return;
+    const rect = plantFilterButtonRef.current.getBoundingClientRect();
+    setPlantMenuPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+    });
+  }, []);
+
+  const closePlantMenu = useCallback(() => {
+    setIsPlantFilterOpen(false);
+    setPlantFilterSearch('');
+  }, []);
+
   const toggleStatusMenu = () => {
     if (isStatusFilterOpen) {
       closeStatusMenu();
@@ -110,6 +130,21 @@ export default function Operators() {
     setSelectedStatus(value);
     setCurrentPage(1);
     closeStatusMenu();
+  };
+
+  const togglePlantMenu = () => {
+    if (isPlantFilterOpen) {
+      closePlantMenu();
+    } else {
+      updatePlantMenuPosition();
+      setIsPlantFilterOpen(true);
+    }
+  };
+
+  const handlePlantSelect = (value) => {
+    setSelectedPlant(value);
+    setCurrentPage(1);
+    closePlantMenu();
   };
 
   useEffect(() => {
@@ -167,8 +202,9 @@ export default function Operators() {
   const filteredRecords = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     const selected = selectedStatus.trim().toLowerCase();
+    const selectedPlantTerm = selectedPlant.trim().toLowerCase();
 
-    if (!term && !selected) return records;
+    if (!term && !selected && !selectedPlantTerm) return records;
 
     const normalize = (value) => (value ?? '').toString().toLowerCase();
 
@@ -176,18 +212,30 @@ export default function Operators() {
       const stateMeta = getStateMeta(row?.plant?.plantstate ?? row?.plantstate ?? row?.state ?? row?.status);
 
       const statusOk = selected ? normalize(stateMeta.label) === selected : true;
+      const plantName = normalize(row?.plant?.plant_name ?? row?.plant_name ?? row?.plantName);
+      const plantOk = selectedPlantTerm ? plantName === selectedPlantTerm : true;
       const fields = [
         normalize(row?.id),
         normalize(row?.collector_address),
-        normalize(row?.plant?.plant_name ?? row?.plant_name ?? row?.plantName),
+        plantName,
         normalize(row?.model),
         normalize(stateMeta.label)
       ];
 
       const termOk = term ? fields.some((field) => field.includes(term)) : true;
-      return statusOk && termOk;
+      return statusOk && plantOk && termOk;
     });
-  }, [records, searchQuery, selectedStatus]);
+  }, [records, searchQuery, selectedStatus, selectedPlant]);
+
+  const plantOptions = useMemo(() => {
+    const normalize = (value) => (value ?? '').toString().trim();
+    const set = new Set();
+    records.forEach((row) => {
+      const name = normalize(row?.plant?.plant_name ?? row?.plant_name ?? row?.plantName);
+      if (name) set.add(name);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [records]);
 
   const sortedRecords = useMemo(() => {
     return [...filteredRecords].sort((a, b) => {
@@ -215,7 +263,7 @@ export default function Operators() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedStatus]);
+  }, [searchQuery, selectedStatus, selectedPlant]);
 
   useEffect(() => {
     if (!isStatusFilterOpen) return;
@@ -245,6 +293,34 @@ export default function Operators() {
     };
   }, [isStatusFilterOpen, closeStatusMenu, updateStatusMenuPosition]);
 
+  useEffect(() => {
+    if (!isPlantFilterOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        plantFilterButtonRef.current?.contains(event.target) ||
+        plantFilterMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      closePlantMenu();
+    };
+
+    const handleViewportChange = () => {
+      updatePlantMenuPosition();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
+    };
+  }, [isPlantFilterOpen, closePlantMenu, updatePlantMenuPosition]);
+
   const statusFilterMenu =
     isStatusFilterOpen && typeof document !== 'undefined'
       ? createPortal(
@@ -273,6 +349,53 @@ export default function Operators() {
                 {selectedStatus === opt && <span className="op-filter-check">✓</span>}
               </button>
             ))}
+          </div>,
+          document.body
+        )
+      : null;
+
+  const plantFilterMenu =
+    isPlantFilterOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={plantFilterMenuRef}
+            className="op-filter-menu"
+            style={{ top: plantMenuPos.top, left: plantMenuPos.left }}
+          >
+            <div className="op-filter-menu-header">Plant Name</div>
+            <input
+              className="op-filter-search"
+              type="text"
+              value={plantFilterSearch}
+              onChange={(e) => setPlantFilterSearch(e.target.value)}
+              placeholder="Search plant"
+              autoFocus
+            />
+            <button
+              type="button"
+              className={`op-filter-option ${selectedPlant === '' ? 'active' : ''}`}
+              onClick={() => handlePlantSelect('')}
+            >
+              Show All
+            </button>
+            <div className="op-filter-divider" />
+            {plantOptions
+              .filter((opt) => {
+                const q = plantFilterSearch.trim().toLowerCase();
+                if (!q) return true;
+                return opt.toLowerCase().includes(q);
+              })
+              .map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`op-filter-option ${selectedPlant === opt ? 'active' : ''}`}
+                  onClick={() => handlePlantSelect(opt)}
+                >
+                  <span className="op-filter-option-label">{opt}</span>
+                  {selectedPlant === opt && <span className="op-filter-check">✓</span>}
+                </button>
+              ))}
           </div>,
           document.body
         )
@@ -321,7 +444,21 @@ export default function Operators() {
                       <tr>
                         <th>ID</th>
                         <th>Collector Address</th>                        
-                        <th>Plant Name</th>
+                        <th>
+                          <div className="op-plant-header">
+                            <span>Plant Name</span>
+                            <button
+                              ref={plantFilterButtonRef}
+                              type="button"
+                              className={`op-filter-trigger ${isPlantFilterOpen ? 'active' : ''} ${selectedPlant ? 'has-selection' : ''}`}
+                              aria-label="Filter plant name"
+                              aria-expanded={isPlantFilterOpen}
+                              onClick={togglePlantMenu}
+                            >
+                              ≡
+                            </button>
+                          </div>
+                        </th>
                         <th>Model</th>
                         <th>Record Time</th>
                         <th>Created At</th>
@@ -378,6 +515,7 @@ export default function Operators() {
                   </table>
                 </div>
                 {statusFilterMenu}
+                {plantFilterMenu}
                 <div className="op-pagination">
                   <button
                     className="op-page-btn op-pagination-arrow op-pagination-arrow-left"
