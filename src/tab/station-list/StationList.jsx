@@ -112,7 +112,7 @@ export default function StationList() {
                 onClick={() => setIsCreateStateOpen(true)}
               >
                 <PlusIcon style={{width: '16px', height: '16px'}} />
-                Create State
+                Create Stations
               </button>
               <button className="btn btn-primary qbits-btn qbits-btn-primary" type="button" onClick={() => router.push('/create-station')}>
                 <PlusIcon style={{width: '16px', height: '16px'}} />
@@ -187,7 +187,7 @@ export default function StationList() {
         <div className="station-modal-overlay" role="dialog" aria-modal="true">
           <div className="station-modal">
             <div className="station-modal-header">
-              <h5>Create State</h5>
+              <h5>Create Stations</h5>
               <button type="button" className="station-modal-close" onClick={closeCreateState}>
                 ×
               </button>
