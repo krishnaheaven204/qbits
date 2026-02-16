@@ -35,6 +35,12 @@ export default function ChannelPartner() {
   const [cities, setCities] = useState([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
   const [citiesError, setCitiesError] = useState('');
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [mapPicked, setMapPicked] = useState(null);
+  const [mapOpenNonce, setMapOpenNonce] = useState(0);
+  const [leafletReady, setLeafletReady] = useState(false);
+  const [leafletComponents, setLeafletComponents] = useState(null);
+  const [leafletMarkerIcon, setLeafletMarkerIcon] = useState(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState('');
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -70,6 +76,8 @@ export default function ChannelPartner() {
     setCities([]);
     setCitiesError('');
     setCitiesLoading(false);
+    setIsMapOpen(false);
+    setMapPicked(null);
     setIsCropOpen(false);
     setCropImageSrc('');
     setCrop({ x: 0, y: 0 });
@@ -165,6 +173,97 @@ export default function ChannelPartner() {
       if ('value' in v && (typeof v.value === 'string' || typeof v.value === 'number')) return String(v.value);
     }
     return '';
+  };
+
+  useEffect(() => {
+    if (!isMapOpen) return;
+    let cancelled = false;
+
+    const loadLeaflet = async () => {
+      try {
+        const [{ MapContainer, Marker, TileLayer, useMapEvents }, L] = await Promise.all([
+          import('react-leaflet'),
+          import('leaflet'),
+        ]);
+
+        await import('leaflet/dist/leaflet.css');
+
+        if (cancelled) return;
+
+        const icon = new L.Icon({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+
+        setLeafletComponents({ MapContainer, Marker, TileLayer, useMapEvents });
+        setLeafletMarkerIcon(icon);
+        setLeafletReady(true);
+      } catch (e) {
+        setLeafletReady(false);
+      }
+    };
+
+    loadLeaflet();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMapOpen]);
+
+  const mapDefaultCenter = useMemo(() => ({ lat: 22.2587, lng: 71.1924 }), []);
+  const mapDefaultZoom = 6;
+
+  const openMapPicker = () => {
+    setError('');
+    const lat = Number(form.latitude);
+    const lng = Number(form.longitude);
+    const isValid =
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      !(lat === 0 && lng === 0) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lng >= -180 &&
+      lng <= 180;
+
+    if (isValid) {
+      setMapPicked({ lat, lng });
+    } else {
+      setMapPicked(null);
+    }
+    setMapOpenNonce((n) => n + 1);
+    setIsMapOpen(true);
+  };
+
+  const closeMapPicker = () => {
+    setIsMapOpen(false);
+    setMapPicked(null);
+  };
+
+  const usePickedLocation = () => {
+    if (!mapPicked) {
+      setError('Please select a location on map.');
+      return;
+    }
+    onChange('latitude', String(mapPicked.lat));
+    onChange('longitude', String(mapPicked.lng));
+    setIsMapOpen(false);
+  };
+
+  const MapClickHandler = ({ onPick }) => {
+    const useMapEventsFn = leafletComponents?.useMapEvents;
+    if (!useMapEventsFn) return null;
+    useMapEventsFn({
+      click(e) {
+        const lat = e?.latlng?.lat;
+        const lng = e?.latlng?.lng;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        onPick({ lat, lng });
+      },
+    });
+    return null;
   };
 
   const editPhotoUrl = useMemo(() => {
@@ -646,7 +745,7 @@ export default function ChannelPartner() {
     <div className="col-xl-12">
       <div className="card-qbits-card">
         <div className="card-header d-flex justify-content-between align-items-center">
-          <h5>Channel Partner</h5>
+          <h5>Authorized Service Partner</h5>
           <div className="cp-header-actions">
             <button
               type="button"
@@ -794,7 +893,7 @@ export default function ChannelPartner() {
         <div className="cp-modal-overlay" role="dialog" aria-modal="true">
           <div className="cp-modal">
             <div className="cp-modal-header">
-              <h5>{isEditMode ? 'Edit Channel Partner' : 'Add Channel Partner'}</h5>
+              <h5>{isEditMode ? 'Edit Authorized Service Partner' : 'Add Authorized Service Partner'}</h5>
               <button type="button" className="cp-modal-close" onClick={closeModal}>
                 ×
               </button>
@@ -856,12 +955,19 @@ export default function ChannelPartner() {
                 <div className="cp-form-field">
                   <label>Latitude {isEditMode ? '' : '*'}</label>
                   <input value={form.latitude} onChange={(e) => onChange('latitude', e.target.value)} />
-                  {fieldErrors?.latitude ? <div className="cp-field-hint">{String(fieldErrors.latitude?.[0] || fieldErrors.latitude)}</div> : null}
-                </div>
+                {fieldErrors?.latitude ? <div className="cp-field-hint">{String(fieldErrors.latitude?.[0] || fieldErrors.latitude)}</div> : null}
+              </div>
 
-                <div className="cp-form-field">
-                  <label>Longitude {isEditMode ? '' : '*'}</label>
+              <div className="cp-form-field">
+                <label>Longitude {isEditMode ? '' : '*'}</label>
+                <div className="cp-input-with-action">
+
                   <input value={form.longitude} onChange={(e) => onChange('longitude', e.target.value)} />
+                  <button type="button" className="cp-map-btn" onClick={openMapPicker}>
+                    Select on Map
+                  </button>
+                                  </div>
+
                   {fieldErrors?.longitude ? <div className="cp-field-hint">{String(fieldErrors.longitude?.[0] || fieldErrors.longitude)}</div> : null}
                 </div>
 
@@ -1007,6 +1113,67 @@ export default function ChannelPartner() {
                 <button type="button" className="cp-btn-primary" onClick={confirmCrop}>
                   Use Photo
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isMapOpen ? (
+        <div className="cp-modal-overlay" role="dialog" aria-modal="true">
+          <div className="cp-map-modal">
+            <div className="cp-modal-header">
+              <h5>Select Location</h5>
+              <button type="button" className="cp-modal-close" onClick={closeMapPicker}>
+                ×
+              </button>
+            </div>
+
+            <div className="cp-map-body">
+              <div className="cp-map-area">
+                {!leafletReady || !leafletComponents ? (
+                  <div className="text-muted" style={{ padding: 12 }}>
+                    Loading map...
+                  </div>
+                ) : (
+                  (() => {
+                    const { MapContainer, Marker, TileLayer } = leafletComponents;
+                    return (
+                      <MapContainer
+                        key={mapOpenNonce}
+                        center={mapDefaultCenter}
+                        zoom={mapDefaultZoom}
+                        style={{ width: '100%', height: '100%' }}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <MapClickHandler onPick={setMapPicked} />
+                        {mapPicked && leafletMarkerIcon ? (
+                          <Marker position={mapPicked} icon={leafletMarkerIcon} />
+                        ) : mapPicked ? (
+                          <Marker position={mapPicked} />
+                        ) : null}
+                      </MapContainer>
+                    );
+                  })()
+                )}
+              </div>
+
+              <div className="cp-map-info">
+                <div className="cp-map-coords">
+                  <div>Latitude: {mapPicked ? String(mapPicked.lat) : '--'}</div>
+                  <div>Longitude: {mapPicked ? String(mapPicked.lng) : '--'}</div>
+                </div>
+                <div className="cp-modal-actions">
+                  <button type="button" className="cp-btn-secondary" onClick={closeMapPicker}>
+                    Cancel
+                  </button>
+                  <button type="button" className="cp-btn-primary" onClick={usePickedLocation}>
+                    Use Location
+                  </button>
+                </div>
               </div>
             </div>
           </div>

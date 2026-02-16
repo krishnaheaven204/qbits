@@ -133,7 +133,7 @@ export default function Sidebar() {
                   <span className="pc-micon">
                     <UserGroupIcon style={{width: '20px', height: '20px'}} />
                   </span>
-                  <span className="pc-mtext">Channel Partner</span>
+                  <span className="pc-mtext">Authorized Partner</span>
                 </Link>
               </li>
             </ul>
