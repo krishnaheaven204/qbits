@@ -12,6 +12,10 @@
 }
 
 
+
+
+
+
 .cp-header-actions {
   display: flex;
   align-items: center;
@@ -139,6 +143,32 @@
   background: #ffffff;
 }
 
+.cp-input-with-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-input-with-action input {
+  flex: 1;
+}
+
+.cp-map-btn {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cp-map-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 .cp-form-field textarea {
   resize: vertical;
 }
@@ -201,6 +231,49 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.cp-map-modal {
+  width: min(900px, 96vw);
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-map-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+.cp-map-area {
+  width: 100%;
+  height: 420px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.cp-map-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cp-map-coords {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 13px;
 }
 
 .cp-crop-body {
