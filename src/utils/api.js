@@ -64,6 +64,8 @@ apiClient.interceptors.response.use(
     // Build a normalized error payload
     const status = error.response?.status;
     const data = error.response?.data;
+    const code = error.code;
+    const hasResponse = Boolean(error.response);
     const message =
       data?.message ||
       error.message ||
@@ -72,8 +74,12 @@ apiClient.interceptors.response.use(
     // eslint-disable-next-line no-console
     console.error('[API RESPONSE ERROR]', {
       url: error.config?.url,
+      method: error.config?.method,
+      baseURL: error.config?.baseURL,
       status,
       data,
+      code,
+      hasResponse,
       message
     });
 

@@ -31,6 +31,12 @@
   gap: 10px;
 }
 
+.op-plant-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .op-filter-trigger {
   display: inline-flex;
   align-items: center;
@@ -79,6 +85,28 @@
   letter-spacing: 0.04em;
   font-size: 12px;
   padding: 6px 6px 10px;
+}
+
+.op-filter-search {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 10px;
+  font-size: 13px;
+  outline: none;
+  color: #111827;
+  margin: 2px 0 10px;
+}
+
+.op-filter-search:focus {
+  border-color: #159f6c;
+  box-shadow: 0 0 0 3px rgba(21, 159, 108, 0.15);
+}
+
+.op-filter-option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .op-filter-divider {
@@ -259,6 +287,12 @@
 
 @media (max-width: 900px) {
   .op-status-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .op-plant-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;

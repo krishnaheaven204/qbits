@@ -44,6 +44,187 @@ export default function UserPlants() {
   const [userName, setUserName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCreateStateOpen, setIsCreateStateOpen] = useState(false);
+  const [createStateLoading, setCreateStateLoading] = useState(false);
+  const [createStateError, setCreateStateError] = useState("");
+  const [isAddCollectorOpen, setIsAddCollectorOpen] = useState(false);
+  const [addCollectorLoading, setAddCollectorLoading] = useState(false);
+  const [addCollectorError, setAddCollectorError] = useState("");
+  const [createdPlantPid, setCreatedPlantPid] = useState(null);
+  const [collectorSerial, setCollectorSerial] = useState("");
+  const [createdPlantAuth, setCreatedPlantAuth] = useState({ userName: "", password: "" });
+  const [form, setForm] = useState({
+    userName: "",
+    password: "",
+    plantName: "",
+    city: "",
+    longitude: "",
+    latitude: "",
+    stationtype: "",
+    capacity: "",
+    batterycapacity: "",
+  });
+
+  const closeCreateState = () => {
+    setIsCreateStateOpen(false);
+    setCreateStateLoading(false);
+    setCreateStateError("");
+  };
+
+  const closeAddCollector = () => {
+    setIsAddCollectorOpen(false);
+    setAddCollectorLoading(false);
+    setAddCollectorError("");
+    setCreatedPlantPid(null);
+    setCollectorSerial("");
+    setCreatedPlantAuth({ userName: "", password: "" });
+  };
+
+  const handleFormChange = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const submitCreateState = async (e) => {
+    e.preventDefault();
+    if (createStateLoading) return;
+
+    setCreateStateError("");
+
+    const payload = {
+      userName: form.userName.trim(),
+      password: form.password,
+      plantName: form.plantName.trim(),
+      city: form.city.trim(),
+      longitude: form.longitude === "" ? null : Number(form.longitude),
+      latitude: form.latitude === "" ? null : Number(form.latitude),
+      stationtype: form.stationtype.trim(),
+      capacity: form.capacity === "" ? null : Number(form.capacity),
+      batterycapacity: form.batterycapacity === "" ? null : Number(form.batterycapacity),
+    };
+
+    if (!payload.userName || !payload.password || !payload.plantName) {
+      setCreateStateError("Please fill User Name, Password, and Plant Name.");
+      return;
+    }
+
+    try {
+      setCreateStateLoading(true);
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+      const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const resp = await fetch("/api/create-plant", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = resp.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      const result = isJson ? await resp.json() : await resp.text();
+
+      if (!resp.ok) {
+        const message =
+          (typeof result === "object" && result && (result.message || result.error))
+            ? result.message || result.error
+            : typeof result === "string"
+              ? result
+              : resp.statusText;
+        throw new Error(message || "Request failed");
+      }
+
+      const message =
+        typeof result === "object" && result
+          ? result?.data?.message || result?.message
+          : "Plant created successfully.";
+      const pid = typeof result === "object" && result ? result?.data?.pid : null;
+
+      closeCreateState();
+      alert(pid ? `${message} (PID: ${pid})` : message);
+
+      if (pid) {
+        setCreatedPlantPid(pid);
+        setCreatedPlantAuth({ userName: payload.userName, password: payload.password });
+        setIsAddCollectorOpen(true);
+      }
+    } catch (err) {
+      setCreateStateError(err?.message || "Failed to create plant");
+    } finally {
+      setCreateStateLoading(false);
+    }
+  };
+
+  const submitAddCollector = async (e) => {
+    e.preventDefault();
+    if (addCollectorLoading) return;
+
+    setAddCollectorError("");
+
+    const serial = collectorSerial.trim();
+    if (!serial) {
+      setAddCollectorError("Please enter Serial Number.");
+      return;
+    }
+
+    try {
+      setAddCollectorLoading(true);
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+      const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const payload = {
+        userName: createdPlantAuth.userName,
+        password: createdPlantAuth.password,
+        plantId: createdPlantPid,
+        serial,
+        type: "WiFi-USB",
+      };
+
+      const resp = await fetch("/api/add-collector", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = resp.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      const result = isJson ? await resp.json() : await resp.text();
+
+      if (!resp.ok) {
+        const message =
+          (typeof result === "object" && result && (result.message || result.error))
+            ? result.message || result.error
+            : typeof result === "string"
+              ? result
+              : resp.statusText;
+        throw new Error(message || "Request failed");
+      }
+
+      const message =
+        typeof result === "object" && result
+          ? result?.data?.message || result?.message || "Collector added successfully."
+          : "Collector added successfully.";
+
+      closeAddCollector();
+      alert(message);
+    } catch (err) {
+      setAddCollectorError(err?.message || "Failed to add collector");
+    } finally {
+      setAddCollectorLoading(false);
+    }
+  };
 
   // Get username from URL query parameter
   useEffect(() => {
@@ -239,6 +420,15 @@ export default function UserPlants() {
           <div className="up-header-text">
             <h5 className="up-title">Plant List</h5>
           </div>
+          <div className="up-header-actions">
+            <button
+              type="button"
+              className="up-create-state-btn"
+              onClick={() => setIsCreateStateOpen(true)}
+            >
+              Create State
+            </button>
+          </div>
            
         </div>
 
@@ -352,6 +542,181 @@ export default function UserPlants() {
         </div>
       </div>
       </div>
+
+      {isCreateStateOpen ? (
+        <div className="up-modal-overlay" role="dialog" aria-modal="true">
+          <div className="up-modal">
+            <div className="up-modal-header">
+              <h5>Create State</h5>
+              <button
+                type="button"
+                className="up-modal-close"
+                onClick={closeCreateState}
+              >
+                ×
+              </button>
+            </div>
+
+            <form className="up-modal-body" onSubmit={submitCreateState}>
+              {createStateError ? (
+                <div className="up-modal-error">{createStateError}</div>
+              ) : null}
+
+              <div className="up-form-grid">
+                <div className="up-form-field">
+                  <label>User Name *</label>
+                  <input
+                    value={form.userName}
+                    onChange={(e) =>
+                      handleFormChange("userName", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Password *</label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) =>
+                      handleFormChange("password", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Plant Name *</label>
+                  <input
+                    value={form.plantName}
+                    onChange={(e) =>
+                      handleFormChange("plantName", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>City</label>
+                  <input
+                    value={form.city}
+                    onChange={(e) => handleFormChange("city", e.target.value)}
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Longitude</label>
+                  <input
+                    value={form.longitude}
+                    onChange={(e) =>
+                      handleFormChange("longitude", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Latitude</label>
+                  <input
+                    value={form.latitude}
+                    onChange={(e) =>
+                      handleFormChange("latitude", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Station Type</label>
+                  <input
+                    value={form.stationtype}
+                    onChange={(e) =>
+                      handleFormChange("stationtype", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Capacity</label>
+                  <input
+                    value={form.capacity}
+                    onChange={(e) =>
+                      handleFormChange("capacity", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="up-form-field">
+                  <label>Battery Capacity</label>
+                  <input
+                    value={form.batterycapacity}
+                    onChange={(e) =>
+                      handleFormChange("batterycapacity", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="up-modal-actions">
+                <button
+                  type="button"
+                  className="up-modal-cancel"
+                  onClick={closeCreateState}
+                  disabled={createStateLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="up-modal-submit"
+                  disabled={createStateLoading}
+                >
+                  {createStateLoading ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {isAddCollectorOpen ? (
+        <div className="up-modal-overlay" role="dialog" aria-modal="true">
+          <div className="up-modal">
+            <div className="up-modal-header">
+              <h5>Add Collector</h5>
+              <button
+                type="button"
+                className="up-modal-close"
+                onClick={closeAddCollector}
+              >
+                ×
+              </button>
+            </div>
+
+            <form className="up-modal-body" onSubmit={submitAddCollector}>
+              {addCollectorError ? (
+                <div className="up-modal-error">{addCollectorError}</div>
+              ) : null}
+
+              <div className="up-form-grid">
+                <div className="up-form-field" style={{ gridColumn: "1 / -1" }}>
+                  <label>Serial Number *</label>
+                  <input
+                    value={collectorSerial}
+                    onChange={(e) => setCollectorSerial(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="up-modal-actions">
+                <button
+                  type="button"
+                  className="up-modal-cancel"
+                  onClick={closeAddCollector}
+                  disabled={addCollectorLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="up-modal-submit"
+                  disabled={addCollectorLoading}
+                >
+                  {addCollectorLoading ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

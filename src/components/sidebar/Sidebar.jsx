@@ -126,6 +126,16 @@ export default function Sidebar() {
                   <span className="pc-mtext">Inverters</span>
                 </Link>
               </li>
+
+              {/* Channel Partner */}
+              <li className="pc-item">
+                <Link href="/channel-partner" className={`pc-link qbits-nav-item ${isActive('channel-partner') ? 'active' : ''}`}>
+                  <span className="pc-micon">
+                    <UserGroupIcon style={{width: '20px', height: '20px'}} />
+                  </span>
+                  <span className="pc-mtext">Channel Partner</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
