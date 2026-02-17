@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Select from 'react-select';
 import { api } from '@/utils/api';
 import './ChannelPartner.css';
 
@@ -98,6 +99,68 @@ export default function ChannelPartner() {
     });
   };
 
+  const toIdValue = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
+    if (typeof value === 'object') {
+      const v = value;
+      if ('id' in v && (typeof v.id === 'string' || typeof v.id === 'number')) return String(v.id);
+      if ('value' in v && (typeof v.value === 'string' || typeof v.value === 'number')) return String(v.value);
+    }
+    return '';
+  };
+
+  const stateOptions = useMemo(() => {
+    if (!Array.isArray(states)) return [];
+    return states
+      .map((s) => {
+        const value = toIdValue(s?.id ?? s?.value ?? s);
+        const label = s && typeof s === 'object' ? (s.name ?? s.label ?? s.title ?? value) : String(s);
+        if (!value) return null;
+        return { value: String(value), label: String(label) };
+      })
+      .filter(Boolean);
+  }, [states]);
+
+  const cityOptions = useMemo(() => {
+    if (!Array.isArray(cities)) return [];
+    return cities
+      .map((c) => {
+        const value = toIdValue(c?.id ?? c?.value ?? c?.city_id ?? c);
+        const label = c && typeof c === 'object' ? (c.name ?? c.label ?? c.title ?? value) : String(c);
+        if (!value) return null;
+        return { value: String(value), label: String(label) };
+      })
+      .filter(Boolean);
+  }, [cities]);
+
+  const selectedStateOption = useMemo(() => {
+    if (!form.stateId) return null;
+    const v = String(form.stateId);
+    return stateOptions.find((o) => String(o.value) === v) || { value: v, label: v };
+  }, [form.stateId, stateOptions]);
+
+  const selectedCityOption = useMemo(() => {
+    if (!form.city) return null;
+    const v = String(form.city);
+    return cityOptions.find((o) => String(o.value) === v) || { value: v, label: v };
+  }, [form.city, cityOptions]);
+
+  const selectStyles = useMemo(
+    () => ({
+      control: (base, state) => ({
+        ...base,
+        minHeight: 40,
+        borderRadius: 10,
+        borderColor: state.isFocused ? '#2563eb' : '#e2e8f0',
+        boxShadow: state.isFocused ? '0 0 0 3px rgba(37, 99, 235, 0.16)' : 'none',
+        ':hover': { borderColor: state.isFocused ? '#2563eb' : '#cbd5e1' },
+      }),
+      menu: (base) => ({ ...base, zIndex: 10050 }),
+    }),
+    [],
+  );
+
   const loadCitiesByStateId = async (stateId) => {
     const id = toIdValue(stateId).trim();
     if (!id) {
@@ -162,17 +225,6 @@ export default function ChannelPartner() {
     if (/^https?:\/\//i.test(path)) return path;
     const clean = path.replace(/^\/+/, '');
     return `https://qbits.quickestimate.co/storage/${clean}`;
-  };
-
-  const toIdValue = (value) => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
-    if (typeof value === 'object') {
-      const v = value;
-      if ('id' in v && (typeof v.id === 'string' || typeof v.id === 'number')) return String(v.id);
-      if ('value' in v && (typeof v.value === 'string' || typeof v.value === 'number')) return String(v.value);
-    }
-    return '';
   };
 
   useEffect(() => {
@@ -388,6 +440,13 @@ export default function ChannelPartner() {
       return JSON.stringify(value);
     }
     return String(value);
+  };
+
+  const renderNumberFull = (value) => {
+    if (value === null || value === undefined || value === '') return '--';
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string') return value;
+    return renderText(value);
   };
 
   const formatDateDDMMYYYY = (value) => {
@@ -828,8 +887,8 @@ export default function ChannelPartner() {
                         <td>{renderText(p.address)}</td>
                         <td>{renderText(p.state)}</td>
                         <td>{renderText(p.city)}</td>
-                        <td>{renderText(p.latitude)}</td>
-                        <td>{renderText(p.longitude)}</td>
+                        <td>{renderNumberFull(p.latitude)}</td>
+                        <td>{renderNumberFull(p.longitude)}</td>
                         <td>{formatDateDDMMYYYY(p.created_at)}</td>
                         <td>{formatDateDDMMYYYY(p.updated_at)}</td>
                         <td>
@@ -973,28 +1032,24 @@ export default function ChannelPartner() {
 
                 <div className="cp-form-field">
                   <label>State {isEditMode ? '' : '*'}</label>
-                  <select
-                    value={form.stateId}
-                    onChange={(e) => {
-                      const next = e.target.value;
+                  <Select
+                    instanceId="cp-state"
+                    value={selectedStateOption}
+                    onChange={(opt) => {
+                      const next = opt?.value ? String(opt.value) : '';
                       onChange('stateId', next);
                       onChange('city', '');
                       setCities([]);
                       setCitiesError('');
                       if (next) loadCitiesByStateId(next);
                     }}
-                  >
-                    <option value="">Select State</option>
-                    {Array.isArray(states) && states.map((s) => {
-                      const id = s && typeof s === 'object' ? (s.id ?? s.value ?? '') : '';
-                      const label = s && typeof s === 'object' ? (s.name ?? s.label ?? s.title ?? id) : String(s);
-                      return (
-                        <option key={String(id || label)} value={String(id)}>
-                          {String(label)}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    options={stateOptions}
+                    isClearable
+                    isLoading={statesLoading}
+                    placeholder="Select State"
+                    styles={selectStyles}
+                    menuPlacement="auto"
+                  />
                   {statesLoading ? <div className="cp-field-hint">Loading states...</div> : null}
                   {statesError ? <div className="cp-field-hint">{statesError}</div> : null}
                   {fieldErrors?.state ? <div className="cp-field-hint">{String(fieldErrors.state?.[0] || fieldErrors.state)}</div> : null}
@@ -1002,22 +1057,18 @@ export default function ChannelPartner() {
 
                 <div className="cp-form-field">
                   <label>City {isEditMode ? '' : '*'}</label>
-                  <select
-                    value={form.city}
-                    onChange={(e) => onChange('city', e.target.value)}
-                    disabled={!form.stateId || citiesLoading}
-                  >
-                    <option value="">{form.stateId ? 'Select City' : 'Select State first'}</option>
-                    {Array.isArray(cities) && cities.map((c) => {
-                      const id = c && typeof c === 'object' ? (c.id ?? c.value ?? c.city_id ?? '') : '';
-                      const label = c && typeof c === 'object' ? (c.name ?? c.label ?? c.title ?? id) : String(c);
-                      return (
-                        <option key={String(id || label)} value={String(id || label)}>
-                          {String(label)}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <Select
+                    instanceId="cp-city"
+                    value={selectedCityOption}
+                    onChange={(opt) => onChange('city', opt?.value ? String(opt.value) : '')}
+                    options={cityOptions}
+                    isClearable
+                    isLoading={citiesLoading}
+                    isDisabled={!form.stateId || citiesLoading}
+                    placeholder={form.stateId ? 'Select City' : 'Select State first'}
+                    styles={selectStyles}
+                    menuPlacement="auto"
+                  />
                   {citiesLoading ? <div className="cp-field-hint">Loading cities...</div> : null}
                   {citiesError ? <div className="cp-field-hint">{citiesError}</div> : null}
                   {fieldErrors?.city ? <div className="cp-field-hint">{String(fieldErrors.city?.[0] || fieldErrors.city)}</div> : null}
